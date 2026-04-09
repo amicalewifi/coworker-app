@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Salles</title></head>
+<body>
+<th:block th:fragment="content">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Salles de réunion</div>
+    <div class="topbar-sub">Fr. 19.-/h · Crédits pack inclus · 8h00–21h00</div>
+  </div>
+  <div class="topbar-r">
+    <button class="btn btn-g btn-sm" onclick="openModal('m-book')">+ Réservation</button>
+  </div>
+</div>
+<div class="content">
+  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+  <div th:if="${error}"   class="flash flash-err">✕ <span th:text="${error}"></span></div>
+
+  <!-- Salles -->
+  <div class="g2">
+    <div th:each="room : ${rooms}" class="card"
+         th:style="${'border-top:3px solid ' + (bookedRoomIds.contains(room.id) ? 'var(--orange)' : 'var(--green)')}">
+      <div class="card-hdr">
+        <div>
+          <div style="font-weight:700;font-size:14px;" th:text="${room.name}"></div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px;"
+               th:text="${room.capacity}+' pers. · '+(${room.equipment!=null?#strings.arrayJoin(room.equipment,' · '):''})"></div>
+        </div>
+        <span th:if="${bookedRoomIds.contains(room.id)}" class="b b-o">Réservée</span>
+        <span th:unless="${bookedRoomIds.contains(room.id)}" class="b b-g">Libre</span>
+      </div>
+      <div class="card-body">
+        <div class="slot-row" style="margin-bottom:10px;">
+          <div th:each="h : ${#numbers.sequence(8,20)}" class="slot"
+               th:classappend="${bookedHoursByRoom.containsKey(room.id) and bookedHoursByRoom.get(room.id).contains(h)} ? 'slot-b' : 'slot-f'"
+               th:title="${h}+':00'"></div>
+        </div>
+        <div th:each="b : ${bookings}" th:if="${b.room.id.equals(room.id)}"
+             style="font-size:12px;padding:5px 8px;background:var(--ol);border-radius:var(--r);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;">
+          <span>
+            <strong th:text="${#temporals.format(b.startTime,'HH:mm')}+' – '+${#temporals.format(b.endTime,'HH:mm')}"></strong>
+            · <span th:text="${b.organizerName?:b.title?:'—'}"></span>
+            · <span th:text="${b.participants}+' pers.'"></span>
+          </span>
+          <form th:action="@{/admin/rooms/bookings/{id}/cancel(id=${b.id})}" method="post" style="display:inline;">
+            <button class="btn btn-sm btn-r" style="padding:2px 7px;font-size:11px;">Annuler</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Réservation -->
+<div id="m-book" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Nouvelle réservation</div>
+    <form th:action="@{/admin/rooms/book}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Salle</label>
+        <select name="roomId" class="form-sel" required>
+          <option th:each="room : ${rooms}" th:value="${room.id}" th:text="${room.name}+' ('+${room.capacity}+' pers.)'"></option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Membre (optionnel)</label>
+        <select name="memberId" class="form-sel">
+          <option value="">— Externe / sans compte —</option>
+          <option th:each="m : ${members}" th:value="${m.id}" th:text="${m.displayName}"></option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Organisateur</label>
+        <input name="organizerName" class="form-in" placeholder="Nom de l'organisateur">
+      </div>
+      <div class="form-g">
+        <div class="form-row"><label class="form-lbl">Date</label><input name="date" type="date" class="form-in" th:value="${#temporals.format(date,'yyyy-MM-dd')}" required></div>
+        <div class="form-row"><label class="form-lbl">Participants</label><input name="participants" type="number" class="form-in" value="1" min="1" max="12"></div>
+      </div>
+      <div class="form-g">
+        <div class="form-row"><label class="form-lbl">Début</label><input name="startTime" type="time" class="form-in" value="09:00" min="08:00" max="20:00" required></div>
+        <div class="form-row"><label class="form-lbl">Fin</label><input name="endTime" type="time" class="form-in" value="11:00" min="09:00" max="21:00" required></div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Titre / objet</label>
+        <input name="title" class="form-in" placeholder="Réunion d'équipe">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <input type="checkbox" name="billedFromCredits" value="true" checked>
+        <span style="font-size:13px;">Déduire des crédits conférence du membre</span>
+      </label>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-book')">Annuler</button>
+        <button type="submit" class="btn btn-g">Confirmer</button>
+      </div>
+    </form>
+  </div>
+</div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Membres</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Membres &amp; abonnements</div>
+    <div class="topbar-sub">Pack 5j Fr. 109.- · Pack 10j Fr. 199.- · Pack 15j Fr. 279.- · Permanent Fr. 329.-/mois</div>
+  </div>
+  <div class="topbar-r">
+    <button class="btn btn-g btn-sm" onclick="openModal('m-new')">+ Nouveau membre</button>
+  </div>
+</div>
+
+<div class="content">
+  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th>Badge NFC</th>
+          <th>Formule</th>
+          <th>Unités restantes</th>
+          <th>½ j. rest.</th>
+          <th>Crédits conf.</th>
+          <th>Pack</th>
+          <th>Statut</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="m : ${members}" th:classappend="${!m.active} ? 'inactive-row'">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av"
+                   th:style="${'background:' + (!m.active ? 'var(--bg)' : 'var(--gl)') + ';color:' + (!m.active ? 'var(--t3)' : 'var(--gd)')}"
+                   th:text="${m.initials}"></div>
+              <div>
+                <div style="font-weight:600;">
+                  <a th:href="@{/admin/members/{id}(id=${m.id})}"
+                     th:text="${m.displayName}"
+                     th:style="${!m.active ? 'color:var(--t3)' : ''}"></a>
+                </div>
+                <div style="font-size:11px;color:var(--t3);" th:text="${m.email}"></div>
+              </div>
+            </div>
+          </td>
+          <td><code style="font-size:11px;background:var(--bg);padding:2px 5px;border-radius:4px;" th:text="${m.badgeUid?:'—'}"></code></td>
+          <td>
+            <span th:switch="${m.membership.name()}">
+              <span th:case="'PERMANENT'"     class="b b-p">Permanent</span>
+              <span th:case="'JOURNEE_ESSAI'" class="b b-a">Essai</span>
+              <span th:case="*" class="b b-bl" th:text="${m.membership.name().replace('PACK_','Pack ').toLowerCase()}"></span>
+            </span>
+          </td>
+          <td>
+            <span th:if="${m.permanent}" style="color:var(--purple);">Illimité</span>
+            <span th:unless="${m.permanent}">
+              <div th:if="${m.packUnitsTotal!=null}" style="display:flex;align-items:center;gap:8px;">
+                <span style="font-weight:700;"
+                      th:style="${'color:' + (m.packAlert=='empty' ? 'var(--red)' : (m.packAlert=='low' ? 'var(--orange)' : 'var(--text)'))}"
+                      th:text="${m.packUnitsRemaining!=null?#numbers.formatDecimal(m.packUnitsRemaining,1,1)+'j':'0.0j'}"></span>
+                <div class="pack-bar" style="width:50px;">
+                  <div class="pack-fill"
+                       th:style="${'width:' + (m.packUnitsTotal>0 and m.packUnitsRemaining!=null ? m.packUnitsRemaining.doubleValue()/m.packUnitsTotal.doubleValue()*100 : 0) + '%;background:' + (m.packAlert=='empty' ? 'var(--red)' : (m.packAlert=='low' ? 'var(--orange)' : 'var(--green)'))}"></div>
+                </div>
+              </div>
+              <span th:unless="${m.packUnitsTotal!=null}" style="color:var(--t3);">—</span>
+            </span>
+          </td>
+          <td style="color:var(--t2);" th:text="${m.halfDaysRemaining!=null?m.halfDaysRemaining+' demi-j.':( m.permanent ? '∞' : '—')}"></td>
+          <td style="color:var(--blue);font-weight:600;"
+              th:text="${#numbers.formatDecimal(m.confCreditsRemaining,1,1)}+'h / '+${#numbers.formatDecimal(m.confCreditsTotalH,1,1)}+'h'"></td>
+          <td>
+            <span th:if="${!m.active}" class="b b-gr">Inactif</span>
+            <span th:if="${m.active}">
+              <span th:switch="${m.packAlert}">
+                <span th:case="'empty'"    class="b b-r">Épuisé</span>
+                <span th:case="'expiring'" class="b b-o">Expire bientôt</span>
+                <span th:case="'low'"      class="b b-a">Faible</span>
+                <span th:case="*"          class="b b-g">Actif</span>
+              </span>
+            </span>
+          </td>
+          <td>
+            <span th:if="${m.active}" class="b b-g" style="font-size:10px;">● Actif</span>
+            <span th:unless="${m.active}" class="b b-gr" style="font-size:10px;">○ Inactif</span>
+          </td>
+          <td>
+            <div style="display:flex;gap:4px;">
+              <a th:href="@{/admin/members/{id}(id=${m.id})}" class="btn btn-sm">Détail</a>
+              <form th:if="${m.active}" th:action="@{/admin/members/{id}/deactivate(id=${m.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-r" title="Désactiver le membre">✕</button>
+              </form>
+              <form th:unless="${m.active}" th:action="@{/admin/members/{id}/activate(id=${m.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-sm btn-g" title="Réactiver le membre">✓</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(members)}">
+          <td colspan="9" style="text-align:center;color:var(--t3);padding:30px;">Aucun membre enregistré</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL: Nouveau membre -->
+<div id="m-new" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Nouveau membre</div>
+    <form th:action="@{/admin/members/create}" method="post">
+      <div class="form-g">
+        <div class="form-row"><label class="form-lbl">Prénom</label><input name="firstName" class="form-in" required></div>
+        <div class="form-row"><label class="form-lbl">Nom</label><input name="lastName" class="form-in" required></div>
+      </div>
+      <div class="form-row"><label class="form-lbl">Email</label><input name="email" type="email" class="form-in" required></div>
+      <div class="form-row"><label class="form-lbl">Téléphone</label><input name="phone" class="form-in" placeholder="+41 79 ..."></div>
+      <div class="form-row"><label class="form-lbl">UID Badge NFC</label><input name="badgeUid" class="form-in" placeholder="NFC-XXXX"></div>
+      <div class="form-row">
+        <label class="form-lbl">Formule</label>
+        <select name="membership" class="form-sel">
+          <option value="PACK_5J">Pack 5j — Fr. 109.-</option>
+          <option value="PACK_10J">Pack 10j — Fr. 199.-</option>
+          <option value="PACK_15J">Pack 15j — Fr. 279.-</option>
+          <option value="PERMANENT">Permanent — Fr. 329.-/mois</option>
+          <option value="JOURNEE_ESSAI">Journée d'essai</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-new')">Annuler</button>
+        <button type="submit" class="btn btn-g">Créer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

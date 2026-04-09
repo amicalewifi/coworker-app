@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a3d2e">
+<title>Cafétéria — Imprimante</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body { max-width:480px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
+.app-topbar { background:var(--gd); color:#fff; padding:16px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
+.app-content { flex:1; padding:16px; }
+.pstatus { border-radius:12px; padding:12px 14px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+.pstatus-on  { background:var(--gl); border:1px solid var(--gt); }
+.pstatus-off { background:var(--rl); border:1px solid #f0b8b0; }
+.ps-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.ps-dot-on  { background:var(--gm); }
+.ps-dot-off { background:var(--red); }
+.job-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--bdr); }
+.job-file { font-size:13px; font-weight:600; }
+.job-meta { font-size:11px; color:var(--t3); margin-top:2px; }
+.sec-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--t3); margin:16px 0 10px; display:flex; align-items:center; gap:8px; }
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <div>
+    <div style="font-size:16px;font-weight:700;">Cafétéria · Imprimante</div>
+    <div style="font-size:11px;opacity:.6;">Kyocera TASKalfa 352ci · <span th:text="${printerHost}"></span></div>
+  </div>
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.6);font-size:12px;">← App</a>
+</div>
+
+<div class="app-content">
+
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">✓ <span th:text="${success}"></span></div>
+  <div th:if="${error}"   class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${error}"></span></div>
+
+  <!-- Statut imprimante -->
+  <div th:if="${printerOnline}"  class="pstatus pstatus-on">
+    <div class="ps-dot ps-dot-on"></div>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--gd);">Imprimante en ligne</div>
+      <div style="font-size:11px;color:var(--gm);">Kyocera TASKalfa 352ci · Fr. 0.05/page · Impression directe active</div>
+    </div>
+  </div>
+  <div th:unless="${printerOnline}" class="pstatus pstatus-off">
+    <div class="ps-dot ps-dot-off"></div>
+    <div>
+      <div style="font-size:13px;font-weight:600;color:var(--red);">Imprimante hors ligne</div>
+      <div style="font-size:11px;color:var(--red);">Les jobs seront mis en file d'attente</div>
+    </div>
+  </div>
+
+  <!-- En cours -->
+  <div class="sec-title">
+    En cours d'impression
+    <span class="b b-o" th:text="${#lists.size(printing)}"></span>
+  </div>
+  <div th:each="j : ${printing}" class="job-row">
+    <div>
+      <div class="job-file" th:text="${j.filename}"></div>
+      <div class="job-meta" th:text="${j.totalPages}+' pages · '+(${j.color?'Couleur':'Noir &amp; blanc'})+(${j.duplex?' · Recto-verso':''})"></div>
+    </div>
+    <span class="b b-o">Impression</span>
+  </div>
+  <div th:if="${#lists.isEmpty(printing)}" style="color:var(--t3);padding:8px 0;font-size:13px;">Aucune impression en cours</div>
+
+  <!-- File d'attente -->
+  <div class="sec-title">
+    File d'attente
+    <span class="b b-bl" th:text="${#lists.size(queued)}"></span>
+  </div>
+  <div th:each="j : ${queued}" class="job-row">
+    <div>
+      <div class="job-file" th:text="${j.filename}"></div>
+      <div class="job-meta" th:text="${j.member!=null?j.member.displayName:'—'}+' · '+${j.totalPages}+' pages'"></div>
+    </div>
+    <span class="b b-bl">Attente</span>
+  </div>
+  <div th:if="${#lists.isEmpty(queued)}" style="color:var(--t3);padding:8px 0;font-size:13px;">File vide</div>
+
+  <!-- Envoyer un fichier -->
+  <div class="sec-title">Envoyer un fichier</div>
+  <form th:action="@{/cafeteria/print}" method="post" enctype="multipart/form-data"
+        style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
+
+    <!-- Zone de dépôt fichier -->
+    <div id="dropZone" style="border:2px dashed var(--bdr);border-radius:10px;padding:24px 16px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color .15s;"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.style.borderColor='var(--gm)'"
+         ondragleave="this.style.borderColor='var(--bdr)'"
+         ondrop="handleDrop(event)">
+      <div style="font-size:28px;margin-bottom:6px;">📄</div>
+      <div style="font-size:13px;font-weight:600;" id="dropLabel">Glissez un fichier ou cliquez pour choisir</div>
+      <div style="font-size:11px;color:var(--t3);margin-top:4px;">PDF, DOC, TXT — max 50 Mo</div>
+      <input type="file" id="fileInput" name="file" accept=".pdf,.doc,.docx,.txt,.odt"
+             style="display:none;" onchange="fileSelected(this)" required>
+    </div>
+
+    <div id="fileInfo" style="display:none;background:var(--gl);border:1px solid var(--gt);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;">
+      <strong id="fileName"></strong>
+      <span style="color:var(--t3);" id="fileSize"></span>
+    </div>
+
+    <div class="form-g" style="margin-bottom:12px;">
+      <div class="form-row"><label class="form-lbl">Copies</label><input name="copies" type="number" class="form-in" value="1" min="1" max="20"></div>
+    </div>
+    <div style="display:flex;gap:16px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" name="color" value="true"> Couleur
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" name="duplex" value="true" checked> Recto-verso
+      </label>
+    </div>
+    <button th:if="${printerOnline}"  type="submit" class="btn btn-g btn-full">Envoyer à l'imprimante</button>
+    <button th:unless="${printerOnline}" type="submit" class="btn btn-full" style="background:var(--ol);color:var(--od);border-color:#f0c89a;">Mettre en file d'attente</button>
+  </form>
+
+<script>
+function fileSelected(input) {
+  if (input.files && input.files[0]) showFile(input.files[0]);
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').style.borderColor = 'var(--bdr)';
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    document.getElementById('fileInput').files = e.dataTransfer.files;
+    showFile(f);
+  }
+}
+function showFile(f) {
+  document.getElementById('dropLabel').textContent = 'Fichier sélectionné';
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('fileName').textContent = f.name + ' ';
+  document.getElementById('fileSize').textContent = '(' + (f.size / 1024).toFixed(0) + ' Ko)';
+  document.getElementById('dropZone').style.borderColor = 'var(--gm)';
+}
+</script>
+
+</div>
+</body>
+</html>

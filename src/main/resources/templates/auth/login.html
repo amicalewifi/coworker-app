@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — l'Amicale du WiFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/amicale.css}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); }
+    .login-wrap { width:100%; max-width:420px; padding:20px; }
+    .logo-bar { display:flex; align-items:center; gap:14px; margin-bottom:32px; }
+    .logo-icon { width:52px; height:52px; background:var(--green-d); border-radius:14px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(26,61,46,.3); flex-shrink:0; }
+    .box { background:var(--surf); border:1px solid var(--bdr); border-radius:var(--r-xl); padding:32px 36px; box-shadow:var(--shadow-md); }
+    .demo { margin-top:20px; padding:12px 14px; background:var(--blue-l); border-radius:var(--r); font-size:12px; color:var(--blue); border:1px solid #c7d9f5; }
+    .divider { border:none; border-top:1px solid var(--bdr); margin:20px 0; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+
+  <div class="logo-bar">
+    <div class="logo-icon">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+        <circle cx="15" cy="20" r="4" fill="white"/>
+        <path d="M7 14 Q7 5 15 5 Q23 5 23 14" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M1 14 Q1 0 15 0 Q29 0 29 14" stroke="rgba(255,255,255,.4)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--text);">l'Amicale du WiFi</div>
+      <div style="font-size:12px;color:var(--t3);font-weight:500;margin-top:1px;">Fully Coworking · Valais · CH-1926</div>
+    </div>
+  </div>
+
+  <div class="box">
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px;">Connexion</div>
+    <div style="font-size:13px;color:var(--t2);margin-bottom:24px;">Accédez à votre espace membre.</div>
+
+    <div th:if="${param.error}"      class="flash flash-err" style="margin-bottom:16px;">Email ou mot de passe incorrect.</div>
+    <div th:if="${param.logout}"     class="flash flash-ok"  style="margin-bottom:16px;">Vous avez été déconnecté.</div>
+    <div th:if="${param.registered}" class="flash flash-ok"  style="margin-bottom:16px;">Compte créé avec succès — connectez-vous.</div>
+    <div th:if="${success}"          class="flash flash-ok"  style="margin-bottom:16px;" th:text="${success}"></div>
+
+    <form th:action="@{/login}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Adresse email</label>
+        <input type="email" name="username" class="form-in"
+               placeholder="votre@email.ch" autocomplete="email" required autofocus>
+      </div>
+      <div class="form-row" style="margin-bottom:22px;">
+        <label class="form-lbl">Mot de passe</label>
+        <input type="password" name="password" class="form-in"
+               placeholder="••••••••" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-g btn-full">Se connecter →</button>
+    </form>
+
+    <hr class="divider">
+
+    <div style="text-align:center;font-size:13px;color:var(--t2);">
+      Pas encore membre ?
+      <a th:href="@{/register}" style="color:var(--green);font-weight:600;">Créer un compte</a>
+    </div>
+  </div>
+
+  <div class="demo" style="margin-top:16px;">
+    <strong style="display:block;margin-bottom:5px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;">Comptes de démo</strong>
+    admin@amicalewifi.ch · <em>admin2024</em><br>
+    camille@exemple.ch · <em>member2024</em>
+  </div>
+</div>
+</body>
+</html>

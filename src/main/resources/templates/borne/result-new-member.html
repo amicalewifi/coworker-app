@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inscription — l'Amicale du WiFi</title>
+<style>
+:root{--bg:#0d1a14;--surf2:#1c2e22;--bdr:rgba(74,146,112,.2);--green:#2d6a4f;--gm:#4a9270;--orange:#e07b39;--ot:#f0a060;--od:#c4611a;--text:#e8e6dc;--t2:#9a9a8e;--font:'Helvetica Neue',Helvetica,Arial,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{background:var(--surf2);border:2px solid var(--orange);border-radius:22px;padding:28px 32px;width:100%;max-width:480px;}
+.title{font-size:17px;font-weight:700;color:var(--ot);margin-bottom:4px;}
+.sub{font-size:12px;color:var(--t2);margin-bottom:18px;line-height:1.5;}
+.badge-pill{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;padding:8px 14px;font-size:14px;font-family:monospace;margin-bottom:18px;text-align:center;color:var(--ot);}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.fr{margin-bottom:9px;}
+.lbl{font-size:11px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px;}
+.inp,.sel{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--bdr);background:rgba(255,255,255,.05);color:var(--text);font-size:14px;font-family:var(--font);}
+.inp:focus,.sel:focus{outline:2px solid var(--orange);outline-offset:1px;}
+.formula-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.f-btn{padding:10px 8px;border-radius:9px;border:1.5px solid var(--bdr);background:rgba(255,255,255,.03);cursor:pointer;text-align:center;font-family:var(--font);transition:all .15s;}
+.f-btn:hover{border-color:var(--gm);}
+.f-btn.sel{border-color:var(--gm);background:rgba(74,146,112,.15);}
+.f-name{font-size:12px;font-weight:700;display:block;color:var(--text);}
+.f-price{font-size:13px;font-weight:700;color:var(--ot);display:block;margin-top:1px;}
+.f-detail{font-size:10px;color:var(--t2);display:block;margin-top:1px;}
+.btns{display:flex;gap:9px;margin-top:6px;}
+.btn-cancel{flex:1;padding:13px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid var(--bdr);color:var(--t2);font-size:14px;cursor:pointer;font-family:var(--font);text-decoration:none;display:block;text-align:center;}
+.btn-ok{flex:2;padding:13px;border-radius:10px;background:var(--orange);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.btn-ok:hover{background:var(--od);}
+</style>
+</head>
+<body>
+<div class="card"
+     th:with="nm=${result}">
+  <div class="title">Badge non reconnu — Inscription</div>
+  <div class="sub">Bienvenue à l'Amicale du WiFi ! Créez votre compte pour accéder à l'espace coworking de Fully.</div>
+  <div class="badge-pill" th:text="'Badge détecté : '+${nm.badgeUid()}"></div>
+
+  <form th:action="@{/borne/register}" method="post">
+    <input type="hidden" name="badgeUid" th:value="${nm.badgeUid()}">
+
+    <div class="fg">
+      <div class="fr"><label class="lbl">Prénom</label><input name="firstName" class="inp" placeholder="Marie" required></div>
+      <div class="fr"><label class="lbl">Nom</label><input name="lastName" class="inp" placeholder="Dupont" required></div>
+    </div>
+    <div class="fr"><label class="lbl">Email</label><input name="email" type="email" class="inp" placeholder="marie@exemple.ch" required></div>
+    <div class="fr"><label class="lbl">Téléphone (optionnel)</label><input name="phone" type="tel" class="inp" placeholder="+41 79 000 00 00"></div>
+
+    <div class="lbl" style="margin-bottom:8px;">Choisissez votre formule</div>
+    <div class="formula-g">
+      <label class="f-btn sel">
+        <input type="radio" name="membership" value="JOURNEE_ESSAI" checked style="display:none;">
+        <span class="f-name">Journée d'essai</span>
+        <span class="f-price" style="color:#52c08a">Gratuit</span>
+        <span class="f-detail">Sans engagement</span>
+      </label>
+      <label class="f-btn">
+        <input type="radio" name="membership" value="PACK_5J" style="display:none;">
+        <span class="f-name">Pack 5 jours</span>
+        <span class="f-price">Fr. 109.-</span>
+        <span class="f-detail">5j ou 10 demi-j.</span>
+      </label>
+      <label class="f-btn">
+        <input type="radio" name="membership" value="PACK_10J" style="display:none;">
+        <span class="f-name">Pack 10 jours</span>
+        <span class="f-price">Fr. 199.-</span>
+        <span class="f-detail">10j ou 20 demi-j.</span>
+      </label>
+      <label class="f-btn">
+        <input type="radio" name="membership" value="PERMANENT" style="display:none;">
+        <span class="f-name">Permanent</span>
+        <span class="f-price">Fr. 329.-/mois</span>
+        <span class="f-detail">24/7 · illimité</span>
+      </label>
+    </div>
+
+    <div class="fr">
+      <label class="lbl">Présence aujourd'hui</label>
+      <select name="presenceType" class="sel">
+        <option value="FULL_DAY">Journée complète (07:00–19:00) — −1.0j</option>
+        <option value="HALF_AM">Demi-journée matin (07:00–12:30) — −0.5j</option>
+        <option value="HALF_PM">Demi-journée AP-M (12:30–19:00) — −0.5j</option>
+        <option value="TRIAL">Journée d'essai — gratuit</option>
+      </select>
+    </div>
+
+    <div class="btns">
+      <a th:href="@{/borne/}" class="btn-cancel">Annuler</a>
+      <button type="submit" class="btn-ok">Créer mon compte →</button>
+    </div>
+  </form>
+</div>
+<script>
+document.querySelectorAll('.f-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    btn.querySelector('input[type=radio]').checked = true;
+  });
+});
+</script>
+</body>
+</html>

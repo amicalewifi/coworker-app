@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:fragment="layout(title, content)">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${title} + ' — l\'Amicale du WiFi'">Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/amicale.css}">
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="22" r="4" fill="#4a9270"/>
+        <path d="M9 17 Q9 8 18 8 Q27 8 27 17" stroke="#4a9270" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M3 17 Q3 2 18 2 Q33 2 33 17" stroke="rgba(74,146,112,.4)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <div class="brand-name">l'Amicale du WiFi</div>
+        <div class="brand-sub">Fully Coworking · CH-1926</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-sec">Tableau de bord</div>
+      <a th:href="@{/admin/}" class="nav-item"
+         th:classappend="${currentUri.equals('/admin/') or currentUri.equals('/admin')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+        Vue générale
+      </a>
+
+      <div class="nav-sec">Gestion</div>
+      <a th:href="@{/admin/members}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/members')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 2c1.5.5 2.5 2 2.5 3.5S12.5 9 11 9M15 14c0-3-1.5-4.5-4-5"/></svg>
+        Membres &amp; packs
+      </a>
+      <a th:href="@{/admin/rooms}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/rooms')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="11" rx="1.5"/><path d="M1 7h14M8 7v7"/></svg>
+        Salles de réunion
+      </a>
+      <a th:href="@{/admin/printer}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/printer')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="12" height="7" rx="1.5"/><path d="M4 5V3h8v2M4 10h8v4H4z"/></svg>
+        Imprimante
+      </a>
+
+      <div class="nav-sec">Terminaux</div>
+      <a th:href="@{/borne/}" class="nav-item" target="_blank">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="9" rx="2"/><path d="M5 4V3a3 3 0 016 0v1"/><circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Borne d'accueil ↗
+      </a>
+      <a th:href="@{/mobile/}" class="nav-item" target="_blank">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="1" width="8" height="14" rx="2"/><circle cx="8" cy="12" r="1" fill="currentColor" stroke="none"/></svg>
+        App membre ↗
+      </a>
+      <a th:href="@{/cafeteria/}" class="nav-item" target="_blank">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12v2H2zM4 5v8M12 5v8M2 13h12"/></svg>
+        Cafétéria ↗
+      </a>
+    </nav>
+
+    <div class="sb-footer">
+      <div><span class="online-dot"></span>Spring Boot · PostgreSQL</div>
+      <div style="margin-top:4px;">
+        <sec:authentication property="name"/>
+        · <form th:action="@{/logout}" method="post" style="display:inline;">
+            <button type="submit" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-family:inherit;font-size:inherit;padding:0;">Déconnexion</button>
+          </form>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div th:replace="${content}"></div>
+  </div>
+</div>
+
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m =>
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); })
+);
+document.querySelectorAll('.type-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const r = card.querySelector('input[type=radio]');
+    if (r) r.checked = true;
+    const g = card.closest('.type-grid');
+    if (g) g.querySelectorAll('.type-card').forEach(c => c.classList.remove('sel'));
+    card.classList.add('sel');
+  });
+});
+</script>
+</body>
+</html>

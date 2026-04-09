@@ -1,0 +1,55 @@
+plugins {
+    id 'org.springframework.boot'        version '3.2.4'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'java'
+}
+
+group   = 'ch.amicalewifi'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+configurations {
+    compileOnly { extendsFrom annotationProcessor }
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // PostgreSQL + Flyway
+    runtimeOnly    'org.postgresql:postgresql'
+    implementation 'org.flywaydb:flyway-core'
+
+    // Lombok
+    compileOnly         'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // QR Code
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
+    // PDF page count
+    implementation 'org.apache.pdfbox:pdfbox:3.0.2'
+
+    // DevTools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.h2database:h2'
+}
+
+tasks.named('test') { useJUnitPlatform() }

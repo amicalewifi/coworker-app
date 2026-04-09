@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Imprimante</title></head>
+<body>
+<th:block th:fragment="content">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Imprimante — Cafétéria</div>
+    <div class="topbar-sub">Kyocera TASKalfa 352ci · <span th:text="${printerHost}"></span> · Fr. 0.05/page</div>
+  </div>
+  <div class="topbar-r">
+    <div th:if="${printerOnline}" class="printer-status printer-online">
+      <span class="printer-dot printer-dot-on"></span> En ligne
+    </div>
+    <div th:unless="${printerOnline}" class="printer-status printer-offline">
+      <span class="printer-dot printer-dot-off"></span> Hors ligne
+    </div>
+    <a th:href="@{/admin/printer}" class="btn btn-sm">↺ Actualiser</a>
+  </div>
+</div>
+
+<div class="content">
+
+  <div th:unless="${printerOnline}" class="flash flash-err">
+    ✕ Imprimante non joignable sur <strong th:text="${printerHost}+':9100'"></strong>.
+    Vérifiez que l'imprimante est allumée et connectée au réseau.
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-ttl">En cours d'impression</span>
+        <span class="b b-o" th:text="${#lists.size(printing)}"></span>
+      </div>
+      <div class="card-body">
+        <div th:each="j : ${printing}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);">
+          <div>
+            <div style="font-weight:600;" th:text="${j.filename}"></div>
+            <div style="font-size:11px;color:var(--t3);"
+                 th:text="${j.member!=null?j.member.displayName:'—'}+' · '+${j.totalPages}+' pages · '+(${j.color?'Couleur':'N&B'})+(${j.duplex?' · Recto-verso':''})"></div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;"
+                 th:text="'Coût: Fr. '+${#numbers.formatDecimal(j.totalCost,1,2)}"></div>
+          </div>
+          <span class="b b-o">Impression</span>
+        </div>
+        <div th:if="${#lists.isEmpty(printing)}"
+             style="color:var(--t3);text-align:center;padding:24px;font-size:13px;">
+          Aucune impression en cours
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-ttl">File d'attente</span>
+        <span class="b b-bl" th:text="${#lists.size(queued)}"></span>
+      </div>
+      <div class="card-body">
+        <div th:each="j : ${queued}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);">
+          <div>
+            <div style="font-weight:600;" th:text="${j.filename}"></div>
+            <div style="font-size:11px;color:var(--t3);"
+                 th:text="${j.member!=null?j.member.displayName:'—'}+' · '+${j.totalPages}+' pages'"></div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;"
+                 th:text="'Créé le '+${#temporals.format(j.createdAt,'d MMM HH:mm')}"></div>
+          </div>
+          <span class="b b-bl">En attente</span>
+        </div>
+        <div th:if="${#lists.isEmpty(queued)}"
+             style="color:var(--t3);text-align:center;padding:24px;font-size:13px;">
+          File d'attente vide
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Infos imprimante -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-ttl">Informations imprimante</span></div>
+    <div class="card-body">
+      <table style="width:100%;font-size:13px;">
+        <tr><td style="color:var(--t3);width:160px;padding:5px 0;">Modèle</td><td>Kyocera TASKalfa 352ci</td></tr>
+        <tr><td style="color:var(--t3);padding:5px 0;">Adresse IP</td><td><code th:text="${printerHost}"></code></td></tr>
+        <tr><td style="color:var(--t3);padding:5px 0;">Port RAW</td><td><code>9100</code></td></tr>
+        <tr><td style="color:var(--t3);padding:5px 0;">Connexion</td>
+            <td>
+              <span th:if="${printerOnline}"  class="b b-g">● Connectée</span>
+              <span th:unless="${printerOnline}" class="b b-r">○ Hors ligne</span>
+            </td>
+        </tr>
+        <tr><td style="color:var(--t3);padding:5px 0;">Tarif</td><td>Fr. 0.05 / page · quota 50 pages/mois</td></tr>
+      </table>
+    </div>
+  </div>
+
+</div>
+</th:block>
+</body>
+</html>

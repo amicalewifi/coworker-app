@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historique — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
+.app-title{font-size:16px;font-weight:700;}
+.app-content{flex:1;padding:16px;}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bdr);}
+.hi-left .date{font-size:11px;color:var(--t3);}
+.hi-left .type{font-size:14px;font-weight:600;margin-top:2px;}
+.hi-left .hours{font-size:11px;color:var(--t2);}
+.stats-banner{background:var(--gd);border-radius:14px;padding:16px;margin-bottom:18px;display:flex;gap:12px;}
+.sb-stat{flex:1;text-align:center;}
+.sb-val{font-size:22px;font-weight:700;color:#fff;}
+.sb-lbl{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
+</style>
+</head>
+<body>
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:20px;">←</a>
+  <div class="app-title">Mon historique</div>
+</div>
+<div class="app-content">
+  <!-- Résumé -->
+  <div class="stats-banner">
+    <div class="sb-stat">
+      <div class="sb-val" th:text="${member.packUnitsRemaining!=null?member.packUnitsRemaining:'∞'}"></div>
+      <div class="sb-lbl">unités restantes</div>
+    </div>
+    <div class="sb-stat">
+      <div class="sb-val" th:text="${member.halfDaysRemaining!=null?member.halfDaysRemaining:'∞'}"></div>
+      <div class="sb-lbl">demi-journées</div>
+    </div>
+    <div class="sb-stat">
+      <div class="sb-val" th:text="${#lists.size(presences)}"></div>
+      <div class="sb-lbl">présences totales</div>
+    </div>
+  </div>
+
+  <!-- Liste -->
+  <div th:each="p : ${presences}" class="hi">
+    <div class="hi-left">
+      <div class="date" th:text="${#temporals.format(p.date,'EEEE d MMMM yyyy')}"></div>
+      <div class="type" th:text="${p.presenceType.label}"></div>
+      <div class="hours" th:text="${p.presenceType.hours}+' · Arrivée '+${#temporals.format(p.checkedInAt,'HH:mm')}"></div>
+    </div>
+    <div>
+      <span th:if="${p.unitaire}" class="b b-o">Unitaire</span>
+      <span th:unless="${p.unitaire}">
+        <span th:if="${p.presenceType.name()=='FULL_DAY'}"    class="b b-g">−1.0j</span>
+        <span th:unless="${p.presenceType.name()=='FULL_DAY'}" class="b b-o">−0.5j</span>
+      </span>
+    </div>
+  </div>
+  <div th:if="${#lists.isEmpty(presences)}" style="color:var(--t3);text-align:center;padding:40px;font-size:13px;">
+    Aucune présence enregistrée
+  </div>
+</div>
+</body>
+</html>

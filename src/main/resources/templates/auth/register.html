@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription — l'Amicale du WiFi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/amicale.css}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+    .box { background:var(--surf); border:1px solid var(--bdr); border-radius:var(--rl2); padding:36px 40px; width:100%; max-width:480px; box-shadow:0 4px 24px rgba(0,0,0,.06); }
+    .logo { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .logo-icon { width:48px; height:48px; background:var(--gd); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--t3); margin:18px 0 10px; }
+    .pack-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
+    .pack-opt  { border:1.5px solid var(--bdr); border-radius:var(--r); padding:12px; cursor:pointer; transition:all .15s; }
+    .pack-opt:hover { border-color:var(--gt); }
+    .pack-opt.sel   { border-color:var(--green); background:var(--gl); }
+    .pack-opt input { display:none; }
+    .pack-opt-name  { font-size:13px; font-weight:700; margin-bottom:2px; }
+    .pack-opt-price { font-size:12px; color:var(--gd); font-weight:700; }
+    .pack-opt-desc  { font-size:11px; color:var(--t3); margin-top:3px; }
+  </style>
+</head>
+<body>
+<div class="box">
+
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="18" r="3.5" fill="white"/>
+        <path d="M7 13 Q7 6 14 6 Q21 6 21 13" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <path d="M2 13 Q2 1 14 1 Q26 1 26 13" stroke="rgba(255,255,255,.5)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:18px;font-weight:700;">l'Amicale du WiFi</div>
+      <div style="font-size:12px;color:var(--t3);">Fully Coworking · Valais · CH-1926</div>
+    </div>
+  </div>
+
+  <div style="font-size:13px;color:var(--t2);margin-bottom:20px;">
+    Créez votre compte membre et choisissez votre formule.
+  </div>
+
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:16px;">✕ <span th:text="${error}"></span></div>
+
+  <form th:action="@{/register}" method="post">
+
+    <div class="section">Vos informations</div>
+    <div class="form-g" style="margin-bottom:10px;">
+      <div class="form-row"><label class="form-lbl">Prénom *</label>
+        <input name="firstName" class="form-in" placeholder="Marie" required></div>
+      <div class="form-row"><label class="form-lbl">Nom *</label>
+        <input name="lastName" class="form-in" placeholder="Dupont" required></div>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Email *</label>
+      <input name="email" type="email" class="form-in" placeholder="marie@exemple.ch" required>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Téléphone</label>
+      <input name="phone" class="form-in" placeholder="+41 79 000 00 00">
+    </div>
+
+    <div class="section">Mot de passe</div>
+    <div class="form-row">
+      <label class="form-lbl">Mot de passe *</label>
+      <input name="password" type="password" class="form-in" placeholder="••••••••" minlength="8" required>
+    </div>
+
+    <div class="section">Choisissez votre formule</div>
+    <div class="pack-grid" id="packGrid">
+      <label class="pack-opt sel" onclick="selPack(this)">
+        <input type="radio" name="membership" value="PACK_5J" checked>
+        <div class="pack-opt-name">Pack 5 jours</div>
+        <div class="pack-opt-price">Fr. 109.–</div>
+        <div class="pack-opt-desc">5j ou 10 demi-journées · valable 3 mois</div>
+      </label>
+      <label class="pack-opt" onclick="selPack(this)">
+        <input type="radio" name="membership" value="PACK_10J">
+        <div class="pack-opt-name">Pack 10 jours</div>
+        <div class="pack-opt-price">Fr. 199.–</div>
+        <div class="pack-opt-desc">10j ou 20 demi-journées · valable 3 mois</div>
+      </label>
+      <label class="pack-opt" onclick="selPack(this)">
+        <input type="radio" name="membership" value="PACK_15J">
+        <div class="pack-opt-name">Pack 15 jours</div>
+        <div class="pack-opt-price">Fr. 279.–</div>
+        <div class="pack-opt-desc">15j ou 30 demi-journées · valable 3 mois</div>
+      </label>
+      <label class="pack-opt" onclick="selPack(this)">
+        <input type="radio" name="membership" value="PERMANENT">
+        <div class="pack-opt-name">Abonnement mensuel</div>
+        <div class="pack-opt-price">Fr. 329.–/mois</div>
+        <div class="pack-opt-desc">Accès illimité · 24h/7j</div>
+      </label>
+    </div>
+
+    <div class="notice notice-g" style="margin-top:12px;margin-bottom:20px;">
+      <span>ℹ</span>
+      <span>Votre accès sera activé après confirmation de votre paiement par l'équipe Amicale du WiFi.</span>
+    </div>
+
+    <button type="submit" class="btn btn-g btn-full">Créer mon compte</button>
+  </form>
+
+  <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--t2);">
+    Déjà membre ?
+    <a th:href="@{/login}" style="color:var(--green);font-weight:600;">Se connecter</a>
+  </div>
+
+</div>
+
+<script>
+function selPack(el) {
+  document.querySelectorAll('.pack-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  el.querySelector('input[type=radio]').checked = true;
+}
+</script>
+</body>
+</html>

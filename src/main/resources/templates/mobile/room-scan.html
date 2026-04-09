@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salle — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
+.app-content{flex:1;padding:16px;}
+</style>
+</head>
+<body>
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:20px;">←</a>
+  <div>
+    <div style="font-size:16px;font-weight:700;" th:text="${room.name}"></div>
+    <div style="font-size:11px;opacity:.6;" th:text="${room.capacity}+' pers. · Fr. '+${room.hourlyRateChf}+'.-/h'"></div>
+  </div>
+</div>
+<div class="app-content">
+
+  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+  <div th:if="${error}"   class="flash flash-err">✕ <span th:text="${error}"></span></div>
+
+  <!-- Équipement -->
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-body">
+      <div style="font-size:12px;color:var(--t3);margin-bottom:6px;" th:text="${room.description}"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span th:each="eq : ${room.equipment}" class="b b-gr" th:text="${eq}"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Réservations du jour -->
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:10px;">Réservations aujourd'hui</div>
+  <div th:each="b : ${bookings}" style="background:var(--ol);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;">
+    <div>
+      <div style="font-weight:600;font-size:13px;" th:text="${#temporals.format(b.startTime,'HH:mm')}+' – '+${#temporals.format(b.endTime,'HH:mm')}"></div>
+      <div style="font-size:11px;color:var(--od);" th:text="${b.organizerName?:b.title?:'—'}+' · '+${b.participants}+' pers.'"></div>
+    </div>
+    <span class="b b-o">Réservé</span>
+  </div>
+  <div th:if="${#lists.isEmpty(bookings)}" class="notice notice-g">Aucune réservation — salle disponible !</div>
+
+  <!-- Formulaire réservation -->
+  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:18px;margin-bottom:10px;">Réserver cette salle</div>
+  <form th:action="@{/mobile/book-room}" method="post">
+    <input type="hidden" name="roomId" th:value="${room.id}">
+    <div class="form-g">
+      <div class="form-row"><label class="form-lbl">Date</label><input name="date" type="date" class="form-in" th:value="${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}" required></div>
+      <div class="form-row"><label class="form-lbl">Participants</label><input name="participants" type="number" class="form-in" value="1" min="1" th:max="${room.capacity}"></div>
+    </div>
+    <div class="form-g">
+      <div class="form-row"><label class="form-lbl">Début</label><input name="startTime" type="time" class="form-in" value="09:00" required></div>
+      <div class="form-row"><label class="form-lbl">Fin</label><input name="endTime" type="time" class="form-in" value="11:00" required></div>
+    </div>
+    <div class="form-row"><label class="form-lbl">Objet de la réunion</label><input name="title" class="form-in" placeholder="Réunion d'équipe…"></div>
+    <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Confirmer la réservation</button>
+  </form>
+</div>
+</body>
+</html>

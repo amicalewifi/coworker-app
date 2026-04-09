@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title th:text="${member.displayName}">Membre</title></head>
+<body>
+<th:block th:fragment="content">
+<div class="topbar">
+  <div>
+    <div class="topbar-title" th:text="${member.displayName}">Membre</div>
+    <div class="topbar-sub" th:text="${member.email}+' · '+${member.membership.label}"></div>
+  </div>
+  <div class="topbar-r">
+    <a th:href="@{/admin/members}" class="btn btn-sm">← Retour</a>
+    <form th:if="${member.active}" th:action="@{/admin/members/{id}/deactivate(id=${member.id})}" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-sm btn-r">Désactiver</button>
+    </form>
+    <form th:unless="${member.active}" th:action="@{/admin/members/{id}/activate(id=${member.id})}" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-sm btn-g">Réactiver</button>
+    </form>
+    <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">Renouveler pack</button>
+    <a th:href="@{/qr/member/{uid}(uid=${member.badgeUid?:'none'})}" class="btn btn-sm" target="_blank">QR Code</a>
+  </div>
+</div>
+<div class="content">
+  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+
+  <div class="g2">
+    <!-- Infos membre -->
+    <div class="card">
+      <div class="card-hdr"><span class="card-ttl">Informations</span></div>
+      <div class="card-body">
+        <table style="width:100%;font-size:13px;">
+          <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Membre depuis</td><td th:text="${#temporals.format(member.createdAt,'d MMMM yyyy')}"></td></tr>
+        </table>
+      </div>
+    </div>
+    <!-- Pack -->
+    <div class="card">
+      <div class="card-hdr"><span class="card-ttl">Pack &amp; crédits</span></div>
+      <div class="card-body">
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span style="font-weight:600;" th:text="${member.membership.label}"></span>
+            <span class="b" th:classappend="${'b-' + (member.packAlert=='empty' ? 'r' : (member.packAlert=='low' ? 'a' : 'g'))}"
+                  th:text="${member.packAlert=='empty'?'Épuisé':member.packAlert=='low'?'Faible':'Actif'}"></span>
+          </div>
+          <div th:if="${member.packUnitsTotal!=null}">
+            <div style="font-size:13px;margin-bottom:6px;">
+              <strong th:text="${member.packUnitsRemaining}+'j'"></strong> restantes sur
+              <span th:text="${member.packUnitsTotal}+'j'"></span>
+              (<span th:text="${member.halfDaysRemaining}"></span> demi-journées)
+            </div>
+            <div class="pack-bar" style="height:10px;">
+              <div class="pack-fill"
+                   th:style="'width:'+( ${member.packUnitsTotal>0 and member.packUnitsRemaining!=null ? member.packUnitsRemaining.doubleValue()/member.packUnitsTotal.doubleValue()*100 : 0})+'%'"></div>
+            </div>
+            <div style="font-size:11px;color:var(--t3);margin-top:5px;">
+              Expire le <span th:text="${member.packExpires!=null?#temporals.format(member.packExpires,'d MMMM yyyy'):'—'}"></span>
+            </div>
+          </div>
+          <div th:unless="${member.packUnitsTotal!=null}" style="color:var(--purple);font-weight:600;">Illimité · 24/7</div>
+        </div>
+        <div style="border-top:1px solid var(--bdr);padding-top:10px;">
+          <div style="font-size:12px;color:var(--t3);">Crédits salle conférence</div>
+          <div style="font-size:13px;font-weight:600;color:var(--blue);"
+               th:text="${member.confCreditsRemaining}+'h restantes / '+${member.confCreditsTotalH}+'h incluses'"></div>
+        </div>
+        <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-top:10px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:12px;color:var(--t3);">Quota impression (mois en cours)</div>
+            <form th:action="@{/admin/members/{id}/reset-print(id=${member.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-sm" style="font-size:11px;">Réinitialiser</button>
+            </form>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:13px;font-weight:700;"
+                  th:style="${'color:' + (member.printUsed >= member.printQuota ? 'var(--red)' : (member.printUsed >= member.printQuota * 0.8 ? 'var(--orange)' : 'var(--text)'))}">
+              <span th:text="${member.printUsed}"></span> / <span th:text="${member.printQuota}"></span> pages
+            </span>
+            <div class="pack-bar" style="flex:1;">
+              <div class="pack-fill"
+                   th:style="${'width:' + (member.printQuota > 0 ? member.printUsed * 100 / member.printQuota : 0) + '%;background:' + (member.printUsed >= member.printQuota ? 'var(--red)' : (member.printUsed >= member.printQuota * 0.8 ? 'var(--orange)' : 'var(--green)'))}"></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--t3);margin-top:4px;"
+               th:text="${member.printQuota - member.printUsed} + ' pages restantes · Fr. ' + ${#numbers.formatDecimal((member.printQuota - member.printUsed) * 0.05, 1, 2)} + ' restant'"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historique présences -->
+  <div class="card">
+    <div class="card-hdr"><span class="card-ttl">Historique des présences</span></div>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Type</th><th>Arrivée</th><th>Départ</th><th>Décompte</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr th:each="p : ${presences}">
+          <td th:text="${#temporals.format(p.date,'d MMM yyyy')}"></td>
+          <td>
+            <span th:switch="${p.presenceType.name()}">
+              <span th:case="'FULL_DAY'" class="b b-g">Journée</span>
+              <span th:case="'HALF_AM'"  class="b b-o">½ Matin</span>
+              <span th:case="'HALF_PM'"  class="b b-o">½ AP-M</span>
+              <span th:case="'TRIAL'"    class="b b-a">Essai</span>
+              <span th:case="*" class="b b-gr" th:text="${p.presenceType.shortLabel}"></span>
+            </span>
+          </td>
+          <td th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></td>
+          <td th:text="${p.checkedOutAt!=null?#temporals.format(p.checkedOutAt,'HH:mm'):'En cours'}"></td>
+          <td>
+            <span th:if="${p.unitaire}" class="cons cons-half">Unitaire</span>
+            <span th:unless="${p.unitaire}">
+              <span th:if="${p.presenceType.name()=='FULL_DAY'}"    class="cons cons-full">−1.0j</span>
+              <span th:unless="${p.presenceType.name()=='FULL_DAY'}" class="cons cons-half">−0.5j</span>
+            </span>
+          </td>
+          <td>
+            <span th:switch="${p.status.name()}">
+              <span th:case="'ACTIVE'"    class="b b-g">Actif</span>
+              <span th:case="'COMPLETED'" class="b b-gr">Terminé</span>
+              <span th:case="*"           class="b b-r">Annulé</span>
+            </span>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(presences)}">
+          <td colspan="6" style="text-align:center;color:var(--t3);padding:20px;">Aucune présence</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal renouvellement -->
+<div id="m-renew" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Renouveler le pack</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <form th:action="@{/admin/members/{id}/renew(id=${member.id})}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Nouvelle formule</label>
+        <select name="membership" class="form-sel">
+          <option value="PACK_5J">Pack 5j — Fr. 109.-</option>
+          <option value="PACK_10J">Pack 10j — Fr. 199.-</option>
+          <option value="PACK_15J">Pack 15j — Fr. 279.-</option>
+          <option value="PERMANENT">Permanent — Fr. 329.-/mois</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-renew')">Annuler</button>
+        <button type="submit" class="btn btn-o">Renouveler</button>
+      </div>
+    </form>
+  </div>
+</div>
+</th:block>
+</body>
+</html>

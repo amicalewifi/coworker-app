@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: amicale-wifi
+
+  datasource:
+    url:               jdbc:postgresql://localhost:5432/amicale_wifi
+    username:          amicale
+    password:          amicale2024
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle:      2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect:    org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: Europe/Zurich
+
+  flyway:
+    enabled:             true
+    locations:           classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    clean-disabled:      true
+
+  thymeleaf:
+    cache:    false
+    mode:     HTML
+    encoding: UTF-8
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Europe/Zurich
+    default-property-inclusion: NON_NULL
+
+  servlet:
+    multipart:
+      enabled:      true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  devtools:
+    restart:
+      enabled: true
+
+server:
+  port: 8081
+  servlet:
+    session:
+      timeout: 8h
+
+# Règles métier Amicale du WiFi
+amicale:
+  business:
+    opening-hour:   7      # coworking ouvre à 07:00
+    closing-hour:   19     # coworking ferme à 19:00
+    full-day-units: 1.0    # 1 journée = 1.0 unité de pack
+    half-day-units: 0.5    # 1 demi-journée = 0.5 unité de pack
+    conf-rate-chf:  19.00  # Fr. 19.-/h salle conférence
+    print-cost-chf: 0.05   # Fr. 0.05/page imprimante
+
+  printer:
+    host:       192.168.1.10  # Kyocera TASKalfa 352ci · 00:17:c8:ea:dc:84
+    port:       9100          # port RAW Kyocera
+    timeout-ms: 2000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+logging:
+  level:
+    root:                         INFO
+    ch.amicalewifi:               DEBUG
+    org.springframework.security: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url:               jdbc:h2:mem:testdb;MODE=PostgreSQL
+    username:          sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+  flyway:
+    enabled: false

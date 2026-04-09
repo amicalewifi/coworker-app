@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Résultat — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px;}
+.result-card{background:var(--surf);border-radius:18px;border:2px solid var(--bdr);padding:24px;width:100%;max-width:380px;text-align:center;}
+.result-card.ok{border-color:var(--gm);}
+.result-card.ko{border-color:var(--red);background:var(--rl);}
+.result-icon{font-size:48px;margin-bottom:12px;}
+.result-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.result-sub{font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5;}
+.pack-info{background:var(--gl);border-radius:10px;padding:12px;margin-bottom:16px;}
+.pack-info-val{font-size:20px;font-weight:700;color:var(--gd);}
+.pack-info-lbl{font-size:11px;color:var(--gm);margin-top:2px;}
+</style>
+</head>
+<body>
+
+<!-- Granted -->
+<div th:if="${result != null and result.class.simpleName == 'Granted'}"
+     th:with="g=${result}" class="result-card ok">
+  <div class="result-icon">✅</div>
+  <div class="result-title">Présence enregistrée !</div>
+  <div class="result-sub" th:text="${g.presence().presenceType().label} + ' — ' + ${g.presence().date()}"></div>
+  <div class="pack-info" th:if="${g.packRemaining() != null}">
+    <div class="pack-info-val" th:text="${g.packRemaining()} + 'j restantes'"></div>
+    <div class="pack-info-lbl" th:text="${g.halfDays()} + ' demi-journées disponibles'"></div>
+  </div>
+  <a th:href="@{/mobile/}" class="btn btn-g btn-full">← Retour à l'accueil</a>
+</div>
+
+<!-- Denied -->
+<div th:if="${result != null and result.class.simpleName == 'Denied'}"
+     th:with="d=${result}" class="result-card ko">
+  <div class="result-icon">❌</div>
+  <div class="result-title">Accès refusé</div>
+  <div class="result-sub" th:switch="${d.reason()}">
+    <span th:case="'pack_exhausted'">Votre pack est épuisé. Contactez l'admin pour le renouveler.</span>
+    <span th:case="'outside_hours'">Vous ne pouvez accéder qu'entre 07:00 et 19:00 avec un pack.</span>
+    <span th:case="'badge_expired'">Votre badge est inactif ou expiré.</span>
+    <span th:case="*" th:text="${d.reason()}"></span>
+  </div>
+  <a th:href="@{/mobile/}" class="btn btn-full">← Retour</a>
+</div>
+
+<!-- Erreur générique -->
+<div th:if="${error}" class="result-card ko">
+  <div class="result-icon">⚠️</div>
+  <div class="result-title">Erreur</div>
+  <div class="result-sub" th:text="${error}"></div>
+  <a th:href="@{/mobile/}" class="btn btn-full">← Retour</a>
+</div>
+
+</body>
+</html>

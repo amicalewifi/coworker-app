@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta th:content="'6;url=' + @{/borne/}" http-equiv="refresh">
+<title>Accès refusé</title>
+<style>
+:root{--red:#e05050;--rd:#f09090;--orange:#e07b39;--ot:#f0a060;--text:#e8e6dc;--t2:#9a9a8e;--font:'Helvetica Neue',Helvetica,Arial,sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:#180808;color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px;}
+.card{background:#200808;border:2px solid var(--red);border-radius:22px;padding:32px 40px;width:100%;max-width:420px;text-align:center;}
+.av{width:72px;height:72px;border-radius:50%;background:rgba(224,80,80,.15);border:2px solid var(--red);display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;color:var(--rd);}
+.title{font-size:22px;font-weight:700;color:var(--rd);margin-bottom:8px;}
+.reason{font-size:14px;color:var(--t2);margin-bottom:22px;line-height:1.6;}
+.btn{background:var(--red);color:#fff;border:none;border-radius:12px;padding:14px;width:100%;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.progress{width:300px;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:var(--red);border-radius:2px;animation:p 6s linear forwards;}
+@keyframes p{from{width:100%}to{width:0}}
+</style>
+</head>
+<body>
+<div class="card"
+     th:with="denied=${result}">
+  <div class="av">✕</div>
+  <div class="title">Accès refusé</div>
+  <div class="reason" th:switch="${denied.reason()}">
+    <span th:case="'pack_exhausted'">
+      <strong th:if="${denied.member()!=null}" th:text="${denied.member().displayName()}"></strong><br>
+      Pack épuisé — plus d'unités disponibles<br>
+      Renouvelez sur <strong>amicalewifi.ch</strong>
+    </span>
+    <span th:case="'badge_expired'">
+      Badge expiré ou désactivé<br>
+      Contactez <strong>hello@amicalewifi.ch</strong>
+    </span>
+    <span th:case="'outside_hours'">
+      Hors horaires coworking (07:00–19:00)<br>
+      Accès 24/7 réservé aux membres permanents
+    </span>
+    <span th:case="*" th:text="${denied.reason()}"></span>
+  </div>
+  <button class="btn" th:attr="data-url=@{/borne/}" onclick="window.location=this.dataset.url">Fermer</button>
+</div>
+<div class="progress"><div class="progress-fill"></div></div>
+<div style="font-size:12px;color:var(--t2);">Retour automatique dans 6 secondes…</div>
+</body>
+</html>
