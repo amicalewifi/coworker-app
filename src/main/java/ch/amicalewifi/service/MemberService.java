@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,8 +21,9 @@ import java.util.UUID;
 @Slf4j
 public class MemberService {
 
-    private final MemberRepository   memberRepo;
-    private final PresenceRepository presenceRepo;
+    private final MemberRepository          memberRepo;
+    private final PresenceRepository        presenceRepo;
+    private final PackTransactionRepository packTxRepo;
 
     public List<Member>   getAll()                 { return memberRepo.findByActiveTrueOrderByLastNameAsc(); }
     public List<Member>   getAllIncludingInactive() { return memberRepo.findAllOrderByActiveDescLastNameAsc(); }
@@ -40,7 +43,15 @@ public class MemberService {
             m.setPackExpires(LocalDate.now().plusMonths(3));
         }
         log.info("Création membre: {} · {}", m.getDisplayName(), m.getMembership());
-        return memberRepo.save(m);
+        Member saved = memberRepo.save(m);
+        packTxRepo.save(PackTransaction.builder()
+                .member(saved)
+                .membership(saved.getMembership())
+                .units(saved.getPackUnitsTotal())
+                .amountChf(saved.getMembership().getPriceChf())
+                .kind("create")
+                .build());
+        return saved;
     }
 
     public Member renewPack(UUID id, MembershipType membership) {
@@ -53,7 +64,15 @@ public class MemberService {
         m.setConfCreditsUsedH(BigDecimal.ZERO);
         m.setUpdatedAt(LocalDateTime.now());
         log.info("Renouvellement: {} · {}", m.getDisplayName(), membership);
-        return memberRepo.save(m);
+        Member saved = memberRepo.save(m);
+        packTxRepo.save(PackTransaction.builder()
+                .member(saved)
+                .membership(membership)
+                .units(membership.getPackUnits())
+                .amountChf(membership.getPriceChf())
+                .kind("renew")
+                .build());
+        return saved;
     }
 
     public Presence manualEntry(UUID memberId, PresenceType type, boolean unitaire) {

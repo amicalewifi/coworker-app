@@ -6,7 +6,7 @@
 <th:block th:fragment="content">
 <div class="topbar">
   <div>
-    <div class="topbar-title">Imprimante — Cafétéria</div>
+    <div class="topbar-title">Facturation &amp; Imprimante</div>
     <div class="topbar-sub">Kyocera TASKalfa 352ci · <span th:text="${printerHost}"></span> · Fr. 0.05/page</div>
   </div>
   <div class="topbar-r">
@@ -75,8 +75,165 @@
     </div>
   </div>
 
+  <!-- Facturation packs du mois -->
+  <div class="card" style="margin-top:18px;">
+    <div class="card-hdr">
+      <div>
+        <span class="card-ttl">Packs vendus</span>
+        <span style="font-size:13px;color:var(--t3);margin-left:8px;font-weight:500;text-transform:capitalize;"
+              th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
+      </div>
+      <span class="b b-g" th:text="${#lists.size(packTxs)}+' transaction(s)'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Membre</th>
+          <th>Formule</th>
+          <th>Type</th>
+          <th style="text-align:right;">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="tx : ${packTxs}">
+          <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
+              th:text="${#temporals.format(tx.createdAt,'d MMM yyyy')}"></td>
+          <td>
+            <div style="font-weight:600;" th:text="${tx.member.displayName}"></div>
+            <div style="font-size:11px;color:var(--t3);" th:text="${tx.member.email}"></div>
+          </td>
+          <td th:text="${tx.membership.label.split(' — ')[0]}"></td>
+          <td>
+            <span th:if="${tx.kind == 'create'}" class="b b-g" style="font-size:10px;">Nouveau</span>
+            <span th:unless="${tx.kind == 'create'}" class="b b-o" style="font-size:10px;">Renouvellement</span>
+          </td>
+          <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green-d);"
+              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(packTxs)}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">Aucun pack vendu ce mois</td>
+        </tr>
+      </tbody>
+      <tfoot th:unless="${#lists.isEmpty(packTxs)}">
+        <tr style="background:var(--surf-2);">
+          <td colspan="4" style="font-weight:700;padding:13px 18px;">Total packs</td>
+          <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);padding:13px 18px;"
+              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(packTxs.![amountChf]),1,2)}"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Facturation mensuelle impressions -->
+  <div class="card" style="margin-top:18px;">
+    <div class="card-hdr">
+      <div>
+        <span class="card-ttl">Facturation</span>
+        <span style="font-size:13px;color:var(--t3);margin-left:8px;font-weight:500;text-transform:capitalize;"
+              th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <a th:href="@{/admin/printer(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
+        <a th:href="@{/admin/printer}" class="btn btn-sm">Mois en cours</a>
+        <a th:href="@{/admin/printer(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
+        <span class="b b-bl" th:text="${#lists.size(monthJobs)}+' jobs'"></span>
+      </div>
+    </div>
+
+    <div class="notice notice-o" style="margin:14px 18px 0;">
+      <span>ℹ</span>
+      <span>Tarif N&amp;B : Fr. 0.05/page · Couleur : Fr. 0.20/page (facturer à la vraie consommation)</span>
+    </div>
+
+    <table class="table" style="margin-top:4px;">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th>Pages N&amp;B</th>
+          <th>Pages couleur</th>
+          <th>Total pages</th>
+          <th style="text-align:right;">Montant à facturer</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="line : ${billingLines}">
+          <td>
+            <div style="font-weight:700;" th:text="${line.name()}"></div>
+            <div style="font-size:11px;color:var(--t3);" th:text="${line.email()}"></div>
+          </td>
+          <td style="color:var(--t2);" th:text="${line.pagesBW()}+' p.'"></td>
+          <td>
+            <span th:if="${line.pagesColor() > 0}" class="b b-o" th:text="${line.pagesColor()}+' p.'"></span>
+            <span th:unless="${line.pagesColor() > 0}" style="color:var(--t4);">—</span>
+          </td>
+          <td style="font-weight:600;" th:text="${line.pagesBW() + line.pagesColor()}+' p.'"></td>
+          <td style="text-align:right;">
+            <span style="font-size:15px;font-weight:800;color:var(--green-d);"
+                  th:text="'Fr. '+${#numbers.formatDecimal(line.pagesBW() * 0.05 + line.pagesColor() * 0.20, 1, 2)}"></span>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(billingLines)}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:28px;">
+            Aucune impression ce mois
+          </td>
+        </tr>
+      </tbody>
+      <tfoot th:unless="${#lists.isEmpty(billingLines)}">
+        <tr style="background:var(--surf-2);">
+          <td style="font-weight:700;padding:13px 18px;">Total</td>
+          <td style="font-weight:600;" th:text="${#aggregates.sum(billingLines.![pagesBW])}+' p.'"></td>
+          <td style="font-weight:600;" th:text="${#aggregates.sum(billingLines.![pagesColor])}+' p.'"></td>
+          <td style="font-weight:700;" th:text="${#aggregates.sum(billingLines.![pagesBW + pagesColor])}+' p.'"></td>
+          <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);"
+              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(billingLines.![pagesBW]) * 0.05 + #aggregates.sum(billingLines.![pagesColor]) * 0.20, 1, 2)}"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Détail des jobs du mois -->
+  <div class="card" style="margin-top:18px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Détail des impressions</span>
+      <span class="b b-gr" th:text="${#lists.size(monthJobs)}+' fichiers'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Membre</th>
+          <th>Fichier</th>
+          <th>Pages</th>
+          <th>Options</th>
+          <th style="text-align:right;">Coût</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="j : ${monthJobs}">
+          <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
+              th:text="${#temporals.format(j.createdAt,'d MMM HH:mm')}"></td>
+          <td th:text="${j.member!=null?j.member.displayName:'Anonyme'}"></td>
+          <td style="color:var(--t2);font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              th:text="${j.filename}"></td>
+          <td th:text="${j.totalPages}+' p. (×'+${j.copies}+')'"></td>
+          <td>
+            <span th:if="${j.color}"  class="b b-o" style="font-size:10px;">Couleur</span>
+            <span th:unless="${j.color}" class="b b-gr" style="font-size:10px;">N&amp;B</span>
+            <span th:if="${j.duplex}"  class="b b-bl" style="font-size:10px;">R-V</span>
+          </td>
+          <td style="text-align:right;font-weight:600;color:var(--text);"
+              th:text="'Fr. '+${#numbers.formatDecimal(j.totalCost,1,2)}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(monthJobs)}">
+          <td colspan="6" style="text-align:center;color:var(--t3);padding:24px;">Aucune impression ce mois</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- Infos imprimante -->
-  <div class="card">
+  <div class="card" style="margin-top:18px;">
     <div class="card-hdr"><span class="card-ttl">Informations imprimante</span></div>
     <div class="card-body">
       <table style="width:100%;font-size:13px;">
@@ -89,7 +246,7 @@
               <span th:unless="${printerOnline}" class="b b-r">○ Hors ligne</span>
             </td>
         </tr>
-        <tr><td style="color:var(--t3);padding:5px 0;">Tarif</td><td>Fr. 0.05 / page · quota 50 pages/mois</td></tr>
+        <tr><td style="color:var(--t3);padding:5px 0;">Tarif</td><td>N&amp;B Fr. 0.05/page · Couleur Fr. 0.20/page · Facturation mensuelle</td></tr>
       </table>
     </div>
   </div>

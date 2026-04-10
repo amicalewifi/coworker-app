@@ -35,7 +35,8 @@ public class AdminController {
     private final RoomService          roomService;
     private final RoomRepository       roomRepo;
     private final MemberRepository     memberRepo;
-    private final PrinterJobRepository printerRepo;
+    private final PrinterJobRepository     printerRepo;
+    private final PackTransactionRepository packTxRepo;
     private final PrinterService       printerService;
 
     @GetMapping({"", "/"})
@@ -248,10 +249,14 @@ public class AdminController {
             billing.put(key, new BillLine(name, email, bw, color, cur.total().add(j.getTotalCost())));
         }
 
+        List<PackTransaction> packTxs = packTxRepo
+                .findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to);
+
         model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
         model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
         model.addAttribute("monthJobs",     monthJobs);
         model.addAttribute("billingLines",  billing.values());
+        model.addAttribute("packTxs",       packTxs);
         model.addAttribute("billingMonth",  ym);
         model.addAttribute("prevMonth",     ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",     ym.plusMonths(1).toString());
