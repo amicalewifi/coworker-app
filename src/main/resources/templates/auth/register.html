@@ -9,19 +9,50 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/amicale.css}">
   <style>
-    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-    .box { background:var(--surf); border:1px solid var(--bdr); border-radius:var(--rl2); padding:36px 40px; width:100%; max-width:480px; box-shadow:0 4px 24px rgba(0,0,0,.06); }
-    .logo { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
-    .logo-icon { width:48px; height:48px; background:var(--gd); border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .section { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--t3); margin:18px 0 10px; }
-    .pack-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
-    .pack-opt  { border:1.5px solid var(--bdr); border-radius:var(--r); padding:12px; cursor:pointer; transition:all .15s; }
-    .pack-opt:hover { border-color:var(--gt); }
-    .pack-opt.sel   { border-color:var(--green); background:var(--gl); }
-    .pack-opt input { display:none; }
-    .pack-opt-name  { font-size:13px; font-weight:700; margin-bottom:2px; }
-    .pack-opt-price { font-size:12px; color:var(--gd); font-weight:700; }
-    .pack-opt-desc  { font-size:11px; color:var(--t3); margin-top:3px; }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(ellipse at 60% 0%, rgba(30,140,90,.10) 0%, transparent 60%),
+                  radial-gradient(ellipse at 0% 100%, rgba(37,99,235,.07) 0%, transparent 50%),
+                  var(--bg);
+    }
+    .box {
+      background: var(--surf);
+      border: 1px solid var(--bdr);
+      border-radius: var(--r-xl);
+      padding: 38px 42px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: var(--shadow-lg);
+    }
+    .logo { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+    .logo-icon {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--green-d) 0%, var(--green) 100%);
+      border-radius: 15px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 5px 18px rgba(20,92,58,.32), inset 0 1px 0 rgba(255,255,255,.15);
+    }
+    .section {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--t3);
+      margin: 22px 0 12px;
+    }
+    .pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
+    .pack-opt  { border: 1.5px solid var(--bdr); border-radius: var(--r); padding: 14px; cursor: pointer; transition: all .18s ease; }
+    .pack-opt:hover { border-color: var(--green-t); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .pack-opt.sel   { border-color: var(--green); background: var(--green-l); box-shadow: 0 0 0 3px rgba(30,140,90,.12); }
+    .pack-opt input { display: none; }
+    .pack-opt-name  { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .pack-opt-price { font-size: 13px; color: var(--green-d); font-weight: 800; }
+    .pack-opt-desc  { font-size: 12px; color: var(--t3); margin-top: 4px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -36,12 +67,13 @@
       </svg>
     </div>
     <div>
-      <div style="font-size:18px;font-weight:700;">l'Amicale du WiFi</div>
-      <div style="font-size:12px;color:var(--t3);">Fully Coworking · Valais · CH-1926</div>
+      <div style="font-size:20px;font-weight:900;letter-spacing:-.5px;">l'Amicale du WiFi</div>
+      <div style="font-size:13px;color:var(--t3);">Fully Coworking · Valais · CH-1926</div>
     </div>
   </div>
 
-  <div style="font-size:13px;color:var(--t2);margin-bottom:20px;">
+  <div style="font-size:26px;font-weight:900;letter-spacing:-.7px;margin-bottom:6px;">Inscription</div>
+  <div style="font-size:14px;color:var(--t2);margin-bottom:24px;">
     Créez votre compte membre et choisissez votre formule.
   </div>
 

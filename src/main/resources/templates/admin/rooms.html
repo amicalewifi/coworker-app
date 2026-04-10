@@ -17,6 +17,24 @@
   <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
   <div th:if="${error}"   class="flash flash-err">✕ <span th:text="${error}"></span></div>
 
+  <!-- Navigateur de date -->
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+    <a th:href="@{/admin/rooms(date=${#temporals.format(date.minusDays(1),'yyyy-MM-dd')})}"
+       class="btn btn-sm">← Préc.</a>
+    <form method="get" action="/admin/rooms" style="display:flex;align-items:center;gap:8px;flex:1;">
+      <input type="date" name="date" class="form-in"
+             th:value="${#temporals.format(date,'yyyy-MM-dd')}"
+             style="max-width:180px;"
+             onchange="this.form.submit()">
+      <button type="submit" class="btn btn-sm">Voir</button>
+      <a th:href="@{/admin/rooms}" class="btn btn-sm">Aujourd'hui</a>
+    </form>
+    <a th:href="@{/admin/rooms(date=${#temporals.format(date.plusDays(1),'yyyy-MM-dd')})}"
+       class="btn btn-sm">Suiv. →</a>
+    <span style="font-size:13px;font-weight:600;color:var(--t2);"
+          th:text="${#temporals.format(date,'EEEE d MMMM yyyy')}"></span>
+  </div>
+
   <!-- Salles -->
   <div class="g2">
     <div th:each="room : ${rooms}" class="card"
@@ -49,6 +67,58 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Toutes les réservations à venir -->
+  <div class="card" style="margin-top:18px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Toutes les réservations à venir</span>
+      <span class="b b-bl" th:text="${#lists.size(allBookings)}+' réservation(s)'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Salle</th>
+          <th>Horaire</th>
+          <th>Organisateur</th>
+          <th>Participants</th>
+          <th>Objet</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="b : ${allBookings}">
+          <td style="white-space:nowrap;">
+            <div style="font-weight:700;" th:text="${#temporals.format(b.date,'E d MMM')}"></div>
+            <div style="font-size:11px;color:var(--t3);" th:text="${#temporals.format(b.date,'yyyy')}"></div>
+          </td>
+          <td>
+            <span class="b b-gr" th:text="${b.room.name}"></span>
+          </td>
+          <td style="white-space:nowrap;font-variant-numeric:tabular-nums;">
+            <span th:text="${#temporals.format(b.startTime,'HH:mm')}+' – '+${#temporals.format(b.endTime,'HH:mm')}"></span>
+          </td>
+          <td>
+            <div th:if="${b.member != null}" style="display:flex;align-items:center;gap:7px;">
+              <div class="av" style="background:var(--gl);color:var(--gd);width:28px;height:28px;font-size:10px;" th:text="${b.member.initials}"></div>
+              <span th:text="${b.organizerName?:b.member.displayName}"></span>
+            </div>
+            <span th:unless="${b.member != null}" style="color:var(--t2);" th:text="${b.organizerName?:'Externe'}"></span>
+          </td>
+          <td style="color:var(--t2);" th:text="${b.participants}+' pers.'"></td>
+          <td style="color:var(--t3);font-size:13px;" th:text="${b.title?:'—'}"></td>
+          <td>
+            <form th:action="@{/admin/rooms/bookings/{id}/cancel(id=${b.id})}" method="post" style="display:inline;">
+              <button class="btn btn-sm btn-r">Annuler</button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(allBookings)}">
+          <td colspan="7" style="text-align:center;color:var(--t3);padding:24px;">Aucune réservation à venir</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 

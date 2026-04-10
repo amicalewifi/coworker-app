@@ -54,14 +54,6 @@ public class CafeteriaController {
         // Détecter le nombre de pages
         int pages = detectPages(file);
 
-        // Vérifier quota
-        if (member != null && member.getPrintUsed() + pages * copies > member.getPrintQuota()) {
-            int remaining = member.getPrintQuota() - member.getPrintUsed();
-            ra.addFlashAttribute("error",
-                    "Quota insuffisant — " + remaining + " pages restantes, ce fichier en demande " + (pages * copies) + ".");
-            return "redirect:/cafeteria/";
-        }
-
         String filename = file.getOriginalFilename();
         boolean online  = printerService.isOnline();
 
@@ -75,12 +67,6 @@ public class CafeteriaController {
             try {
                 byte[] data = file.getBytes();
                 printerService.print(data, filename);
-
-                // Décompte quota
-                if (member != null) {
-                    member.setPrintUsed(member.getPrintUsed() + job.getTotalPages());
-                    memberRepo.save(member);
-                }
 
                 job.setStatus(PrintJobStatus.COMPLETED);
                 job.setCompletedAt(LocalDateTime.now());

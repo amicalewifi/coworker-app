@@ -25,7 +25,8 @@ public class RoomService {
     public Optional<Room>    getByToken(String t)  { return roomRepo.findByQrCodeToken(t); }
     public List<RoomBooking> getToday()            { return bookingRepo.findByDateAndStatusOrderByStartTime(LocalDate.now(), BookingStatus.CONFIRMED); }
     public List<RoomBooking> getForDate(LocalDate d) { return bookingRepo.findByDateAndStatusOrderByStartTime(d, BookingStatus.CONFIRMED); }
-    public List<RoomBooking> getForMember(UUID id) { return bookingRepo.findByMemberIdOrderByDateDescStartTimeDesc(id); }
+    public List<RoomBooking> getForMember(UUID id)   { return bookingRepo.findByMemberIdOrderByDateDescStartTimeDesc(id); }
+    public List<RoomBooking> getUpcomingFrom(LocalDate from) { return bookingRepo.findByDateGreaterThanEqualAndStatusOrderByDateAscStartTimeAsc(from, BookingStatus.CONFIRMED); }
 
     public RoomBooking book(RoomBooking b) {
         if (!bookingRepo.findConflicts(b.getRoom().getId(), b.getDate(), b.getStartTime(), b.getEndTime()).isEmpty()) {

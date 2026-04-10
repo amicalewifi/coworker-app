@@ -237,35 +237,51 @@
         </select>
       </div>
       <div class="form-row">
-        <label class="form-lbl">Type de présence</label>
+        <label class="form-lbl">Type de présence — Pack</label>
         <div class="type-grid">
           <label class="type-card sel">
             <input type="radio" name="presenceType" value="HALF_AM" style="display:none;">
             <div style="font-weight:700;font-size:13px;">½ Matin</div>
-            <div style="font-size:10px;color:var(--t3);">07:00–12:30</div>
+            <div style="font-size:11px;color:var(--t3);">07:00–12:30</div>
             <div style="font-size:12px;font-weight:700;color:var(--od);margin-top:4px;">−0.5j</div>
           </label>
           <label class="type-card">
             <input type="radio" name="presenceType" value="FULL_DAY" style="display:none;">
             <div style="font-weight:700;font-size:13px;">Journée</div>
-            <div style="font-size:10px;color:var(--t3);">07:00–19:00</div>
+            <div style="font-size:11px;color:var(--t3);">07:00–19:00</div>
             <div style="font-size:12px;font-weight:700;color:var(--gd);margin-top:4px;">−1.0j</div>
           </label>
           <label class="type-card">
             <input type="radio" name="presenceType" value="HALF_PM" style="display:none;">
             <div style="font-weight:700;font-size:13px;">½ AP-M</div>
-            <div style="font-size:10px;color:var(--t3);">12:30–19:00</div>
+            <div style="font-size:11px;color:var(--t3);">12:30–19:00</div>
             <div style="font-size:12px;font-weight:700;color:var(--od);margin-top:4px;">−0.5j</div>
           </label>
         </div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--bdr);border-radius:var(--r);cursor:pointer;">
-        <input type="checkbox" name="unitaire" value="true">
-        <div>
-          <div style="font-size:13px;font-weight:600;">Entrée unitaire (sans pack)</div>
-          <div style="font-size:11px;color:var(--t2);">Ne décompte pas les unités du pack</div>
+      <div class="form-row">
+        <label class="form-lbl">Séance unique (sans pack)</label>
+        <div class="type-grid">
+          <label class="type-card">
+            <input type="radio" name="presenceType" value="UNIT_HALF_AM" style="display:none;">
+            <div style="font-weight:700;font-size:13px;">½ Matin seule</div>
+            <div style="font-size:11px;color:var(--t3);">07:00–12:30</div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-top:4px;">Unitaire</div>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="presenceType" value="UNIT_FULL" style="display:none;">
+            <div style="font-weight:700;font-size:13px;">Journée seule</div>
+            <div style="font-size:11px;color:var(--t3);">07:00–19:00</div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-top:4px;">Unitaire</div>
+          </label>
+          <label class="type-card">
+            <input type="radio" name="presenceType" value="UNIT_HALF_PM" style="display:none;">
+            <div style="font-weight:700;font-size:13px;">½ AP-M seule</div>
+            <div style="font-size:11px;color:var(--t3);">12:30–19:00</div>
+            <div style="font-size:12px;font-weight:700;color:var(--blue);margin-top:4px;">Unitaire</div>
+          </label>
         </div>
-      </label>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-entry')">Annuler</button>
         <button type="submit" class="btn btn-g">Confirmer</button>
@@ -290,6 +306,9 @@
       <div class="form-row">
         <label class="form-lbl">Formule</label>
         <select name="membership" class="form-sel">
+          <option value="PACK_MATIN">Pack matin — Fr. 15.- (1 demi-j. matin)</option>
+          <option value="PACK_APMIDI">Pack après-midi — Fr. 15.- (1 demi-j. AP-M)</option>
+          <option value="PACK_1J">Pack 1 jour — Fr. 29.- (1j ou 2 demi-j.)</option>
           <option value="PACK_5J">Pack 5 jours — Fr. 109.- (5j ou 10 demi-j.)</option>
           <option value="PACK_10J">Pack 10 jours — Fr. 199.- (10j ou 20 demi-j.)</option>
           <option value="PACK_15J">Pack 15 jours — Fr. 279.- (15j ou 30 demi-j.)</option>
@@ -315,6 +334,9 @@
       <div class="form-row">
         <label class="form-lbl">Nouvelle formule</label>
         <select name="membership" class="form-sel">
+          <option value="PACK_MATIN">Pack matin — Fr. 15.-</option>
+          <option value="PACK_APMIDI">Pack après-midi — Fr. 15.-</option>
+          <option value="PACK_1J">Pack 1 jour — Fr. 29.-</option>
           <option value="PACK_5J">Pack 5 jours — Fr. 109.-</option>
           <option value="PACK_10J">Pack 10 jours — Fr. 199.-</option>
           <option value="PACK_15J">Pack 15 jours — Fr. 279.-</option>

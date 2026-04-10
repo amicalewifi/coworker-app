@@ -25,6 +25,9 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> 
     @EntityGraph(attributePaths = {"room", "member"})
     List<RoomBooking> findByMemberIdOrderByDateDescStartTimeDesc(UUID memberId);
 
+    @EntityGraph(attributePaths = {"room", "member"})
+    List<RoomBooking> findByDateGreaterThanEqualAndStatusOrderByDateAscStartTimeAsc(LocalDate date, BookingStatus status);
+
     @Query("""
         SELECT b FROM RoomBooking b
         WHERE b.room.id = :rid AND b.date = :date AND b.status = 'CONFIRMED'

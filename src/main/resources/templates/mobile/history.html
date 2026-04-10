@@ -9,10 +9,13 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
 .app-title{font-size:16px;font-weight:700;}
 .app-content{flex:1;padding:16px;}
-.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--bdr);}
-.hi-left .date{font-size:11px;color:var(--t3);}
-.hi-left .type{font-size:14px;font-weight:600;margin-top:2px;}
-.hi-left .hours{font-size:11px;color:var(--t2);}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--surf);border-radius:12px;border:1px solid var(--bdr);margin-bottom:8px;border-left-width:4px;}
+.hi.full{border-left-color:var(--green);}
+.hi.half{border-left-color:var(--orange);}
+.hi.unit{border-left-color:var(--t4);}
+.hi-left .date{font-size:11px;color:var(--t3);font-weight:500;}
+.hi-left .type{font-size:14px;font-weight:700;margin-top:3px;color:var(--text);}
+.hi-left .hours{font-size:11px;color:var(--t3);margin-top:2px;}
 .stats-banner{background:var(--gd);border-radius:14px;padding:16px;margin-bottom:18px;display:flex;gap:12px;}
 .sb-stat{flex:1;text-align:center;}
 .sb-val{font-size:22px;font-weight:700;color:#fff;}
@@ -42,18 +45,21 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
   </div>
 
   <!-- Liste -->
-  <div th:each="p : ${presences}" class="hi">
+  <div th:each="p : ${presences}"
+       th:classappend="${p.unitaire ? 'unit' : (p.presenceType.name()=='FULL_DAY' ? 'full' : 'half')}"
+       class="hi">
     <div class="hi-left">
       <div class="date" th:text="${#temporals.format(p.date,'EEEE d MMMM yyyy')}"></div>
       <div class="type" th:text="${p.presenceType.label}"></div>
       <div class="hours" th:text="${p.presenceType.hours}+' · Arrivée '+${#temporals.format(p.checkedInAt,'HH:mm')}"></div>
     </div>
-    <div>
-      <span th:if="${p.unitaire}" class="b b-o">Unitaire</span>
+    <div style="text-align:right;">
+      <span th:if="${p.unitaire}" class="b b-gr">Unitaire</span>
       <span th:unless="${p.unitaire}">
         <span th:if="${p.presenceType.name()=='FULL_DAY'}"    class="b b-g">−1.0j</span>
         <span th:unless="${p.presenceType.name()=='FULL_DAY'}" class="b b-o">−0.5j</span>
       </span>
+      <div style="font-size:10px;color:var(--t4);margin-top:4px;" th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></div>
     </div>
   </div>
   <div th:if="${#lists.isEmpty(presences)}" style="color:var(--t3);text-align:center;padding:40px;font-size:13px;">
