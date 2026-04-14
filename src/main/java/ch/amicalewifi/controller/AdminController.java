@@ -328,6 +328,19 @@ public class AdminController {
         return "admin/rooms";
     }
 
+    @PostMapping("/rooms/{id}/koalendar")
+    public String updateRoomKoalendar(@PathVariable UUID id,
+                                      @RequestParam(required = false) String slug,
+                                      RedirectAttributes ra) {
+        Room room = roomRepo.findById(id).orElseThrow();
+        room.setKoalendarSlug((slug != null && !slug.isBlank()) ? slug.trim() : null);
+        roomRepo.save(room);
+        ra.addFlashAttribute("success", slug != null && !slug.isBlank()
+                ? "Koalendar configuré : " + slug
+                : "Koalendar désactivé pour " + room.getName());
+        return "redirect:/admin/rooms";
+    }
+
     @PostMapping("/rooms/book")
     public String bookRoom(@RequestParam UUID roomId,
                            @RequestParam(required = false) UUID memberId,

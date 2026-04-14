@@ -55,6 +55,10 @@ public class RoomBooking {
     @Column(name = "billed_amount_chf", precision = 8, scale = 2)
     private BigDecimal billedAmountChf;
 
+    /** UID Koalendar — permet d'identifier la réservation pour modification/annulation webhook. */
+    @Column(name = "koalendar_uid", unique = true)
+    private String koalendarUid;
+
     @Column(name = "created_at")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

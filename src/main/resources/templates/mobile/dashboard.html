@@ -120,6 +120,20 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     </div>
   </div>
 
+  <!-- Bannière renouvellement si pack épuisé ou faible -->
+  <div th:if="${member.packAlert == 'empty' or member.packAlert == 'low' or member.packAlert == 'expiring'}"
+       style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+    <div style="font-size:22px;flex-shrink:0;"
+         th:text="${member.packAlert == 'empty' ? '⚠️' : '🔔'}">⚠️</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;color:var(--od);"
+           th:text="${member.packAlert == 'empty' ? 'Pack épuisé' : (member.packAlert == 'expiring' ? 'Pack bientôt expiré' : 'Pack presque vide')}">Pack épuisé</div>
+      <div style="font-size:11px;color:var(--od);opacity:.8;margin-top:2px;">Renouvelez votre pack pour continuer à accéder au coworking</div>
+    </div>
+    <a th:href="@{/mobile/renew}"
+       style="background:var(--orange);color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;text-decoration:none;white-space:nowrap;">Renouveler</a>
+  </div>
+
   <!-- Scan QR du coworking -->
   <div style="background:var(--gl);border:1.5px solid var(--gt);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
     <div style="width:42px;height:42px;border-radius:12px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;">

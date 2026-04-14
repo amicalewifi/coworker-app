@@ -83,6 +83,13 @@ amicale:
     base-url: https://api.ui.com/proxy/network
     voucher-expire-minutes: 600   # 10 heures
 
+  zahls:
+    instance:    VOTRE_INSTANCE           # ex: "amicale" si votre URL est amicale.zahls.ch
+    api-key:     VOTRE_CLE_API            # backend zahls.ch > API & Intégrations
+    base-url:    https://api.zahls.ch/v1.14
+    success-url: http://localhost:8081/mobile/?renewed=ok
+    cancel-url:  http://localhost:8081/mobile/
+
 management:
   endpoints:
     web:

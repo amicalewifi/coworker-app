@@ -66,8 +66,8 @@
         <span class="card-ttl">Entrées du jour</span>
         <a th:href="@{/admin/members}" class="btn btn-sm">Tout voir</a>
       </div>
-      <div style="padding:0 16px;">
-        <div th:each="e,i : ${stats.todayEvents}" th:if="${i.index lt 8}" class="tl-item">
+      <div style="padding:0 16px;max-height:480px;overflow-y:auto;">
+        <div th:each="e,i : ${stats.todayEvents}" th:if="${i.index lt 50}" class="tl-item">
           <div class="tl-time" th:text="${#temporals.format(e.occurredAt,'HH:mm')}"></div>
           <div class="tl-dot"
                th:style="${'background:' + (e.eventType.name()=='ENTRY_GRANTED' ? 'var(--green)' : (e.eventType.name()=='ENTRY_DENIED' ? 'var(--red)' : 'var(--orange)'))}"></div>

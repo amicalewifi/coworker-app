@@ -28,18 +28,18 @@ body{font-family:var(--font);background:#081810;color:var(--text);min-height:100
 </head>
 <body>
 <div class="card" th:with="g=${result}">
-  <div class="av" th:text="${g.member().initials()}">CB</div>
-  <div class="name" th:text="${g.member().displayName()}">Camille Berrut</div>
-  <div class="sub" th:text="${g.member().membership().label} + ' · Bienvenue !'"></div>
+  <div class="av" th:text="${g.member().initials}">CB</div>
+  <div class="name" th:text="${g.member().displayName}">Camille Berrut</div>
+  <div class="sub" th:text="${g.member().membership.label} + ' · Bienvenue !'"></div>
 
   <div class="tags">
-    <span class="tag tag-g" th:text="${g.member().badgeUid()}"></span>
-    <span th:switch="${g.presence().presenceType().name()}">
+    <span class="tag tag-g" th:text="${g.member().badgeUid}"></span>
+    <span th:if="${g.presence() != null}" th:switch="${g.presence().presenceType.name()}">
       <span th:case="'FULL_DAY'" class="tag tag-g">Journée − 1.0j</span>
       <span th:case="'HALF_AM'"  class="tag tag-o">½ Matin − 0.5j</span>
       <span th:case="'HALF_PM'"  class="tag tag-o">½ AP-M − 0.5j</span>
       <span th:case="'TRIAL'"    class="tag tag-o">Essai gratuit</span>
-      <span th:case="*" class="tag tag-o" th:text="${g.presence().presenceType().shortLabel}"></span>
+      <span th:case="*" class="tag tag-o" th:text="${g.presence().presenceType.shortLabel}"></span>
     </span>
   </div>
 
@@ -50,7 +50,7 @@ body{font-family:var(--font);background:#081810;color:var(--text);min-height:100
     </div>
     <div class="pack-bar">
       <div class="pack-fill"
-           th:style="'width:' + (${g.member().packUnitsTotal() != null ? g.packRemaining().doubleValue() / g.member().packUnitsTotal().doubleValue() * 100 : 50}) + '%;background:' + (${g.packRemaining().doubleValue() <= 1.0} ? 'var(--orange)' : 'var(--gm)')">
+           th:style="'width:' + (${g.member().packUnitsTotal != null ? g.packRemaining().doubleValue() / g.member().packUnitsTotal.doubleValue() * 100 : 50}) + '%;background:' + (${g.packRemaining().doubleValue() <= 1.0} ? 'var(--orange)' : 'var(--gm)')">
       </div>
     </div>
   </div>

@@ -24,6 +24,7 @@ public class MemberService {
     private final MemberRepository          memberRepo;
     private final PresenceRepository        presenceRepo;
     private final PackTransactionRepository packTxRepo;
+    private final AccessEventRepository     eventRepo;
 
     public List<Member>   getAll()                 { return memberRepo.findByActiveTrueOrderByLastNameAsc(); }
     public List<Member>   getAllIncludingInactive() { return memberRepo.findAllOrderByActiveDescLastNameAsc(); }
@@ -78,7 +79,7 @@ public class MemberService {
     public Presence manualEntry(UUID memberId, PresenceType type, boolean unitaire) {
         Member m = getById(memberId);
         PresenceType effective = unitaire ? type.toUnitaire() : type;
-        return presenceRepo.save(Presence.builder()
+        Presence presence = presenceRepo.save(Presence.builder()
                 .member(m)
                 .date(LocalDate.now())
                 .presenceType(effective)
@@ -87,6 +88,15 @@ public class MemberService {
                 .unitsConsumed(effective.getUnits())
                 .unitaire(unitaire || effective.isUnitaire())
                 .build());
+        eventRepo.save(AccessEvent.builder()
+                .member(m)
+                .badgeUid("manual")
+                .eventType(AccessEventType.ENTRY_GRANTED)
+                .presenceType(effective)
+                .unitsConsumed(effective.getUnits())
+                .terminalId("admin")
+                .build());
+        return presence;
     }
 
     public Presence checkout(UUID presenceId) {

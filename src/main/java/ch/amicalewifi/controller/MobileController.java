@@ -5,6 +5,7 @@ import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -30,14 +31,20 @@ public class MobileController {
     private final RoomService      roomService;
     private final ScanService      scanService;
     private final UnifiService     unifiService;
+    private final ZahlsService     zahlsService;
     private final MemberRepository memberRepo;
     private final RoomRepository   roomRepo;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
 
     @GetMapping({"", "/"})
-    public String home(Authentication auth, Model model) {
+    public String home(Authentication auth,
+                       @RequestParam(required = false) String renewed,
+                       Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
+        if ("ok".equals(renewed)) {
+            model.addAttribute("success", "Paiement reçu — votre pack a été renouvelé !");
+        }
         if (member == null) {
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
@@ -166,6 +173,36 @@ public class MobileController {
         model.addAttribute("bookings", roomService.getToday().stream()
                 .filter(b -> b.getRoom().getId().equals(room.getId())).toList());
         return "mobile/room-scan";
+    }
+
+    /** Page de renouvellement de pack via zahls.ch. */
+    @GetMapping("/renew")
+    public String renewPage(Authentication auth, Model model) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        model.addAttribute("member", member);
+        // Proposer uniquement les packs avec un prix (pas essai, unitaire, domiciliation)
+        List<MembershipType> packs = List.of(
+                MembershipType.PACK_MATIN, MembershipType.PACK_APMIDI,
+                MembershipType.PACK_1J, MembershipType.PACK_5J,
+                MembershipType.PACK_10J, MembershipType.PACK_15J,
+                MembershipType.PERMANENT);
+        model.addAttribute("memberships", packs);
+        return "mobile/renew";
+    }
+
+    /** Initie le paiement zahls.ch pour le renouvellement choisi. */
+    @PostMapping("/renew")
+    public String initiateRenewal(Authentication auth,
+                                  @RequestParam MembershipType membership,
+                                  RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        return zahlsService.createPaymentLink(member.getId(), membership)
+                .map(url -> "redirect:" + url)
+                .orElseGet(() -> {
+                    ra.addFlashAttribute("error",
+                            "Impossible de créer le lien de paiement zahls.ch. Contactez l'admin.");
+                    return "redirect:/mobile/";
+                });
     }
 
     @PostMapping("/book-room")

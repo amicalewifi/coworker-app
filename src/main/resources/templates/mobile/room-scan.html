@@ -44,21 +44,36 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
   </div>
   <div th:if="${#lists.isEmpty(bookings)}" class="notice notice-g">Aucune réservation — salle disponible !</div>
 
-  <!-- Formulaire réservation -->
-  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:18px;margin-bottom:10px;">Réserver cette salle</div>
-  <form th:action="@{/mobile/book-room}" method="post">
-    <input type="hidden" name="roomId" th:value="${room.id}">
-    <div class="form-g">
-      <div class="form-row"><label class="form-lbl">Date</label><input name="date" type="date" class="form-in" th:value="${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}" required></div>
-      <div class="form-row"><label class="form-lbl">Participants</label><input name="participants" type="number" class="form-in" value="1" min="1" th:max="${room.capacity}"></div>
+  <!-- Réservation via Koalendar (si slug configuré) -->
+  <div th:if="${room.koalendarSlug != null}">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:18px;margin-bottom:10px;">Réserver cette salle</div>
+    <div style="font-size:12px;color:var(--t2);margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="14" rx="2"/><path d="M3 8h14M7 2v2M13 2v2"/></svg>
+      Calendrier en ligne — votre réservation est confirmée instantanément
     </div>
-    <div class="form-g">
-      <div class="form-row"><label class="form-lbl">Début</label><input name="startTime" type="time" class="form-in" value="09:00" required></div>
-      <div class="form-row"><label class="form-lbl">Fin</label><input name="endTime" type="time" class="form-in" value="11:00" required></div>
-    </div>
-    <div class="form-row"><label class="form-lbl">Objet de la réunion</label><input name="title" class="form-in" placeholder="Réunion d'équipe…"></div>
-    <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Confirmer la réservation</button>
-  </form>
+    <iframe th:src="${'https://koalendar.com/e/' + room.koalendarSlug + '?embed=true'}"
+            style="width:100%;min-height:620px;border:none;border-radius:14px;background:var(--surf);"
+            frameborder="0" scrolling="yes" allowtransparency="true">
+    </iframe>
+  </div>
+
+  <!-- Formulaire réservation manuelle (si pas de Koalendar) -->
+  <div th:unless="${room.koalendarSlug != null}">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-top:18px;margin-bottom:10px;">Réserver cette salle</div>
+    <form th:action="@{/mobile/book-room}" method="post">
+      <input type="hidden" name="roomId" th:value="${room.id}">
+      <div class="form-g">
+        <div class="form-row"><label class="form-lbl">Date</label><input name="date" type="date" class="form-in" th:value="${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}" required></div>
+        <div class="form-row"><label class="form-lbl">Participants</label><input name="participants" type="number" class="form-in" value="1" min="1" th:max="${room.capacity}"></div>
+      </div>
+      <div class="form-g">
+        <div class="form-row"><label class="form-lbl">Début</label><input name="startTime" type="time" class="form-in" value="09:00" required></div>
+        <div class="form-row"><label class="form-lbl">Fin</label><input name="endTime" type="time" class="form-in" value="11:00" required></div>
+      </div>
+      <div class="form-row"><label class="form-lbl">Objet de la réunion</label><input name="title" class="form-in" placeholder="Réunion d'équipe…"></div>
+      <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Confirmer la réservation</button>
+    </form>
+  </div>
 </div>
 </body>
 </html>

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -36,7 +37,8 @@ public class DashboardService {
         List<Presence>    presences  = memberService.getToday();
         List<RoomBooking> bookings   = roomService.getToday();
         List<Room>        rooms      = roomService.getAll();
-        List<AccessEvent> events     = eventRepo.findByDate(LocalDate.now());
+        LocalDate today = LocalDate.now();
+        List<AccessEvent> events = eventRepo.findByDate(today.atStartOfDay(), today.plusDays(1).atStartOfDay());
         List<Member>      permanents = memberRepo.findByMembershipAndActiveTrue(MembershipType.PERMANENT);
         List<Member>      alerts     = memberService.getPackAlerts();
         List<Member>      allActive  = memberRepo.findByActiveTrueOrderByLastNameAsc();

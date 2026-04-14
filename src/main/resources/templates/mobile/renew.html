@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f4f34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Renouveler mon pack — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.app-content{flex:1;padding:16px;overflow-y:auto;}
+/* Pack cards */
+.pack-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
+.pack-card{border:2px solid var(--bdr);border-radius:16px;padding:16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;}
+.pack-card:has(input:checked){border-color:var(--green);background:var(--gl);}
+.pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.pack-name{font-size:15px;font-weight:800;color:var(--text);}
+.pack-desc{font-size:12px;color:var(--t2);margin-top:3px;}
+.pack-price{font-size:22px;font-weight:900;color:var(--gd);margin-top:6px;}
+.pack-badge{position:absolute;top:14px;right:14px;background:var(--gl);color:var(--gd);font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
+.pack-card:has(input:checked) .pack-badge{background:var(--green);color:#fff;}
+/* Current pack info */
+.current-pack{background:linear-gradient(135deg,#0f4f34,#1a7a50);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
+.cp-lbl{font-size:11px;opacity:.6;font-weight:600;margin-bottom:6px;}
+.cp-name{font-size:18px;font-weight:800;}
+.cp-remaining{font-size:13px;opacity:.75;margin-top:4px;}
+/* Payment button */
+.pay-btn{display:block;width:100%;padding:16px;background:var(--green);color:#fff;border-radius:14px;text-align:center;font-size:16px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(26,122,80,.35);transition:all .2s;box-sizing:border-box;}
+.pay-btn:hover{background:var(--gm);transform:translateY(-1px);}
+.pay-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.pay-methods{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+.pay-m{font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--surf-2);color:var(--t2);border:1px solid var(--bdr);}
+/* Bottom nav */
+.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:20px;height:20px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <div class="app-title">Renouveler mon pack</div>
+</div>
+
+<div class="app-content">
+
+  <!-- Pack actuel -->
+  <div class="current-pack">
+    <div class="cp-lbl">Formule actuelle</div>
+    <div class="cp-name" th:text="${member.membership.label}">Pack 5 jours</div>
+    <div class="cp-remaining" th:if="${member.packUnitsRemaining != null}"
+         th:text="${member.packUnitsRemaining} + ' j restantes · ' + ${member.halfDaysRemaining} + ' demi-journées'"></div>
+    <div class="cp-remaining" th:if="${member.packUnitsRemaining == null}">Pas de pack en cours</div>
+  </div>
+
+  <!-- Sélection du pack -->
+  <form th:action="@{/mobile/renew}" method="post" id="renewForm">
+    <div class="pack-grid">
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_MATIN" onchange="updateBtn(this)">
+        <div class="pack-name">Pack matin</div>
+        <div class="pack-desc">07:00–12:30 · 1 demi-journée</div>
+        <div class="pack-price">Fr. 15.–</div>
+        <span class="pack-badge">½ j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_APMIDI" onchange="updateBtn(this)">
+        <div class="pack-name">Pack après-midi</div>
+        <div class="pack-desc">12:30–19:00 · 1 demi-journée</div>
+        <div class="pack-price">Fr. 15.–</div>
+        <span class="pack-badge">½ j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_1J" onchange="updateBtn(this)">
+        <div class="pack-name">Pack 1 jour</div>
+        <div class="pack-desc">1 journée · ou 2 demi-journées</div>
+        <div class="pack-price">Fr. 29.–</div>
+        <span class="pack-badge">1 j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_5J" onchange="updateBtn(this)">
+        <div class="pack-name">Pack 5 jours</div>
+        <div class="pack-desc">5 journées · ou 10 demi-journées</div>
+        <div class="pack-price">Fr. 109.–</div>
+        <span class="pack-badge">5 j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_10J" onchange="updateBtn(this)">
+        <div class="pack-name">Pack 10 jours</div>
+        <div class="pack-desc">10 journées · ou 20 demi-journées</div>
+        <div class="pack-price">Fr. 199.–</div>
+        <span class="pack-badge">10 j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PACK_15J" onchange="updateBtn(this)">
+        <div class="pack-name">Pack 15 jours</div>
+        <div class="pack-desc">15 journées · ou 30 demi-journées</div>
+        <div class="pack-price">Fr. 279.–</div>
+        <span class="pack-badge">15 j</span>
+      </label>
+
+      <label class="pack-card">
+        <input type="radio" name="membership" value="PERMANENT" onchange="updateBtn(this)">
+        <div class="pack-name">Permanent</div>
+        <div class="pack-desc">Accès illimité 24h/7j</div>
+        <div class="pack-price">Fr. 329.–<span style="font-size:13px;font-weight:500;color:var(--t2);">/mois</span></div>
+        <span class="pack-badge">∞</span>
+      </label>
+
+    </div>
+
+    <button type="submit" class="pay-btn" id="payBtn" disabled>Sélectionnez un pack</button>
+    <div class="pay-methods">
+      <span class="pay-m">TWINT</span>
+      <span class="pay-m">Visa / Mastercard</span>
+      <span class="pay-m">PostFinance</span>
+      <span class="pay-m">Apple Pay</span>
+    </div>
+
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:12px;line-height:1.5;">
+      Paiement sécurisé via zahls.ch · Swiss payment<br>
+      Votre pack est activé immédiatement après confirmation du paiement.
+    </div>
+  </form>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+  <a th:href="@{/cafeteria/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="16" height="10" rx="2"/><path d="M5 6V4h10v2M5 13h10"/></svg>
+    Imprimer
+  </a>
+</div>
+
+<script>
+const prices = {
+  PACK_MATIN: 'Fr. 15.–', PACK_APMIDI: 'Fr. 15.–', PACK_1J: 'Fr. 29.–',
+  PACK_5J: 'Fr. 109.–', PACK_10J: 'Fr. 199.–', PACK_15J: 'Fr. 279.–',
+  PERMANENT: 'Fr. 329.–/mois'
+};
+function updateBtn(radio) {
+  const btn = document.getElementById('payBtn');
+  const p = prices[radio.value] || '';
+  btn.textContent = 'Payer ' + p + ' avec zahls.ch →';
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
