@@ -233,7 +233,7 @@
         <label class="form-lbl">Membre</label>
         <select name="memberId" class="form-sel" required>
           <option value="">— Sélectionner —</option>
-          <option th:each="p : ${presences}" th:value="${p.member.id}" th:text="${p.member.displayName}"></option>
+          <option th:each="m : ${allMembers}" th:value="${m.id}" th:text="${m.displayName}"></option>
         </select>
       </div>
       <div class="form-row">
