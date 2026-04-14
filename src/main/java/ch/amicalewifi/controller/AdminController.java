@@ -5,6 +5,7 @@ import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -280,8 +281,12 @@ public class AdminController {
                               @RequestParam PresenceType presenceType,
                               @RequestParam(defaultValue = "false") boolean unitaire,
                               RedirectAttributes ra) {
-        memberService.manualEntry(memberId, presenceType, unitaire);
-        ra.addFlashAttribute("success", "Entrée enregistrée: " + presenceType.getLabel());
+        try {
+            memberService.manualEntry(memberId, presenceType, unitaire);
+            ra.addFlashAttribute("success", "Entrée enregistrée: " + presenceType.getLabel());
+        } catch (DataIntegrityViolationException e) {
+            ra.addFlashAttribute("error", "Une présence " + presenceType.getLabel() + " existe déjà aujourd'hui pour ce membre.");
+        }
         return "redirect:/admin/";
     }
 
