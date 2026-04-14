@@ -80,7 +80,7 @@ amicale:
   unifi:
     api-key:  OO-GyiG06ULRYhrLT39ZCVb2ZV0D_E-7
     site:     default
-    base-url: https://unifi.ui.com/proxy/network
+    base-url: https://api.ui.com/proxy/network
     voucher-expire-minutes: 600   # 10 heures
 
 management:
