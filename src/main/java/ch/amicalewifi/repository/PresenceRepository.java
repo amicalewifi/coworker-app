@@ -21,6 +21,8 @@ public interface PresenceRepository extends JpaRepository<Presence, UUID> {
 
     boolean existsByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);
 
+    java.util.Optional<Presence> findByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);
+
     @Query("SELECT COUNT(p) FROM Presence p WHERE p.date = :date AND p.status = 'ACTIVE'")
     long countTodayActive(@Param("date") LocalDate date);
 }

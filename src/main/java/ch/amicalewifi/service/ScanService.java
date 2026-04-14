@@ -108,11 +108,13 @@ public class ScanService {
     }
 
     private Presence savePresence(Member m, PresenceType type) {
-        return presenceRepo.save(Presence.builder()
-                .member(m).date(LocalDate.now()).presenceType(type)
-                .status(PresenceStatus.ACTIVE).checkedInAt(LocalDateTime.now())
-                .unitsConsumed(type.getUnits()).unitaire(type.isUnitaire())
-                .build());
+        // Idempotent : si la même présence existe déjà aujourd'hui, on la retourne sans réinsérer
+        return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), LocalDate.now(), type)
+                .orElseGet(() -> presenceRepo.save(Presence.builder()
+                        .member(m).date(LocalDate.now()).presenceType(type)
+                        .status(PresenceStatus.ACTIVE).checkedInAt(LocalDateTime.now())
+                        .unitsConsumed(type.getUnits()).unitaire(type.isUnitaire())
+                        .build()));
     }
 
     private void saveEvent(Member member, String uid, AccessEventType type,

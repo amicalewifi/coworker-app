@@ -29,7 +29,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
      th:with="g=${result}" class="result-card ok">
   <div class="result-icon">✅</div>
   <div class="result-title">Présence enregistrée !</div>
-  <div class="result-sub" th:text="${g.presence().presenceType().label} + ' — ' + ${g.presence().date()}"></div>
+  <div class="result-sub" th:text="${g.presence().presenceType.label} + ' — ' + ${g.presence().date}"></div>
   <div class="pack-info" th:if="${g.packRemaining() != null}">
     <div class="pack-info-val" th:text="${g.packRemaining()} + 'j restantes'"></div>
     <div class="pack-info-lbl" th:text="${g.halfDays()} + ' demi-journées disponibles'"></div>

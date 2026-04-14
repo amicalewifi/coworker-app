@@ -73,6 +73,7 @@ public class AdminController {
         model.addAttribute("stats",                  dashboardService.getStats());
         model.addAttribute("todayDate",              LocalDate.now());
         model.addAttribute("presences",              memberService.getToday());
+        model.addAttribute("allMembers",             memberService.getAll());
         model.addAttribute("rooms",                  roomService.getAll());
         model.addAttribute("todayBookings",          todayBookings);
         model.addAttribute("bookedRoomIds",          bookedRoomIds);
