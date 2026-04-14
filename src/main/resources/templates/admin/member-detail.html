@@ -18,12 +18,20 @@
       <button type="submit" class="btn btn-sm btn-g">Réactiver</button>
     </form>
     <button class="btn btn-sm" onclick="openModal('m-edit')">Modifier</button>
+    <button class="btn btn-sm" onclick="openModal('m-reset-pw')">Reset MDP</button>
+    <button class="btn btn-r btn-sm" onclick="openModal('m-delete')">Supprimer</button>
     <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">Renouveler pack</button>
     <a th:href="@{/qr/venue}" class="btn btn-sm" target="_blank">QR d'entrée</a>
   </div>
 </div>
 <div class="content">
   <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+  <div th:if="${error}" class="flash flash-err">✕ <span th:text="${error}"></span></div>
+  <div th:if="${tempPassword}" class="flash" style="background:#fff3cd;border:1px solid #ffc107;color:#856404;border-radius:8px;padding:12px 16px;margin-bottom:16px;">
+    <strong>Mot de passe temporaire :</strong>
+    <code style="font-size:16px;font-weight:700;letter-spacing:.08em;background:rgba(0,0,0,.05);padding:2px 8px;border-radius:4px;" th:text="${tempPassword}"></code>
+    <span style="font-size:12px;display:block;margin-top:4px;opacity:.8;">Communiquez ce mot de passe au membre. Il devra le changer à la première connexion.</span>
+  </div>
 
   <div class="g2">
     <!-- Infos membre -->

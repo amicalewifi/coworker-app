@@ -6,12 +6,14 @@ import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -30,14 +32,19 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AdminController {
 
-    private final DashboardService     dashboardService;
-    private final MemberService        memberService;
-    private final RoomService          roomService;
-    private final RoomRepository       roomRepo;
-    private final MemberRepository     memberRepo;
-    private final PrinterJobRepository     printerRepo;
+    private final DashboardService          dashboardService;
+    private final MemberService             memberService;
+    private final RoomService               roomService;
+    private final RoomRepository            roomRepo;
+    private final MemberRepository          memberRepo;
+    private final UserRepository            userRepo;
+    private final PrinterJobRepository      printerRepo;
     private final PackTransactionRepository packTxRepo;
-    private final PrinterService       printerService;
+    private final PrinterService            printerService;
+    private final PasswordEncoder           passwordEncoder;
+
+    private static final String CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+    private static final SecureRandom RNG = new SecureRandom();
 
     @GetMapping({"", "/"})
     public String dashboard(Model model) {
@@ -151,8 +158,11 @@ public class AdminController {
 
     @PostMapping("/members/{id}/update")
     public String updateMember(@PathVariable UUID id,
+                               @RequestParam(required = false) String firstName,
+                               @RequestParam(required = false) String lastName,
                                @RequestParam(required = false) String phone,
                                @RequestParam(required = false) String company,
+                               @RequestParam(required = false) String tvaNumber,
                                @RequestParam(required = false) String badgeUid,
                                @RequestParam(required = false) String address,
                                @RequestParam(required = false) String city,
@@ -161,8 +171,11 @@ public class AdminController {
                                @RequestParam(required = false) String notes,
                                RedirectAttributes ra) {
         Member m = memberRepo.findById(id).orElseThrow();
+        if (firstName != null && !firstName.isBlank()) m.setFirstName(firstName);
+        if (lastName  != null && !lastName.isBlank())  m.setLastName(lastName);
         m.setPhone(phone);
         m.setCompany(company);
+        m.setTvaNumber(tvaNumber);
         m.setBadgeUid(badgeUid != null && !badgeUid.isBlank() ? badgeUid : null);
         m.setAddress(address);
         m.setCity(city);
@@ -172,6 +185,35 @@ public class AdminController {
         m.setUpdatedAt(LocalDateTime.now());
         memberRepo.save(m);
         ra.addFlashAttribute("success", "Informations du membre mises à jour");
+        return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/members/{id}/delete")
+    public String deleteMember(@PathVariable UUID id, RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        String name = m.getDisplayName();
+        User user = m.getUser();
+        memberRepo.delete(m);
+        if (user != null) userRepo.delete(user);
+        ra.addFlashAttribute("success", "Membre " + name + " supprimé définitivement");
+        return "redirect:/admin/members";
+    }
+
+    @PostMapping("/members/{id}/reset-password")
+    public String resetPassword(@PathVariable UUID id, RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        if (m.getUser() == null) {
+            ra.addFlashAttribute("error", "Ce membre n'a pas de compte utilisateur associé");
+            return "redirect:/admin/members/" + id;
+        }
+        StringBuilder tmp = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) tmp.append(CHARS.charAt(RNG.nextInt(CHARS.length())));
+        String tempPassword = tmp.toString();
+        m.getUser().setPasswordHash(passwordEncoder.encode(tempPassword));
+        userRepo.save(m.getUser());
+        ra.addFlashAttribute("tempPassword", tempPassword);
+        ra.addFlashAttribute("success",
+                "Mot de passe réinitialisé pour " + m.getDisplayName() + ". Nouveau mot de passe temporaire ci-dessous.");
         return "redirect:/admin/members/" + id;
     }
 

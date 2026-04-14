@@ -22,6 +22,7 @@ public class Member {
     @Column(nullable = false, unique = true)        private String email;
     private String phone;
     private String company;
+    @Column(name = "tva_number") private String tvaNumber;
 
     @Column(name = "badge_uid", unique = true)  private String  badgeUid;
     @Column(name = "badge_active") @Builder.Default private boolean badgeActive = true;

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -29,43 +30,55 @@ public class RegisterController {
     }
 
     @PostMapping
+    @Transactional
     public String submit(@RequestParam String firstName,
                          @RequestParam String lastName,
                          @RequestParam String email,
                          @RequestParam String password,
                          @RequestParam(required = false) String phone,
+                         @RequestParam(required = false) String company,
                          @RequestParam(required = false) String address,
                          @RequestParam(required = false) String city,
                          @RequestParam(required = false) String postalCode,
                          @RequestParam(required = false) String country,
                          @RequestParam MembershipType membership,
+                         Model model,
                          RedirectAttributes ra) {
 
         if (userRepo.existsByEmail(email) || memberRepo.existsByEmail(email)) {
-            ra.addFlashAttribute("error", "Un compte existe déjà avec cet email.");
-            return "redirect:/register";
+            model.addAttribute("error", "Un compte existe déjà avec cet email.");
+            model.addAttribute("memberships", MembershipType.values());
+            return "auth/register";
         }
 
-        User user = userRepo.save(User.builder()
-                .email(email)
-                .passwordHash(passwordEncoder.encode(password))
-                .role(UserRole.MEMBER)
-                .build());
+        try {
+            User user = userRepo.save(User.builder()
+                    .email(email)
+                    .passwordHash(passwordEncoder.encode(password))
+                    .role(UserRole.MEMBER)
+                    .build());
 
-        memberService.create(Member.builder()
-                .firstName(firstName).lastName(lastName)
-                .email(email).phone(phone)
-                .address(address).city(city)
-                .postalCode(postalCode)
-                .country(country != null && !country.isBlank() ? country : "Suisse")
-                .membership(membership)
-                .user(user)
-                .active(true)
-                .build());
+            memberService.create(Member.builder()
+                    .firstName(firstName).lastName(lastName)
+                    .email(email).phone(phone).company(company)
+                    .address(address).city(city)
+                    .postalCode(postalCode)
+                    .country(country != null && !country.isBlank() ? country : "Suisse")
+                    .membership(membership)
+                    .user(user)
+                    .active(true)
+                    .build());
 
-        log.info("Nouvelle inscription: {} {} ({})", firstName, lastName, email);
-        ra.addFlashAttribute("success",
-                "Bienvenue " + firstName + " ! Votre compte a été créé. Connectez-vous pour accéder à votre espace.");
-        return "redirect:/login?registered";
+            log.info("Nouvelle inscription: {} {} ({})", firstName, lastName, email);
+            ra.addFlashAttribute("success",
+                    "Bienvenue " + firstName + " ! Votre compte a été créé. Connectez-vous pour accéder à votre espace.");
+            return "redirect:/login?registered";
+
+        } catch (Exception e) {
+            log.error("Erreur lors de l'inscription de {}: {}", email, e.getMessage(), e);
+            model.addAttribute("error", "Une erreur est survenue lors de la création du compte. Veuillez réessayer.");
+            model.addAttribute("memberships", MembershipType.values());
+            return "auth/register";
+        }
     }
 }
