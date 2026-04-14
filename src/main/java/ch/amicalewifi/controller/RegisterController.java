@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -30,7 +29,6 @@ public class RegisterController {
     }
 
     @PostMapping
-    @Transactional
     public String submit(@RequestParam String firstName,
                          @RequestParam String lastName,
                          @RequestParam String email,
@@ -51,8 +49,9 @@ public class RegisterController {
             return "auth/register";
         }
 
+        User user = null;
         try {
-            User user = userRepo.save(User.builder()
+            user = userRepo.save(User.builder()
                     .email(email)
                     .passwordHash(passwordEncoder.encode(password))
                     .role(UserRole.MEMBER)
@@ -76,7 +75,11 @@ public class RegisterController {
 
         } catch (Exception e) {
             log.error("Erreur lors de l'inscription de {}: {}", email, e.getMessage(), e);
-            model.addAttribute("error", "Une erreur est survenue lors de la création du compte. Veuillez réessayer.");
+            // Nettoyer l'utilisateur orphelin si le membre n'a pas pu être créé
+            if (user != null) {
+                try { userRepo.delete(user); } catch (Exception ignored) {}
+            }
+            model.addAttribute("error", "Une erreur est survenue lors de la création du compte : " + e.getMessage());
             model.addAttribute("memberships", MembershipType.values());
             return "auth/register";
         }

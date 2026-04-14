@@ -92,6 +92,10 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
         <label class="field-lbl">Entreprise</label>
         <input type="text" name="company" class="field-in" th:value="${member.company}" placeholder="Nom de votre entreprise">
       </div>
+      <div class="field-row">
+        <label class="field-lbl">N° TVA CHE (si entreprise)</label>
+        <input type="text" name="tvaNumber" class="field-in" th:value="${member.tvaNumber}" placeholder="CHE-123.456.789 TVA">
+      </div>
     </div>
 
     <div class="form-card">

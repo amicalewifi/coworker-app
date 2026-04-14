@@ -103,6 +103,7 @@ public class AdminController {
                                @RequestParam String email,
                                @RequestParam(required = false) String phone,
                                @RequestParam(required = false) String company,
+                               @RequestParam(required = false) String tvaNumber,
                                @RequestParam(required = false) String badgeUid,
                                @RequestParam(required = false) String address,
                                @RequestParam(required = false) String city,
@@ -112,7 +113,7 @@ public class AdminController {
                                RedirectAttributes ra) {
         memberService.create(Member.builder()
                 .firstName(firstName).lastName(lastName).email(email)
-                .phone(phone).company(company).badgeUid(badgeUid)
+                .phone(phone).company(company).tvaNumber(tvaNumber).badgeUid(badgeUid)
                 .address(address).city(city).postalCode(postalCode)
                 .country(country != null && !country.isBlank() ? country : "Suisse")
                 .membership(membership).build());

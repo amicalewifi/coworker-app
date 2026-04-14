@@ -100,6 +100,7 @@ public class MobileController {
     public String updateProfile(Authentication auth,
                                 @RequestParam(required = false) String phone,
                                 @RequestParam(required = false) String company,
+                                @RequestParam(required = false) String tvaNumber,
                                 @RequestParam(required = false) String address,
                                 @RequestParam(required = false) String city,
                                 @RequestParam(required = false) String postalCode,
@@ -108,6 +109,7 @@ public class MobileController {
         Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
         m.setPhone(phone);
         m.setCompany(company);
+        m.setTvaNumber(tvaNumber);
         m.setAddress(address);
         m.setCity(city);
         m.setPostalCode(postalCode);

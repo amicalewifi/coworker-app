@@ -42,6 +42,7 @@
           <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
+          <tr th:if="${member.tvaNumber}"><td style="color:var(--t3);padding:5px 0;">N° TVA</td><td th:text="${member.tvaNumber}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Adresse</td><td th:text="${member.address?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Ville</td><td th:text="${(member.postalCode?:'')+' '+(member.city?:'—')}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Pays</td><td th:text="${member.country}"></td></tr>
@@ -155,6 +156,16 @@
     <form th:action="@{/admin/members/{id}/update(id=${member.id})}" method="post">
       <div class="form-g" style="margin-bottom:10px;">
         <div class="form-row">
+          <label class="form-lbl">Prénom</label>
+          <input name="firstName" class="form-in" th:value="${member.firstName}" placeholder="Prénom" required>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Nom</label>
+          <input name="lastName" class="form-in" th:value="${member.lastName}" placeholder="Nom" required>
+        </div>
+      </div>
+      <div class="form-g" style="margin-bottom:10px;">
+        <div class="form-row">
           <label class="form-lbl">Téléphone</label>
           <input name="phone" class="form-in" th:value="${member.phone}" placeholder="+41 79 000 00 00">
         </div>
@@ -162,6 +173,10 @@
           <label class="form-lbl">Entreprise</label>
           <input name="company" class="form-in" th:value="${member.company}" placeholder="Société SA">
         </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">N° TVA CHE (si entreprise)</label>
+        <input name="tvaNumber" class="form-in" th:value="${member.tvaNumber}" placeholder="CHE-123.456.789 TVA">
       </div>
       <div class="form-row">
         <label class="form-lbl">Badge NFC (UID)</label>
@@ -192,6 +207,42 @@
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-edit')">Annuler</button>
         <button type="submit" class="btn btn-g">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal reset mot de passe -->
+<div id="m-reset-pw" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Réinitialiser le mot de passe</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <p style="font-size:13px;color:var(--t2);margin:12px 0;">
+      Un mot de passe temporaire aléatoire sera généré et affiché une seule fois.
+      Communiquez-le au membre pour qu'il puisse se reconnecter.
+    </p>
+    <form th:action="@{/admin/members/{id}/reset-password(id=${member.id})}" method="post">
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-reset-pw')">Annuler</button>
+        <button type="submit" class="btn btn-r">Générer un nouveau mot de passe</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal suppression membre -->
+<div id="m-delete" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl" style="color:var(--red);">Supprimer le membre</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <p style="font-size:13px;color:var(--t2);margin:12px 0;">
+      Cette action est <strong>irréversible</strong>. Toutes les présences et transactions associées seront supprimées.
+      Le compte de connexion sera également supprimé.
+    </p>
+    <form th:action="@{/admin/members/{id}/delete(id=${member.id})}" method="post">
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-delete')">Annuler</button>
+        <button type="submit" class="btn btn-r">Supprimer définitivement</button>
       </div>
     </form>
   </div>
