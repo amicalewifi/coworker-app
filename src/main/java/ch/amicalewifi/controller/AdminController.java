@@ -218,6 +218,46 @@ public class AdminController {
         return "redirect:/admin/members/" + id;
     }
 
+    @PostMapping("/members/{id}/create-account")
+    public String createAccount(@PathVariable UUID id, RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        if (m.getUser() != null) {
+            ra.addFlashAttribute("error", "Ce membre a déjà un compte utilisateur");
+            return "redirect:/admin/members/" + id;
+        }
+        if (userRepo.existsByEmail(m.getEmail())) {
+            ra.addFlashAttribute("error", "Un compte existe déjà avec l'email " + m.getEmail());
+            return "redirect:/admin/members/" + id;
+        }
+        StringBuilder tmp = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) tmp.append(CHARS.charAt(RNG.nextInt(CHARS.length())));
+        String tempPassword = tmp.toString();
+        User user = userRepo.save(User.builder()
+                .email(m.getEmail())
+                .passwordHash(passwordEncoder.encode(tempPassword))
+                .role(UserRole.MEMBER)
+                .build());
+        m.setUser(user);
+        memberRepo.save(m);
+        ra.addFlashAttribute("tempPassword", tempPassword);
+        ra.addFlashAttribute("success",
+                "Compte créé pour " + m.getDisplayName() + ". Mot de passe temporaire ci-dessous.");
+        return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/members/{id}/unlink-account")
+    public String unlinkAccount(@PathVariable UUID id, RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        if (m.getUser() == null) {
+            ra.addFlashAttribute("error", "Ce membre n'a pas de compte utilisateur");
+            return "redirect:/admin/members/" + id;
+        }
+        m.setUser(null);
+        memberRepo.save(m);
+        ra.addFlashAttribute("success", "Compte désassocié. Le membre ne peut plus se connecter.");
+        return "redirect:/admin/members/" + id;
+    }
+
     @PostMapping("/printer/jobs/{id}/cancel")
     public String cancelPrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
         printerRepo.findById(id).ifPresent(j -> {

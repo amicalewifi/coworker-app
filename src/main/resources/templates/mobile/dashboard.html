@@ -113,7 +113,8 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
         <div class="mc-stat-lbl">demi-journées restantes</div>
       </div>
       <div class="mc-stat">
-        <div class="mc-stat-val" th:text="${#numbers.formatDecimal(member.confCreditsRemaining,1,1)}+'h'">1.5h</div>
+        <div class="mc-stat-val"
+             th:text="${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsRemaining,1,1) : '—'}+'h'">—h</div>
         <div class="mc-stat-lbl">crédits conférence</div>
       </div>
     </div>

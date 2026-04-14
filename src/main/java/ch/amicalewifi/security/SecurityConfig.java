@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .requestMatchers("/mobile/**").hasAnyRole("ADMIN","MEMBER")
                 // Cafétéria: membres et admin
                 .requestMatchers("/cafeteria/**").hasAnyRole("ADMIN","MEMBER")
+                // Borne Akuvox A05S — auth par clé API, pas de session
+                .requestMatchers("/api/v1/akuvox/**").permitAll()
                 // API REST
                 .requestMatchers("/api/v1/scan/**").hasAnyRole("ADMIN","TERMINAL")
                 .requestMatchers("/api/**").hasAnyRole("ADMIN","MEMBER","TERMINAL")

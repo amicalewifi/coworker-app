@@ -18,7 +18,11 @@
       <button type="submit" class="btn btn-sm btn-g">Réactiver</button>
     </form>
     <button class="btn btn-sm" onclick="openModal('m-edit')">Modifier</button>
-    <button class="btn btn-sm" onclick="openModal('m-reset-pw')">Reset MDP</button>
+    <form th:if="${member.user == null}" th:action="@{/admin/members/{id}/create-account(id=${member.id})}" method="post" style="display:inline;">
+      <button type="submit" class="btn btn-g btn-sm">Créer un compte</button>
+    </form>
+    <button th:if="${member.user != null}" class="btn btn-sm" onclick="openModal('m-reset-pw')">Reset MDP</button>
+    <button th:if="${member.user != null}" class="btn btn-sm btn-r" onclick="openModal('m-unlink')">Désassocier compte</button>
     <button class="btn btn-r btn-sm" onclick="openModal('m-delete')">Supprimer</button>
     <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">Renouveler pack</button>
     <a th:href="@{/qr/venue}" class="btn btn-sm" target="_blank">QR d'entrée</a>
@@ -39,6 +43,13 @@
       <div class="card-hdr"><span class="card-ttl">Informations</span></div>
       <div class="card-body">
         <table style="width:100%;font-size:13px;">
+          <tr>
+            <td style="color:var(--t3);width:140px;padding:5px 0;">Compte login</td>
+            <td>
+              <span th:if="${member.user != null}" class="b b-g">Actif · <span th:text="${member.user.email}"></span></span>
+              <span th:unless="${member.user != null}" class="b b-gr">Aucun compte</span>
+            </td>
+          </tr>
           <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
@@ -225,6 +236,24 @@
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-reset-pw')">Annuler</button>
         <button type="submit" class="btn btn-r">Générer un nouveau mot de passe</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal désassocier compte -->
+<div id="m-unlink" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Désassocier le compte</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <p style="font-size:13px;color:var(--t2);margin:12px 0;">
+      Le membre ne pourra plus se connecter. Le compte utilisateur
+      (<span th:text="${member.user?.email}"></span>) sera conservé mais dissocié.
+    </p>
+    <form th:action="@{/admin/members/{id}/unlink-account(id=${member.id})}" method="post">
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-unlink')">Annuler</button>
+        <button type="submit" class="btn btn-r">Désassocier</button>
       </div>
     </form>
   </div>

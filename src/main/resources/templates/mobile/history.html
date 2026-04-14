@@ -95,7 +95,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     <div class="cons-row" th:if="${member.confCreditsTotalH.doubleValue() > 0}">
       <div class="cons-row-header">
         <span>Crédits salle de réunion</span>
-        <span th:text="${#numbers.formatDecimal(member.confCreditsRemaining,1,1)}+'h restantes / '+${#numbers.formatDecimal(member.confCreditsTotalH,1,1)}+'h'"></span>
+        <span th:text="${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsRemaining,1,1) : '0.0'}+'h restantes / '+${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsTotalH,1,1) : '0.0'}+'h'"></span>
       </div>
       <div class="cons-bar-wrap">
         <div class="cons-bar cons-bar-blue"

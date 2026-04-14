@@ -25,6 +25,29 @@ public class ScanService {
     @Value("${amicale.business.opening-hour}") private int openH;
     @Value("${amicale.business.closing-hour}") private int closeH;
 
+    /**
+     * Badge NFC/RFID à la borne d'entrée : ouvre la porte et logue l'événement.
+     * Ne crée PAS de présence et ne décompte PAS de pack.
+     * La déduction se fait uniquement quand le membre déclare son type de présence
+     * via l'application mobile (WiFi).
+     */
+    public ScanResult processBadgeAccess(String badgeUid) {
+        log.info("Badge access (porte uniquement): {}", badgeUid);
+        Member member = memberRepo.findByBadgeUid(badgeUid).orElse(null);
+        if (member == null) {
+            saveEvent(null, badgeUid, AccessEventType.NEW_MEMBER_CREATED, null, null, null);
+            return new ScanResult.NewMember(badgeUid);
+        }
+        if (!member.isBadgeActive() ||
+                (member.getBadgeExpires() != null && member.getBadgeExpires().isBefore(LocalDate.now()))) {
+            saveEvent(member, badgeUid, AccessEventType.ENTRY_DENIED, null, null, "badge_expired");
+            return new ScanResult.Denied("badge_expired", member);
+        }
+        // Entrée accordée — log seulement, pas de déduction
+        saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, null, null, null);
+        return new ScanResult.Granted(member, null, member.getPackUnitsRemaining(), member.getHalfDaysRemaining());
+    }
+
     public ScanResult processScan(String badgeUid, PresenceType presenceType) {
         log.info("Scan badge: {} · {}", badgeUid, presenceType);
         Member member = memberRepo.findByBadgeUid(badgeUid).orElse(null);

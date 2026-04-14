@@ -29,6 +29,7 @@ public class MobileController {
     private final MemberService    memberService;
     private final RoomService      roomService;
     private final ScanService      scanService;
+    private final UnifiService     unifiService;
     private final MemberRepository memberRepo;
     private final RoomRepository   roomRepo;
 
@@ -148,6 +149,10 @@ public class MobileController {
         if (member == null) return "redirect:/mobile/";
         if (unitaire) presenceType = presenceType.toUnitaire();
         ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType);
+        if (result instanceof ScanResult.Granted) {
+            unifiService.createVoucher(member.getDisplayName())
+                    .ifPresent(code -> model.addAttribute("wifiVoucher", code));
+        }
         model.addAttribute("result", result);
         model.addAttribute("member", member);
         return "mobile/scan-result";

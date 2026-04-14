@@ -60,7 +60,7 @@ public class Member {
     @Column(name = "print_quota")  @Builder.Default private int printQuota = 50;
     @Column(name = "print_used")   @Builder.Default private int printUsed  = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "user_id") private User user;
+    @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "user_id") private User user;
 
     @Column(name = "is_active") @Builder.Default private boolean active = true;
     private String notes;
@@ -90,7 +90,9 @@ public class Member {
     }
 
     public BigDecimal getConfCreditsRemaining() {
-        return confCreditsTotalH.subtract(confCreditsUsedH);
+        BigDecimal total = confCreditsTotalH != null ? confCreditsTotalH : BigDecimal.ZERO;
+        BigDecimal used  = confCreditsUsedH  != null ? confCreditsUsedH  : BigDecimal.ZERO;
+        return total.subtract(used);
     }
 
     public boolean isPermanent() {
