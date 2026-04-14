@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f4f34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Mon profil — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.app-content{flex:1;padding:16px;overflow-y:auto;}
+/* Profile header */
+.profile-header{background:linear-gradient(135deg,#0f4f34,#1a7a50);border-radius:20px;padding:28px 20px 24px;margin-bottom:16px;text-align:center;color:#fff;box-shadow:0 8px 28px rgba(15,79,52,.28);position:relative;overflow:hidden;}
+.profile-header::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.05);}
+.ph-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.15);display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;border:2px solid rgba(255,255,255,.25);margin-bottom:12px;position:relative;z-index:1;}
+.ph-name{font-size:20px;font-weight:800;letter-spacing:-.4px;position:relative;z-index:1;}
+.ph-formula{font-size:12px;opacity:.65;margin-top:3px;font-weight:500;position:relative;z-index:1;}
+.ph-email{font-size:12px;opacity:.5;margin-top:4px;font-weight:500;position:relative;z-index:1;}
+/* QR section */
+.qr-card{background:var(--surf);border:1px solid var(--bdr);border-radius:20px;padding:20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.05);margin-bottom:16px;}
+.qr-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.qr-hint{font-size:12px;color:var(--t3);margin-bottom:12px;}
+.qr-img{width:200px;height:200px;border-radius:14px;border:3px solid var(--gl);margin:0 auto 14px;display:block;image-rendering:pixelated;}
+.qr-download{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--green);text-decoration:none;padding:8px 16px;border:1.5px solid var(--green);border-radius:20px;transition:all .15s;}
+.qr-download:hover{background:var(--gl);}
+/* Form card */
+.form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+.form-card-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:16px;}
+.field-row{margin-bottom:14px;}
+.field-row:last-child{margin-bottom:0;}
+.field-lbl{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px;display:block;}
+.field-in{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
+.field-in:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,122,80,.1);}
+.field-in[readonly]{background:var(--bg);color:var(--t3);cursor:default;}
+.field-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.save-btn{display:block;width:100%;padding:14px;background:var(--green);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(26,122,80,.3);transition:all .2s;margin-top:4px;}
+.save-btn:hover{background:var(--gm);transform:translateY(-1px);}
+/* Bottom nav */
+.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:20px;height:20px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <div class="app-title">Mon profil</div>
+</div>
+
+<div class="app-content">
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">✓ <span th:text="${success}"></span></div>
+  <div th:if="${error}"   class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${error}"></span></div>
+
+  <!-- Entête profil -->
+  <div class="profile-header">
+    <div class="ph-avatar" th:text="${member.initials}">CB</div>
+    <div class="ph-name" th:text="${member.displayName}">Camille Berrut</div>
+    <div class="ph-formula" th:text="${member.membership.label}">Pack 10 jours</div>
+    <div class="ph-email" th:text="${member.email}">camille@exemple.ch</div>
+  </div>
+
+  <!-- QR Code personnel -->
+  <div class="qr-card">
+    <div class="qr-card-title">Mon QR Code</div>
+    <div class="qr-hint">Présentez ce code à l'entrée pour enregistrer votre présence</div>
+    <img th:src="@{/qr/me}" alt="QR Code personnel" class="qr-img" loading="lazy">
+    <a th:href="@{/qr/me}" download="qrcode-amicale.png" class="qr-download">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 3v10M5 13l5 5 5-5"/><path d="M3 18h14"/></svg>
+      Télécharger
+    </a>
+  </div>
+
+  <!-- Coordonnées -->
+  <form th:action="@{/mobile/profile}" method="post">
+    <div class="form-card">
+      <div class="form-card-title">Coordonnées</div>
+
+      <div class="field-row">
+        <label class="field-lbl">Email (non modifiable)</label>
+        <input type="email" class="field-in" th:value="${member.email}" readonly>
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Téléphone</label>
+        <input type="tel" name="phone" class="field-in" th:value="${member.phone}" placeholder="+41 79 000 00 00">
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Entreprise</label>
+        <input type="text" name="company" class="field-in" th:value="${member.company}" placeholder="Nom de votre entreprise">
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="form-card-title">Adresse postale</div>
+
+      <div class="field-row">
+        <label class="field-lbl">Rue et numéro</label>
+        <input type="text" name="address" class="field-in" th:value="${member.address}" placeholder="Rue de la Gare 12">
+      </div>
+      <div class="field-row field-g2">
+        <div>
+          <label class="field-lbl">NPA</label>
+          <input type="text" name="postalCode" class="field-in" th:value="${member.postalCode}" placeholder="1926">
+        </div>
+        <div>
+          <label class="field-lbl">Localité</label>
+          <input type="text" name="city" class="field-in" th:value="${member.city}" placeholder="Fully">
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Pays</label>
+        <input type="text" name="country" class="field-in" th:value="${member.country}" placeholder="Suisse">
+      </div>
+    </div>
+
+    <button type="submit" class="save-btn">Enregistrer les modifications</button>
+  </form>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+  <a th:href="@{/cafeteria/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="16" height="10" rx="2"/><path d="M5 6V4h10v2"/></svg>
+    Imprimer
+  </a>
+</div>
+
+</body>
+</html>

@@ -97,11 +97,17 @@ public class AdminController {
                                @RequestParam(required = false) String phone,
                                @RequestParam(required = false) String company,
                                @RequestParam(required = false) String badgeUid,
+                               @RequestParam(required = false) String address,
+                               @RequestParam(required = false) String city,
+                               @RequestParam(required = false) String postalCode,
+                               @RequestParam(required = false) String country,
                                @RequestParam MembershipType membership,
                                RedirectAttributes ra) {
         memberService.create(Member.builder()
                 .firstName(firstName).lastName(lastName).email(email)
                 .phone(phone).company(company).badgeUid(badgeUid)
+                .address(address).city(city).postalCode(postalCode)
+                .country(country != null && !country.isBlank() ? country : "Suisse")
                 .membership(membership).build());
         ra.addFlashAttribute("success", "Membre " + firstName + " " + lastName + " créé avec succès");
         return "redirect:/admin/members";
@@ -141,6 +147,49 @@ public class AdminController {
         memberRepo.save(m);
         ra.addFlashAttribute("success", "Quota d'impression réinitialisé");
         return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/members/{id}/update")
+    public String updateMember(@PathVariable UUID id,
+                               @RequestParam(required = false) String phone,
+                               @RequestParam(required = false) String company,
+                               @RequestParam(required = false) String badgeUid,
+                               @RequestParam(required = false) String address,
+                               @RequestParam(required = false) String city,
+                               @RequestParam(required = false) String postalCode,
+                               @RequestParam(required = false) String country,
+                               @RequestParam(required = false) String notes,
+                               RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        m.setPhone(phone);
+        m.setCompany(company);
+        m.setBadgeUid(badgeUid != null && !badgeUid.isBlank() ? badgeUid : null);
+        m.setAddress(address);
+        m.setCity(city);
+        m.setPostalCode(postalCode);
+        m.setCountry(country != null && !country.isBlank() ? country : "Suisse");
+        m.setNotes(notes);
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        ra.addFlashAttribute("success", "Informations du membre mises à jour");
+        return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/printer/jobs/{id}/cancel")
+    public String cancelPrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
+        printerRepo.findById(id).ifPresent(j -> {
+            j.setStatus(PrintJobStatus.CANCELLED);
+            printerRepo.save(j);
+        });
+        ra.addFlashAttribute("success", "Job d'impression annulé");
+        return "redirect:/admin/printer";
+    }
+
+    @PostMapping("/printer/jobs/{id}/delete")
+    public String deletePrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
+        printerRepo.deleteById(id);
+        ra.addFlashAttribute("success", "Job d'impression supprimé");
+        return "redirect:/admin/printer";
     }
 
     @PostMapping("/presences/manual")

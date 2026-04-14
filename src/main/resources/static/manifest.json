@@ -1,0 +1,37 @@
+{
+  "name": "l'Amicale du WiFi",
+  "short_name": "Amicale",
+  "description": "Espace membre Fully Coworking · Valais",
+  "start_url": "/mobile/",
+  "display": "standalone",
+  "background_color": "#0f4f34",
+  "theme_color": "#0f4f34",
+  "orientation": "portrait-primary",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ma présence",
+      "url": "/mobile/",
+      "description": "Déclarer ma présence"
+    },
+    {
+      "name": "Mon historique",
+      "url": "/mobile/history",
+      "description": "Voir mon historique"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import ch.amicalewifi.model.*;
 import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,7 +12,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
@@ -29,11 +32,12 @@ public class MobileController {
     private final MemberRepository memberRepo;
     private final RoomRepository   roomRepo;
 
+    @Value("${amicale.venue.qr-token}") private String venueQrToken;
+
     @GetMapping({"", "/"})
     public String home(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if (member == null) {
-            // Admin sans profil membre → retour au tableau de bord admin
             boolean isAdmin = auth.getAuthorities().stream()
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
             return isAdmin ? "redirect:/admin/" : "redirect:/login";
@@ -58,13 +62,8 @@ public class MobileController {
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if (member == null) return "redirect:/mobile/";
-        if (member.getBadgeUid() == null) {
-            model.addAttribute("error", "Aucun badge NFC associé à votre compte. Contactez l'administrateur.");
-            model.addAttribute("member", member);
-            return "mobile/scan-result";
-        }
         if (unitaire) presenceType = presenceType.toUnitaire();
-        ScanResult result = scanService.processScan(member.getBadgeUid(), presenceType);
+        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType);
         model.addAttribute("result", result);
         model.addAttribute("member", member);
         return "mobile/scan-result";
@@ -73,9 +72,83 @@ public class MobileController {
     @GetMapping("/history")
     public String history(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        List<Presence> presences = memberService.getForMember(member.getId());
+
+        long fullDays  = presences.stream().filter(p -> p.getPresenceType() == PresenceType.FULL_DAY).count();
+        long halfDays  = presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
+                                                     || p.getPresenceType() == PresenceType.HALF_PM).count();
+        BigDecimal totalChf = presences.stream()
+                .filter(p -> p.getUnitPriceChf() != null && p.getUnitsConsumed() != null)
+                .map(p -> p.getUnitPriceChf().multiply(p.getUnitsConsumed()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         model.addAttribute("member",    member);
-        model.addAttribute("presences", memberService.getForMember(member.getId()));
+        model.addAttribute("presences", presences);
+        model.addAttribute("fullDays",  fullDays);
+        model.addAttribute("halfDays",  halfDays);
+        model.addAttribute("totalChf",  totalChf);
         return "mobile/history";
+    }
+
+    @GetMapping("/profile")
+    public String profile(Authentication auth, Model model) {
+        model.addAttribute("member", memberRepo.findByEmail(auth.getName()).orElseThrow());
+        return "mobile/profile";
+    }
+
+    @PostMapping("/profile")
+    public String updateProfile(Authentication auth,
+                                @RequestParam(required = false) String phone,
+                                @RequestParam(required = false) String company,
+                                @RequestParam(required = false) String address,
+                                @RequestParam(required = false) String city,
+                                @RequestParam(required = false) String postalCode,
+                                @RequestParam(required = false) String country,
+                                RedirectAttributes ra) {
+        Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        m.setPhone(phone);
+        m.setCompany(company);
+        m.setAddress(address);
+        m.setCity(city);
+        m.setPostalCode(postalCode);
+        m.setCountry(country != null && !country.isBlank() ? country : "Suisse");
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        ra.addFlashAttribute("success", "Profil mis à jour.");
+        return "redirect:/mobile/profile";
+    }
+
+    /** Page ouverte après scan du QR code du coworking. */
+    @GetMapping("/presence")
+    public String presenceScan(@RequestParam(required = false) String venue,
+                               Authentication auth, Model model) {
+        if (venue == null || !venue.equals(venueQrToken)) {
+            return "redirect:/mobile/?error=qr_invalide";
+        }
+        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
+        if (member == null) return "redirect:/mobile/";
+        model.addAttribute("member", member);
+        model.addAttribute("venue", venue);
+        model.addAttribute("presenceTypes", List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
+        return "mobile/presence";
+    }
+
+    /** Enregistrement de présence via QR scan du coworking. */
+    @PostMapping("/presence")
+    public String presenceConfirm(@RequestParam(required = false) String venue,
+                                  @RequestParam(defaultValue = "FULL_DAY") PresenceType presenceType,
+                                  @RequestParam(defaultValue = "false") boolean unitaire,
+                                  Authentication auth, Model model) {
+        if (venue == null || !venue.equals(venueQrToken)) {
+            return "redirect:/mobile/?error=qr_invalide";
+        }
+        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
+        if (member == null) return "redirect:/mobile/";
+        if (unitaire) presenceType = presenceType.toUnitaire();
+        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType);
+        model.addAttribute("result", result);
+        model.addAttribute("member", member);
+        return "mobile/scan-result";
     }
 
     @GetMapping("/room-scan")

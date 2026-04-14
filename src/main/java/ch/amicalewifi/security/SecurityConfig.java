@@ -30,7 +30,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/logout"))
             .authorizeHttpRequests(auth -> auth
                 // Ressources publiques
-                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/error").permitAll()
+                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/icons/**",
+                                 "/manifest.json", "/sw.js", "/error").permitAll()
                 // Borne: ADMIN ou TERMINAL
                 .requestMatchers("/borne/**").hasAnyRole("ADMIN","TERMINAL")
                 // Admin uniquement
@@ -42,7 +43,8 @@ public class SecurityConfig {
                 // API REST
                 .requestMatchers("/api/v1/scan/**").hasAnyRole("ADMIN","TERMINAL")
                 .requestMatchers("/api/**").hasAnyRole("ADMIN","MEMBER","TERMINAL")
-                // QR Code
+                // QR Code — venue public pour scan par les membres
+                .requestMatchers("/qr/venue").hasAnyRole("ADMIN","MEMBER")
                 .requestMatchers("/qr/**").hasAnyRole("ADMIN","MEMBER")
                 .anyRequest().authenticated()
             )

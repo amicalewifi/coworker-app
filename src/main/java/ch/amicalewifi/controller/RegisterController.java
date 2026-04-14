@@ -34,6 +34,10 @@ public class RegisterController {
                          @RequestParam String email,
                          @RequestParam String password,
                          @RequestParam(required = false) String phone,
+                         @RequestParam(required = false) String address,
+                         @RequestParam(required = false) String city,
+                         @RequestParam(required = false) String postalCode,
+                         @RequestParam(required = false) String country,
                          @RequestParam MembershipType membership,
                          RedirectAttributes ra) {
 
@@ -51,6 +55,9 @@ public class RegisterController {
         memberService.create(Member.builder()
                 .firstName(firstName).lastName(lastName)
                 .email(email).phone(phone)
+                .address(address).city(city)
+                .postalCode(postalCode)
+                .country(country != null && !country.isBlank() ? country : "Suisse")
                 .membership(membership)
                 .user(user)
                 .active(true)

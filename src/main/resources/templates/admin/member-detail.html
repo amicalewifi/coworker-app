@@ -17,8 +17,9 @@
     <form th:unless="${member.active}" th:action="@{/admin/members/{id}/activate(id=${member.id})}" method="post" style="display:inline;">
       <button type="submit" class="btn btn-sm btn-g">Réactiver</button>
     </form>
+    <button class="btn btn-sm" onclick="openModal('m-edit')">Modifier</button>
     <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">Renouveler pack</button>
-    <a th:href="@{/qr/member/{uid}(uid=${member.badgeUid?:'none'})}" class="btn btn-sm" target="_blank">QR Code</a>
+    <a th:href="@{/qr/venue}" class="btn btn-sm" target="_blank">QR d'entrée</a>
   </div>
 </div>
 <div class="content">
@@ -33,6 +34,10 @@
           <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Adresse</td><td th:text="${member.address?:'—'}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Ville</td><td th:text="${(member.postalCode?:'')+' '+(member.city?:'—')}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">Pays</td><td th:text="${member.country}"></td></tr>
+          <tr><td style="color:var(--t3);padding:5px 0;">QR Token</td><td><code style="font-size:11px;" th:text="${member.qrToken}"></code></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Membre depuis</td><td th:text="${#temporals.format(member.createdAt,'d MMMM yyyy')}"></td></tr>
         </table>
       </div>
@@ -131,6 +136,56 @@
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Modal modification membre -->
+<div id="m-edit" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Modifier le membre</div>
+    <div class="modal-sub" th:text="${member.displayName}+' · '+${member.email}"></div>
+    <form th:action="@{/admin/members/{id}/update(id=${member.id})}" method="post">
+      <div class="form-g" style="margin-bottom:10px;">
+        <div class="form-row">
+          <label class="form-lbl">Téléphone</label>
+          <input name="phone" class="form-in" th:value="${member.phone}" placeholder="+41 79 000 00 00">
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Entreprise</label>
+          <input name="company" class="form-in" th:value="${member.company}" placeholder="Société SA">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Badge NFC (UID)</label>
+        <input name="badgeUid" class="form-in" th:value="${member.badgeUid}" placeholder="ex: A1B2C3D4">
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Adresse</label>
+        <input name="address" class="form-in" th:value="${member.address}" placeholder="Rue de la Gare 12">
+      </div>
+      <div class="form-g" style="margin-bottom:10px;">
+        <div class="form-row">
+          <label class="form-lbl">NPA</label>
+          <input name="postalCode" class="form-in" th:value="${member.postalCode}" placeholder="1926">
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Localité</label>
+          <input name="city" class="form-in" th:value="${member.city}" placeholder="Fully">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Pays</label>
+        <input name="country" class="form-in" th:value="${member.country}" placeholder="Suisse">
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Notes internes</label>
+        <input name="notes" class="form-in" th:value="${member.notes}" placeholder="Observations...">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-edit')">Annuler</button>
+        <button type="submit" class="btn btn-g">Enregistrer</button>
+      </div>
+    </form>
   </div>
 </div>
 

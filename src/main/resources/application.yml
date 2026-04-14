@@ -71,6 +71,9 @@ amicale:
     port:       9100          # port RAW Kyocera
     timeout-ms: 2000
 
+  venue:
+    qr-token: amicale-fully-2024  # Token du QR code affiché dans le coworking
+
 management:
   endpoints:
     web:

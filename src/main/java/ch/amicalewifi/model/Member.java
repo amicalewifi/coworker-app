@@ -27,6 +27,16 @@ public class Member {
     @Column(name = "badge_active") @Builder.Default private boolean badgeActive = true;
     @Column(name = "badge_expires")             private LocalDate badgeExpires;
 
+    // QR token unique (toujours disponible, indépendant du badge NFC)
+    @Column(name = "qr_token", unique = true)
+    @Builder.Default private UUID qrToken = UUID.randomUUID();
+
+    // Adresse postale
+    private String address;
+    private String city;
+    @Column(name = "postal_code") private String postalCode;
+    @Column(nullable = false) @Builder.Default private String country = "Suisse";
+
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "membership_type")
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)

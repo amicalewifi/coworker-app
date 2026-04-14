@@ -57,15 +57,20 @@
         <span class="b b-bl" th:text="${#lists.size(queued)}"></span>
       </div>
       <div class="card-body">
-        <div th:each="j : ${queued}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);">
-          <div>
-            <div style="font-weight:600;" th:text="${j.filename}"></div>
+        <div th:each="j : ${queued}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" th:text="${j.filename}"></div>
             <div style="font-size:11px;color:var(--t3);"
                  th:text="${j.member!=null?j.member.displayName:'—'}+' · '+${j.totalPages}+' pages'"></div>
             <div style="font-size:11px;color:var(--t3);margin-top:2px;"
                  th:text="'Créé le '+${#temporals.format(j.createdAt,'d MMM HH:mm')}"></div>
           </div>
-          <span class="b b-bl">En attente</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+            <span class="b b-bl">En attente</span>
+            <form th:action="@{/admin/printer/jobs/{id}/cancel(id=${j.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-r" style="font-size:11px;padding:4px 10px;">Annuler</button>
+            </form>
+          </div>
         </div>
         <div th:if="${#lists.isEmpty(queued)}"
              style="color:var(--t3);text-align:center;padding:24px;font-size:13px;">
@@ -207,6 +212,7 @@
           <th>Pages</th>
           <th>Options</th>
           <th style="text-align:right;">Coût</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -214,7 +220,7 @@
           <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
               th:text="${#temporals.format(j.createdAt,'d MMM HH:mm')}"></td>
           <td th:text="${j.member!=null?j.member.displayName:'Anonyme'}"></td>
-          <td style="color:var(--t2);font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          <td style="color:var(--t2);font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
               th:text="${j.filename}"></td>
           <td th:text="${j.totalPages}+' p. (×'+${j.copies}+')'"></td>
           <td>
@@ -224,6 +230,12 @@
           </td>
           <td style="text-align:right;font-weight:600;color:var(--text);"
               th:text="'Fr. '+${#numbers.formatDecimal(j.totalCost,1,2)}"></td>
+          <td style="text-align:right;">
+            <form th:action="@{/admin/printer/jobs/{id}/delete(id=${j.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-r" style="font-size:11px;padding:4px 10px;"
+                      onclick="return confirm('Supprimer ce job ?')">Supprimer</button>
+            </form>
+          </td>
         </tr>
         <tr th:if="${#lists.isEmpty(monthJobs)}">
           <td colspan="6" style="text-align:center;color:var(--t3);padding:24px;">Aucune impression ce mois</td>
