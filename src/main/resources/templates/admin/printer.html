@@ -61,8 +61,8 @@
           </td>
           <td style="text-align:right;">
             <button class="btn btn-sm btn-g"
-                    th:attr="data-mid='m-credits'"
-                    th:onclick="'openModal(\'m-credits\');document.getElementById(\'creditMemberId\').value=\'' + ${m.id} + '\''">
+                    th:attr="data-member-id=${m.id}"
+                    onclick="openModal('m-credits');document.getElementById('creditMemberId').value=this.dataset.memberId">
               + Crédits
             </button>
           </td>
