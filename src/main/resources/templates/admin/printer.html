@@ -67,7 +67,7 @@
             </button>
           </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(allMembers) or allMembers.stream().noneMatch(m -> m.printQuota > 0 or m.printUsed > 0)}">
+        <tr th:if="${#lists.isEmpty(allMembers) or #lists.isEmpty(allMembers.?[printQuota > 0 || printUsed > 0])}">
           <td colspan="5" style="text-align:center;color:var(--t3);padding:20px;">Aucun membre avec des crédits</td>
         </tr>
       </tbody>
@@ -101,7 +101,12 @@
     <div class="card">
       <div class="card-hdr">
         <span class="card-ttl">En cours d'impression</span>
-        <span class="b b-o" th:text="${#lists.size(printing)}"></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="b b-o" th:text="${#lists.size(printing)}"></span>
+          <form th:unless="${#lists.isEmpty(printing)}" th:action="@{/admin/printer/jobs/clear-printing}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-r" onclick="return confirm('Annuler tous les jobs en cours ?')">Vider</button>
+          </form>
+        </div>
       </div>
       <div class="card-body">
         <div th:each="j : ${printing}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);">
@@ -124,7 +129,12 @@
     <div class="card">
       <div class="card-hdr">
         <span class="card-ttl">File d'attente</span>
-        <span class="b b-bl" th:text="${#lists.size(queued)}"></span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="b b-bl" th:text="${#lists.size(queued)}"></span>
+          <form th:unless="${#lists.isEmpty(queued)}" th:action="@{/admin/printer/jobs/clear-queued}" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-r" onclick="return confirm('Annuler tous les jobs en attente ?')">Vider</button>
+          </form>
+        </div>
       </div>
       <div class="card-body">
         <div th:each="j : ${queued}" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bdr);gap:10px;">
@@ -195,75 +205,6 @@
           <td colspan="4" style="font-weight:700;padding:13px 18px;">Total packs</td>
           <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);padding:13px 18px;"
               th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(packTxs.![amountChf]),1,2)}"></td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
-
-  <!-- Facturation mensuelle impressions -->
-  <div class="card" style="margin-top:18px;">
-    <div class="card-hdr">
-      <div>
-        <span class="card-ttl">Facturation</span>
-        <span style="font-size:13px;color:var(--t3);margin-left:8px;font-weight:500;text-transform:capitalize;"
-              th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <a th:href="@{/admin/printer(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
-        <a th:href="@{/admin/printer}" class="btn btn-sm">Mois en cours</a>
-        <a th:href="@{/admin/printer(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
-        <span class="b b-bl" th:text="${#lists.size(monthJobs)}+' jobs'"></span>
-      </div>
-    </div>
-
-    <div class="notice notice-o" style="margin:14px 18px 0;">
-      <span>ℹ</span>
-      <span>N&amp;B = 1 crédit/page (Fr. 0.10) · Couleur = 2 crédits/page (Fr. 0.20) · 1 crédit = Fr. 0.10</span>
-    </div>
-
-    <table class="table" style="margin-top:4px;">
-      <thead>
-        <tr>
-          <th>Membre</th>
-          <th>Pages N&amp;B</th>
-          <th>Pages couleur</th>
-          <th style="text-align:right;">Crédits consommés</th>
-          <th style="text-align:right;">Montant</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="line : ${billingLines}">
-          <td>
-            <div style="font-weight:700;" th:text="${line.name()}"></div>
-            <div style="font-size:11px;color:var(--t3);" th:text="${line.email()}"></div>
-          </td>
-          <td style="color:var(--t2);" th:text="${line.pagesBW()}+' p.'"></td>
-          <td>
-            <span th:if="${line.pagesColor() > 0}" class="b b-o" th:text="${line.pagesColor()}+' p.'"></span>
-            <span th:unless="${line.pagesColor() > 0}" style="color:var(--t4);">—</span>
-          </td>
-          <td th:with="cr=${line.pagesBW() + line.pagesColor() * 2}"
-              style="text-align:right;font-weight:600;" th:text="${cr}+' cr.'"></td>
-          <td style="text-align:right;">
-            <span style="font-size:15px;font-weight:800;color:var(--gd);"
-                  th:text="'Fr. '+${#numbers.formatDecimal((line.pagesBW() + line.pagesColor() * 2) * 0.10, 1, 2)}"></span>
-          </td>
-        </tr>
-        <tr th:if="${#lists.isEmpty(billingLines)}">
-          <td colspan="5" style="text-align:center;color:var(--t3);padding:28px;">
-            Aucune impression ce mois
-          </td>
-        </tr>
-      </tbody>
-      <tfoot th:unless="${#lists.isEmpty(billingLines)}">
-        <tr style="background:var(--surf-2);">
-          <td style="font-weight:700;padding:13px 18px;">Total</td>
-          <td style="font-weight:600;" th:text="${#aggregates.sum(billingLines.![pagesBW])}+' p.'"></td>
-          <td style="font-weight:600;" th:text="${#aggregates.sum(billingLines.![pagesColor])}+' p.'"></td>
-          <td style="text-align:right;font-weight:700;"
-              th:text="${#aggregates.sum(billingLines.![pagesBW + pagesColor * 2])}+' cr.'"></td>
-          <td style="text-align:right;font-size:16px;font-weight:900;color:var(--gd);"
-              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(billingLines.![pagesBW + pagesColor * 2]) * 0.10, 1, 2)}"></td>
         </tr>
       </tfoot>
     </table>

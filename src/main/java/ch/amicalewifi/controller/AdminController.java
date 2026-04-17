@@ -305,6 +305,26 @@ public class AdminController {
         return "redirect:/admin/printer";
     }
 
+    @PostMapping("/printer/jobs/clear-printing")
+    public String clearPrintingJobs(RedirectAttributes ra) {
+        List<ch.amicalewifi.model.PrinterJob> jobs =
+                printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING);
+        jobs.forEach(j -> j.setStatus(PrintJobStatus.CANCELLED));
+        printerRepo.saveAll(jobs);
+        ra.addFlashAttribute("success", jobs.size() + " job(s) en cours annulé(s)");
+        return "redirect:/admin/printer";
+    }
+
+    @PostMapping("/printer/jobs/clear-queued")
+    public String clearQueuedJobs(RedirectAttributes ra) {
+        List<ch.amicalewifi.model.PrinterJob> jobs =
+                printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED);
+        jobs.forEach(j -> j.setStatus(PrintJobStatus.CANCELLED));
+        printerRepo.saveAll(jobs);
+        ra.addFlashAttribute("success", jobs.size() + " job(s) en attente annulé(s)");
+        return "redirect:/admin/printer";
+    }
+
     @PostMapping("/printer/jobs/{id}/cancel")
     public String cancelPrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
         printerRepo.findById(id).ifPresent(j -> {

@@ -19,11 +19,12 @@ import java.util.TreeMap;
 @RequiredArgsConstructor
 public class DashboardService {
 
-    private final MemberService              memberService;
-    private final RoomService                roomService;
-    private final MemberRepository           memberRepo;
-    private final AccessEventRepository      eventRepo;
-    private final PackTransactionRepository  packTxRepo;
+    private final MemberService                    memberService;
+    private final RoomService                      roomService;
+    private final MemberRepository                 memberRepo;
+    private final AccessEventRepository            eventRepo;
+    private final PackTransactionRepository        packTxRepo;
+    private final PrintCreditTransactionRepository printCreditTxRepo;
 
     public record Stats(
             long presentToday,
@@ -37,6 +38,7 @@ public class DashboardService {
             List<AccessEvent> todayEvents,
             Map<Integer, BigDecimal> monthlyIncome,
             List<PackTransaction> monthlyTransactions,
+            List<PrintCreditTransaction> monthlyPrintTransactions,
             BigDecimal monthlyTotal
     ) {}
 
@@ -61,10 +63,18 @@ public class DashboardService {
         List<PackTransaction> monthTxs = packTxRepo
                 .findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
                         firstOfMonth.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        List<PrintCreditTransaction> monthPrintTxs = printCreditTxRepo
+                .findByCreatedAtBetweenOrderByCreatedAtDesc(
+                        firstOfMonth.atStartOfDay(), today.plusDays(1).atStartOfDay());
         Map<Integer, BigDecimal> monthlyIncome = new TreeMap<>();
         for (int d = 1; d <= today.getDayOfMonth(); d++) monthlyIncome.put(d, BigDecimal.ZERO);
         BigDecimal monthlyTotal = BigDecimal.ZERO;
         for (PackTransaction tx : monthTxs) {
+            int day = tx.getCreatedAt().getDayOfMonth();
+            monthlyIncome.merge(day, tx.getAmountChf(), BigDecimal::add);
+            monthlyTotal = monthlyTotal.add(tx.getAmountChf());
+        }
+        for (PrintCreditTransaction tx : monthPrintTxs) {
             int day = tx.getCreatedAt().getDayOfMonth();
             monthlyIncome.merge(day, tx.getAmountChf(), BigDecimal::add);
             monthlyTotal = monthlyTotal.add(tx.getAmountChf());
@@ -76,7 +86,7 @@ public class DashboardService {
                 (int) presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
                                                   || p.getPresenceType() == PresenceType.HALF_PM).count(),
                 occupied, rooms.size(), packs, permanents.size(), alerts, events,
-                monthlyIncome, monthTxs, monthlyTotal
+                monthlyIncome, monthTxs, monthPrintTxs, monthlyTotal
         );
     }
 }

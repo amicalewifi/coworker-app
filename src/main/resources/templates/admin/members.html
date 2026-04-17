@@ -37,6 +37,7 @@
           <th>Unités restantes</th>
           <th>½ j. rest.</th>
           <th>Crédits conf.</th>
+          <th>Impression</th>
           <th>Pack</th>
           <th>Statut</th>
           <th></th>
@@ -86,6 +87,11 @@
           <td style="color:var(--blue);font-weight:600;"
               th:text="${#numbers.formatDecimal(m.confCreditsRemaining,1,1)}+'h / '+${#numbers.formatDecimal(m.confCreditsTotalH,1,1)}+'h'"></td>
           <td>
+            <span th:style="${'color:' + (m.printUsed >= m.printQuota ? 'var(--red)' : (m.printUsed >= m.printQuota * 0.8 ? 'var(--orange)' : 'var(--t2)'))}">
+              <span th:text="${m.printUsed}"></span> / <span th:text="${m.printQuota}"></span>
+            </span>
+          </td>
+          <td>
             <span th:if="${!m.active}" class="b b-gr">Inactif</span>
             <span th:if="${m.active}">
               <span th:switch="${m.packAlert}">
@@ -113,7 +119,7 @@
           </td>
         </tr>
         <tr th:if="${#lists.isEmpty(members)}">
-          <td colspan="9" style="text-align:center;color:var(--t3);padding:30px;">Aucun membre enregistré</td>
+          <td colspan="10" style="text-align:center;color:var(--t3);padding:30px;">Aucun membre enregistré</td>
         </tr>
       </tbody>
     </table>
