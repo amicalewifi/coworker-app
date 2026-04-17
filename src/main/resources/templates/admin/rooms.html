@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
-<head><title>Salles</title></head>
+<head><title>Salles — l'Amicale du WiFi</title></head>
 <body>
 <th:block th:fragment="content">
 <div class="topbar">
@@ -82,6 +82,58 @@
             Webhook : <code th:text="'/api/v1/koalendar/webhook/'+${room.koalendarSlug}"></code>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vue mensuelle -->
+  <div class="card" style="margin-top:18px;">
+    <div class="card-hdr">
+      <span class="card-ttl">
+        Vue mensuelle —
+        <span th:text="${#temporals.format(monthYear.atDay(1),'MMMM yyyy',#locale)}"></span>
+      </span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <a th:href="@{/admin/rooms(month=${prevMonth},date=${#temporals.format(date,'yyyy-MM-dd')})}" class="btn btn-sm">←</a>
+        <a th:href="@{/admin/rooms(date=${#temporals.format(date,'yyyy-MM-dd')})}" class="btn btn-sm">Ce mois</a>
+        <a th:href="@{/admin/rooms(month=${nextMonth},date=${#temporals.format(date,'yyyy-MM-dd')})}" class="btn btn-sm">→</a>
+      </div>
+    </div>
+    <div class="card-body" style="padding-bottom:8px;">
+
+      <!-- En-têtes jours -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;">
+        <div th:each="h : ${ {'Lun','Mar','Mer','Jeu','Ven','Sam','Dim'} }"
+             style="text-align:center;font-size:11px;font-weight:700;color:var(--t3);padding:4px 0;"
+             th:text="${h}"></div>
+      </div>
+
+      <!-- Grille des jours -->
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+
+        <!-- Cases vides avant le 1er -->
+        <div th:each="e : ${#numbers.sequence(1, firstDow - 1)}"
+             style="min-height:70px;"></div>
+
+        <!-- Jours du mois -->
+        <div th:each="day : ${#numbers.sequence(1, daysInMonth)}"
+             th:with="hasBookings=${monthBookingsByDay.containsKey(day)},
+                      isToday=${monthYear.atDay(day).equals(#temporals.createToday())}"
+             style="min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;"
+             th:style="'min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;'
+                       + (${isToday} ? 'border-color:var(--green);background:var(--gl);' : '')
+                       + (${hasBookings and !isToday} ? 'border-color:var(--orange);' : '')">
+          <div style="font-weight:700;margin-bottom:3px;"
+               th:style="'font-weight:700;margin-bottom:3px;color:'+(${isToday} ? 'var(--gd)' : 'var(--text)')"
+               th:text="${day}"></div>
+          <div th:if="${hasBookings}"
+               th:each="b : ${monthBookingsByDay.get(day)}"
+               style="background:var(--ol);border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--od);">
+            <span th:text="${#temporals.format(b.startTime,'HH:mm')}"></span>
+            <span th:text="${b.room.name}" style="font-weight:600;"></span>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

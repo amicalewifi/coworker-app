@@ -41,8 +41,9 @@ public class AdminController {
     private final UserRepository            userRepo;
     private final PrinterJobRepository      printerRepo;
     private final PackTransactionRepository packTxRepo;
-    private final PrinterService            printerService;
-    private final PasswordEncoder           passwordEncoder;
+    private final PrinterService                   printerService;
+    private final PrintCreditTransactionRepository printCreditTxRepo;
+    private final PasswordEncoder                  passwordEncoder;
 
     private static final String CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     private static final SecureRandom RNG = new SecureRandom();
@@ -276,6 +277,34 @@ public class AdminController {
         return "redirect:/admin/members/" + id;
     }
 
+    @PostMapping("/printer/credits/add")
+    public String addPrintCredits(@RequestParam UUID memberId,
+                                  @RequestParam PrintPackType packType,
+                                  RedirectAttributes ra) {
+        Member m = memberService.getById(memberId);
+        m.setPrintQuota(m.getPrintQuota() + packType.getCredits());
+        memberRepo.save(m);
+        printCreditTxRepo.save(PrintCreditTransaction.builder()
+                .member(m)
+                .packType(packType)
+                .creditsAdded(packType.getCredits())
+                .amountChf(packType.getPriceChf())
+                .build());
+        ra.addFlashAttribute("success",
+                "+" + packType.getCredits() + " crédits ajoutés pour " + m.getDisplayName()
+                + " — Fr. " + packType.getPriceChf());
+        return "redirect:/admin/printer";
+    }
+
+    @PostMapping("/printer/jobs/clean-completed")
+    public String cleanCompletedJobs(RedirectAttributes ra) {
+        List<ch.amicalewifi.model.PrinterJob> completed =
+                printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.COMPLETED);
+        printerRepo.deleteAll(completed);
+        ra.addFlashAttribute("success", completed.size() + " job(s) imprimés supprimés");
+        return "redirect:/admin/printer";
+    }
+
     @PostMapping("/printer/jobs/{id}/cancel")
     public String cancelPrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
         printerRepo.findById(id).ifPresent(j -> {
@@ -317,6 +346,7 @@ public class AdminController {
     @GetMapping("/rooms")
     public String rooms(@RequestParam(required = false)
                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                        @RequestParam(required = false) String month,
                         Model model) {
         LocalDate d = date != null ? date : LocalDate.now();
         List<RoomBooking> bookings = roomService.getForDate(d);
@@ -334,6 +364,13 @@ public class AdminController {
                             return hours;
                         })
                 ));
+
+        YearMonth ym = (month != null) ? YearMonth.parse(month) : YearMonth.from(d);
+        List<RoomBooking> monthBookings = roomService.getForMonth(ym);
+        Map<Integer, List<RoomBooking>> monthBookingsByDay = monthBookings.stream()
+                .collect(Collectors.groupingBy(b -> b.getDate().getDayOfMonth()));
+        int firstDow = ym.atDay(1).getDayOfWeek().getValue(); // 1=Mon … 7=Sun
+
         model.addAttribute("rooms",             roomService.getAll());
         model.addAttribute("bookings",          bookings);
         model.addAttribute("bookedRoomIds",     bookedRoomIds);
@@ -341,6 +378,12 @@ public class AdminController {
         model.addAttribute("date",              d);
         model.addAttribute("allBookings",       roomService.getUpcomingFrom(LocalDate.now()));
         model.addAttribute("members",           memberService.getAll());
+        model.addAttribute("monthYear",         ym);
+        model.addAttribute("daysInMonth",       ym.lengthOfMonth());
+        model.addAttribute("firstDow",          firstDow);
+        model.addAttribute("monthBookingsByDay",monthBookingsByDay);
+        model.addAttribute("prevMonth",         ym.minusMonths(1).toString());
+        model.addAttribute("nextMonth",         ym.plusMonths(1).toString());
         return "admin/rooms";
     }
 
@@ -419,11 +462,17 @@ public class AdminController {
         List<PackTransaction> packTxs = packTxRepo
                 .findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to);
 
+        List<PrintCreditTransaction> creditTxs = printCreditTxRepo
+                .findByCreatedAtBetweenOrderByCreatedAtDesc(from, to);
+
         model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
         model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
         model.addAttribute("monthJobs",     monthJobs);
         model.addAttribute("billingLines",  billing.values());
         model.addAttribute("packTxs",       packTxs);
+        model.addAttribute("creditTxs",     creditTxs);
+        model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
+        model.addAttribute("allMembers",    memberService.getAll());
         model.addAttribute("billingMonth",  ym);
         model.addAttribute("prevMonth",     ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",     ym.plusMonths(1).toString());

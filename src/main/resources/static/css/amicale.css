@@ -233,7 +233,7 @@ a:hover { color: var(--green-m); }
 }
 
 .topbar-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: -.5px;
   color: var(--text);
@@ -711,14 +711,6 @@ tr.inactive-row:hover td { opacity: .72; background: var(--bg); }
   .topbar { padding: 14px 18px; }
 }
 
-/* ── Topbar title size refinement ────────────────────── */
-
-.topbar-title {
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -.55px;
-  color: var(--text);
-}
 
 .stat-val {
   font-size: 34px;

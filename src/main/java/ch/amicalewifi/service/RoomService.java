@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +28,7 @@ public class RoomService {
     public List<RoomBooking> getForDate(LocalDate d) { return bookingRepo.findByDateAndStatusOrderByStartTime(d, BookingStatus.CONFIRMED); }
     public List<RoomBooking> getForMember(UUID id)   { return bookingRepo.findByMemberIdOrderByDateDescStartTimeDesc(id); }
     public List<RoomBooking> getUpcomingFrom(LocalDate from) { return bookingRepo.findByDateGreaterThanEqualAndStatusOrderByDateAscStartTimeAsc(from, BookingStatus.CONFIRMED); }
+    public List<RoomBooking> getForMonth(YearMonth ym)       { return bookingRepo.findByDateBetweenAndStatusOrderByDateAscStartTimeAsc(ym.atDay(1), ym.atEndOfMonth(), BookingStatus.CONFIRMED); }
 
     public RoomBooking book(RoomBooking b) {
         if (!bookingRepo.findConflicts(b.getRoom().getId(), b.getDate(), b.getStartTime(), b.getEndTime()).isEmpty()) {

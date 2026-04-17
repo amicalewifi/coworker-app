@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
-<head><title>Tableau de bord</title></head>
+<head><title>Tableau de bord — l'Amicale du WiFi</title></head>
 <body>
 <th:block th:fragment="content">
 
 <div class="topbar">
   <div>
-    <div class="topbar-title" style="font-size:28px;font-weight:800;letter-spacing:-0.5px;">Tableau de bord</div>
+    <div class="topbar-title">Tableau de bord</div>
     <div class="topbar-sub" th:text="${#temporals.format(todayDate,'EEEE d MMMM yyyy',#locale)}"></div>
   </div>
   <div class="topbar-r">
@@ -110,21 +110,28 @@
       <span class="card-ttl">Salles — aujourd'hui</span>
       <a th:href="@{/admin/rooms}" class="btn btn-sm">Gérer</a>
     </div>
-    <div class="card-body g2" style="gap:12px;">
+    <div class="card-body g2" style="padding-top:0;">
       <div th:each="room : ${rooms}"
-           style="border:1px solid var(--bdr);border-radius:var(--r);padding:12px;"
-           th:style="'border-left:3px solid '+( ${bookedRoomIds.contains(room.id)} ? 'var(--orange)' : 'var(--green)')">
+           style="border:1px solid var(--bdr);border-radius:var(--r);padding:14px;"
+           th:style="'border-top:3px solid '+( ${bookedRoomIds.contains(room.id)} ? 'var(--orange)' : 'var(--green)')">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div style="font-weight:700;" th:text="${room.name}"></div>
+          <div>
+            <div style="font-weight:700;font-size:14px;" th:text="${room.name}"></div>
+            <div style="font-size:11px;color:var(--t3);margin-top:2px;"
+                 th:text="${room.capacity}+' pers.'+(${room.equipment!=null?' · '+#strings.arrayJoin(room.equipment,' · '):''})"></div>
+          </div>
           <span th:if="${currentlyBookedRoomIds.contains(room.id)}" class="b b-o">Réservée</span>
           <span th:unless="${currentlyBookedRoomIds.contains(room.id)}" class="b b-g">Libre</span>
         </div>
-        <div style="font-size:11px;color:var(--t3);margin-bottom:8px;"
-             th:text="${room.capacity}+' pers.'+(${room.equipment!=null?' · '+#strings.arrayJoin(room.equipment,' · '):''})"></div>
-        <div class="slot-row">
+        <div class="slot-row" style="margin-bottom:8px;">
           <div th:each="h : ${#numbers.sequence(8,20)}" class="slot"
                th:classappend="${bookedHoursByRoom.containsKey(room.id) and bookedHoursByRoom.get(room.id).contains(h)} ? 'slot-b' : 'slot-f'"
                th:title="${h}+':00'"></div>
+        </div>
+        <div th:each="b : ${todayBookings}" th:if="${b.room.id.equals(room.id)}"
+             style="font-size:12px;padding:5px 8px;background:var(--ol);border-radius:var(--r);margin-bottom:4px;">
+          <strong th:text="${#temporals.format(b.startTime,'HH:mm')}+' – '+${#temporals.format(b.endTime,'HH:mm')}"></strong>
+          · <span th:text="${b.organizerName?:b.title?:'—'}"></span>
         </div>
       </div>
     </div>
