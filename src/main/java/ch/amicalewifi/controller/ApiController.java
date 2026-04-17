@@ -1,11 +1,15 @@
 package ch.amicalewifi.controller;
 
+import ch.amicalewifi.model.AccessEventType;
 import ch.amicalewifi.model.PresenceType;
+import ch.amicalewifi.repository.AccessEventRepository;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +19,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiController {
 
-    private final ScanService      scanService;
-    private final MemberService    memberService;
-    private final RoomService      roomService;
-    private final DashboardService dashboardService;
+    private final ScanService           scanService;
+    private final MemberService         memberService;
+    private final RoomService           roomService;
+    private final DashboardService      dashboardService;
+    private final AccessEventRepository eventRepo;
 
     @PostMapping("/scan")
     public ResponseEntity<?> scan(@RequestBody Map<String, String> body) {
@@ -54,5 +59,21 @@ public class ApiController {
     @GetMapping("/dashboard/stats")
     public DashboardService.Stats stats() {
         return dashboardService.getStats();
+    }
+
+    @GetMapping("/admin/entries-today")
+    public List<Map<String, Object>> entriesToday() {
+        LocalDate today = LocalDate.now();
+        return eventRepo.findByTypeAndDate(
+                AccessEventType.ENTRY_GRANTED,
+                today.atStartOfDay(),
+                today.plusDays(1).atStartOfDay()
+        ).stream().map(e -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("time",   e.getOccurredAt().format(DateTimeFormatter.ofPattern("HH:mm")));
+            m.put("name",   e.getMember() != null ? e.getMember().getDisplayName() : "Badge " + e.getBadgeUid());
+            m.put("badge",  e.getBadgeUid());
+            return m;
+        }).toList();
     }
 }

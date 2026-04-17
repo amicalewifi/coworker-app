@@ -75,7 +75,11 @@ amicale:
     qr-token: amicale-fully-2024  # Token du QR code affiché dans le coworking
 
   akuvox:
-    api-key: 4f3b0f82-ad1c-4bc6-abbf-5c112e6bdb3e
+    api-key:      4f3b0f82-ad1c-4bc6-abbf-5c112e6bdb3e
+    http-port:    80
+    device-url:   http://192.168.1.102
+    device-user:  user
+    device-pass:  d56c5aa6ad5a7afad95396cdb38dac7d  # MD5 de CWT-gre9uvg*rad7rkw
 
   unifi:
     api-key:  OO-GyiG06ULRYhrLT39ZCVb2ZV0D_E-7

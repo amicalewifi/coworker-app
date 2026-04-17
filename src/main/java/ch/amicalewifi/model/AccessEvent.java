@@ -46,4 +46,7 @@ public class AccessEvent {
     @Column(name = "occurred_at")
     @Builder.Default
     private LocalDateTime occurredAt = LocalDateTime.now();
+
+    @Column(name = "akuvox_id")
+    private Integer akuvoxId;
 }

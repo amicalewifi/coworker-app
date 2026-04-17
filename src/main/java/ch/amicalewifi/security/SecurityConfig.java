@@ -42,6 +42,8 @@ public class SecurityConfig {
                 .requestMatchers("/cafeteria/**").hasAnyRole("ADMIN","MEMBER")
                 // Borne Akuvox A05S — auth par clé API, pas de session
                 .requestMatchers("/api/v1/akuvox/**").permitAll()
+                // Polling dashboard entrées du jour — lecture seule, page déjà protégée
+                .requestMatchers("/api/v1/admin/entries-today").permitAll()
                 // Webhook zahls.ch — appelé par les serveurs Payrexx, pas de session
                 .requestMatchers("/api/v1/zahls/**").permitAll()
                 // Webhook Koalendar — appelé par les serveurs Koalendar, pas de session

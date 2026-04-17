@@ -60,36 +60,28 @@
 
   <div class="g2">
 
-    <!-- Journal d'accès -->
+    <!-- Journal d'accès AKUVOX -->
     <div class="card">
       <div class="card-hdr">
         <span class="card-ttl">Entrées du jour</span>
-        <a th:href="@{/admin/members}" class="btn btn-sm">Tout voir</a>
+        <span id="entries-count" class="b b-g" style="font-size:11px;"></span>
       </div>
-      <div style="padding:0 16px;max-height:480px;overflow-y:auto;">
-        <div th:each="e,i : ${stats.todayEvents}" th:if="${i.index lt 50}" class="tl-item">
+      <div id="entries-list" style="padding:0 16px;max-height:480px;overflow-y:auto;">
+        <div th:each="e : ${stats.todayEvents}"
+             th:if="${e.eventType.name()=='ENTRY_GRANTED'}"
+             class="tl-item">
           <div class="tl-time" th:text="${#temporals.format(e.occurredAt,'HH:mm')}"></div>
-          <div class="tl-dot"
-               th:style="${'background:' + (e.eventType.name()=='ENTRY_GRANTED' ? 'var(--green)' : (e.eventType.name()=='ENTRY_DENIED' ? 'var(--red)' : 'var(--orange)'))}"></div>
+          <div class="tl-dot" style="background:var(--green)"></div>
           <div class="tl-body">
             <div class="tl-name">
-              <span th:if="${e.member!=null}"   th:text="${e.member.displayName}"></span>
+              <span th:if="${e.member!=null}"    th:text="${e.member.displayName}"></span>
               <span th:unless="${e.member!=null}" th:text="'Badge '+${e.badgeUid}"></span>
             </div>
-            <div class="tl-desc">
-              <span th:text="${e.badgeUid}"></span>
-              <span th:if="${e.presenceType!=null}" th:text="' · '+${e.presenceType.shortLabel}"></span>
-              <span th:if="${e.unitsConsumed!=null and e.unitsConsumed>0}" th:text="' · −'+${e.unitsConsumed}+'j'"></span>
-            </div>
+            <div class="tl-desc" th:text="${e.badgeUid}"></div>
           </div>
-          <span th:switch="${e.eventType.name()}">
-            <span th:case="'ENTRY_GRANTED'"     class="b b-g">Autorisé</span>
-            <span th:case="'ENTRY_DENIED'"      class="b b-r" th:text="${e.deniedReason?:'Refusé'}"></span>
-            <span th:case="'NEW_MEMBER_CREATED'" class="b b-o">Inscrit</span>
-            <span th:case="*" class="b b-gr" th:text="${e.eventType.name()}"></span>
-          </span>
         </div>
         <div th:if="${#lists.isEmpty(stats.todayEvents)}"
+             id="entries-empty"
              style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">
           Aucune entrée aujourd'hui
         </div>
@@ -352,6 +344,41 @@
     </form>
   </div>
 </div>
+
+<script>
+(function () {
+  function renderEntries(entries) {
+    var list = document.getElementById('entries-list');
+    var count = document.getElementById('entries-count');
+    if (!list) return;
+    count.textContent = entries.length + ' passage' + (entries.length !== 1 ? 's' : '');
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">Aucune entrée aujourd\'hui</div>';
+      return;
+    }
+    list.innerHTML = entries.map(function (e) {
+      return '<div class="tl-item">'
+        + '<div class="tl-time">' + e.time + '</div>'
+        + '<div class="tl-dot" style="background:var(--green)"></div>'
+        + '<div class="tl-body">'
+        + '<div class="tl-name">' + e.name + '</div>'
+        + '<div class="tl-desc">' + e.badge + '</div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function poll() {
+    fetch('/api/v1/admin/entries-today', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(renderEntries)
+      .catch(function () {});
+  }
+
+  poll();
+  setInterval(poll, 8000);
+})();
+</script>
 
 </th:block>
 </body>
