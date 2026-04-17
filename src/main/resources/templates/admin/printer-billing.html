@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Facturation impression — l'Amicale du WiFi</title></head>
+<body>
+<th:block th:fragment="content">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Facturation impression</div>
+    <div class="topbar-sub" style="text-transform:capitalize;" th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></div>
+  </div>
+  <div class="topbar-r">
+    <a th:href="@{/admin/printer/billing(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
+    <a th:href="@{/admin/printer/billing}" class="btn btn-sm">Mois en cours</a>
+    <a th:href="@{/admin/printer/billing(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
+    <button class="btn btn-sm" onclick="openModal('m-credits')">+ Crédits</button>
+  </div>
+</div>
+
+<div class="content">
+
+  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+
+  <!-- Crédits d'impression -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Crédits d'impression</span>
+      <span style="font-size:12px;color:var(--t3);">N&amp;B = 1 crédit/page · Couleur = 2 crédits/page · 1 crédit = Fr. 0.10</span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th style="text-align:right;">Crédits achetés</th>
+          <th style="text-align:right;">Crédits utilisés</th>
+          <th style="text-align:right;">Solde</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="m : ${allMembers}" th:if="${m.printQuota > 0 or m.printUsed > 0}">
+          <td>
+            <div style="font-weight:600;" th:text="${m.displayName}"></div>
+            <div style="font-size:11px;color:var(--t3);" th:text="${m.email}"></div>
+          </td>
+          <td style="text-align:right;color:var(--t2);" th:text="${m.printQuota}"></td>
+          <td style="text-align:right;color:var(--t2);" th:text="${m.printUsed}"></td>
+          <td style="text-align:right;">
+            <span th:with="solde=${m.printQuota - m.printUsed}"
+                  th:classappend="${solde <= 0} ? 'b b-r' : (${solde < 20} ? 'b b-o' : 'b b-g')"
+                  class="b"
+                  th:text="${solde}+' cr.'"></span>
+          </td>
+          <td style="text-align:right;">
+            <button class="btn btn-sm btn-g"
+                    th:attr="data-member-id=${m.id}"
+                    onclick="openModal('m-credits');document.getElementById('creditMemberId').value=this.dataset.memberId">
+              + Crédits
+            </button>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(allMembers) or #lists.isEmpty(allMembers.?[printQuota > 0 || printUsed > 0])}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:20px;">Aucun membre avec des crédits</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Crédits vendus du mois -->
+  <div class="card" th:unless="${#lists.isEmpty(creditTxs)}" style="margin-bottom:18px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Crédits vendus</span>
+      <span style="font-size:13px;color:var(--t3);margin-left:8px;font-weight:500;text-transform:capitalize;"
+            th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
+    </div>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Membre</th><th>Pack</th><th style="text-align:right;">Crédits</th><th style="text-align:right;">Montant</th></tr></thead>
+      <tbody>
+        <tr th:each="tx : ${creditTxs}">
+          <td style="font-size:12px;color:var(--t3);white-space:nowrap;"
+              th:text="${#temporals.format(tx.createdAt,'d MMM')}"></td>
+          <td style="font-weight:600;" th:text="${tx.member.displayName}"></td>
+          <td th:text="${tx.packType.label}"></td>
+          <td style="text-align:right;font-weight:600;" th:text="${tx.creditsAdded}"></td>
+          <td style="text-align:right;font-weight:800;color:var(--gd);"
+              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Packs vendus du mois -->
+  <div class="card" style="margin-bottom:18px;">
+    <div class="card-hdr">
+      <div>
+        <span class="card-ttl">Packs vendus</span>
+        <span style="font-size:13px;color:var(--t3);margin-left:8px;font-weight:500;text-transform:capitalize;"
+              th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
+      </div>
+      <span class="b b-g" th:text="${#lists.size(packTxs)}+' transaction(s)'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Membre</th>
+          <th>Formule</th>
+          <th>Type</th>
+          <th style="text-align:right;">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="tx : ${packTxs}">
+          <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
+              th:text="${#temporals.format(tx.createdAt,'d MMM yyyy')}"></td>
+          <td>
+            <div style="font-weight:600;" th:text="${tx.member.displayName}"></div>
+            <div style="font-size:11px;color:var(--t3);" th:text="${tx.member.email}"></div>
+          </td>
+          <td th:text="${tx.membership.label.split(' — ')[0]}"></td>
+          <td>
+            <span th:if="${tx.kind == 'create'}" class="b b-g" style="font-size:10px;">Nouveau</span>
+            <span th:unless="${tx.kind == 'create'}" class="b b-o" style="font-size:10px;">Renouvellement</span>
+          </td>
+          <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green-d);"
+              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(packTxs)}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:24px;">Aucun pack vendu ce mois</td>
+        </tr>
+      </tbody>
+      <tfoot th:unless="${#lists.isEmpty(packTxs)}">
+        <tr style="background:var(--surf-2);">
+          <td colspan="4" style="font-weight:700;padding:13px 18px;">Total packs</td>
+          <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);padding:13px 18px;"
+              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(packTxs.![amountChf]),1,2)}"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Détail des jobs du mois -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-ttl">Détail des impressions</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="b b-gr" th:text="${#lists.size(monthJobs)}+' fichiers'"></span>
+        <form th:action="@{/admin/printer/jobs/clean-completed}" method="post" style="display:inline;">
+          <button type="submit" class="btn btn-sm btn-r"
+                  onclick="return confirm('Supprimer tous les jobs imprimés ?')">Nettoyer imprimés</button>
+        </form>
+      </div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Membre</th>
+          <th>Fichier</th>
+          <th>Pages</th>
+          <th>Options</th>
+          <th style="text-align:right;">Coût</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="j : ${monthJobs}">
+          <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
+              th:text="${#temporals.format(j.createdAt,'d MMM HH:mm')}"></td>
+          <td th:text="${j.member!=null?j.member.displayName:'Anonyme'}"></td>
+          <td style="color:var(--t2);font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              th:text="${j.filename}"></td>
+          <td th:text="${j.totalPages}+' p. (×'+${j.copies}+')'"></td>
+          <td>
+            <span th:if="${j.color}"  class="b b-o" style="font-size:10px;">Couleur</span>
+            <span th:unless="${j.color}" class="b b-gr" style="font-size:10px;">N&amp;B</span>
+            <span th:if="${j.duplex}"  class="b b-bl" style="font-size:10px;">R-V</span>
+          </td>
+          <td style="text-align:right;font-weight:600;color:var(--text);"
+              th:text="'Fr. '+${#numbers.formatDecimal(j.totalCost,1,2)}"></td>
+          <td style="text-align:right;">
+            <form th:action="@{/admin/printer/jobs/{id}/delete(id=${j.id})}" method="post" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-r" style="font-size:11px;padding:4px 10px;"
+                      onclick="return confirm('Supprimer ce job ?')">Supprimer</button>
+            </form>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(monthJobs)}">
+          <td colspan="7" style="text-align:center;color:var(--t3);padding:24px;">Aucune impression ce mois</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- MODAL: Ajouter des crédits -->
+<div id="m-credits" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Ajouter des crédits d'impression</div>
+    <div class="modal-sub">N&amp;B = 1 crédit/page · Couleur = 2 crédits/page · 1 crédit = Fr. 0.10</div>
+    <form th:action="@{/admin/printer/credits/add}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Membre</label>
+        <select id="creditMemberId" name="memberId" class="form-sel" required>
+          <option value="">— Sélectionner —</option>
+          <option th:each="m : ${allMembers}" th:value="${m.id}" th:text="${m.displayName}+' ('+${m.printQuota - m.printUsed}+' cr. restants)'"></option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Pack</label>
+        <div class="type-grid">
+          <label th:each="pack : ${printPacks}" class="type-card">
+            <input type="radio" name="packType" th:value="${pack.name()}" style="display:none;" th:required="true">
+            <div style="font-weight:700;font-size:13px;" th:text="${pack.credits}+' cr.'"></div>
+            <div style="font-size:11px;color:var(--t3);">Fr. <span th:text="${#numbers.formatDecimal(pack.priceChf,1,2)}"></span></div>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-credits')">Annuler</button>
+        <button type="submit" class="btn btn-g">Confirmer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

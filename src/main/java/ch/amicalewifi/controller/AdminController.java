@@ -13,14 +13,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.YearMonth;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -456,7 +454,18 @@ public class AdminController {
     }
 
     @GetMapping("/printer")
-    public String printer(@RequestParam(required = false) String month, Model model) {
+    public String printer(Model model) {
+        model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
+        model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
+        model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
+        model.addAttribute("allMembers",    memberService.getAll());
+        model.addAttribute("printerOnline", printerService.isOnline());
+        model.addAttribute("printerHost",   printerService.getHost());
+        return "admin/printer";
+    }
+
+    @GetMapping("/printer/billing")
+    public String printerBilling(@RequestParam(required = false) String month, Model model) {
         YearMonth ym = (month != null) ? YearMonth.parse(month) : YearMonth.now();
         LocalDateTime from = ym.atDay(1).atStartOfDay();
         LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
@@ -464,31 +473,12 @@ public class AdminController {
         List<PrinterJob> monthJobs = printerRepo
                 .findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
                         PrintJobStatus.COMPLETED, from, to);
-
-        // Agrégation par membre pour facturation
-        // clé: displayName, valeur: [pagesBW, pagesColor, totalCost]
-        record BillLine(String name, String email, int pagesBW, int pagesColor, BigDecimal total) {}
-        Map<String, BillLine> billing = new LinkedHashMap<>();
-        for (PrinterJob j : monthJobs) {
-            String key  = j.getMember() != null ? j.getMember().getId().toString() : "anon";
-            String name = j.getMember() != null ? j.getMember().getDisplayName() : "Anonyme";
-            String email = j.getMember() != null ? j.getMember().getEmail() : "—";
-            BillLine cur = billing.getOrDefault(key, new BillLine(name, email, 0, 0, BigDecimal.ZERO));
-            int bw    = cur.pagesBW()    + (j.isColor() ? 0 : j.getTotalPages());
-            int color = cur.pagesColor() + (j.isColor() ? j.getTotalPages() : 0);
-            billing.put(key, new BillLine(name, email, bw, color, cur.total().add(j.getTotalCost())));
-        }
-
         List<PackTransaction> packTxs = packTxRepo
                 .findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to);
-
         List<PrintCreditTransaction> creditTxs = printCreditTxRepo
                 .findByCreatedAtBetweenOrderByCreatedAtDesc(from, to);
 
-        model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
-        model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
         model.addAttribute("monthJobs",     monthJobs);
-        model.addAttribute("billingLines",  billing.values());
         model.addAttribute("packTxs",       packTxs);
         model.addAttribute("creditTxs",     creditTxs);
         model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
@@ -498,6 +488,6 @@ public class AdminController {
         model.addAttribute("nextMonth",     ym.plusMonths(1).toString());
         model.addAttribute("printerOnline", printerService.isOnline());
         model.addAttribute("printerHost",   printerService.getHost());
-        return "admin/printer";
+        return "admin/printer-billing";
     }
 }
