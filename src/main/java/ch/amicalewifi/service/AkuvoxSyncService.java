@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class AkuvoxSyncService {
 
     private final AccessEventRepository eventRepo;
     private final MemberRepository      memberRepo;
+    private final PresenceRepository    presenceRepo;
     private final ObjectMapper          objectMapper;
     private final RestTemplate          restTemplate;
 
@@ -78,11 +80,29 @@ public class AkuvoxSyncService {
                         .deniedReason(granted ? null : "akuvox_denied")
                         .build());
 
+                if (granted && member != null && member.getMembership() == MembershipType.PERMANENT) {
+                    autoPresencePermanent(member, date);
+                }
+
                 log.debug("Akuvox sync — {} {} ({})", occurredAt, name, badge);
             }
         } catch (Exception e) {
             log.warn("Akuvox sync failed: {}", e.getMessage());
         }
+    }
+
+    private void autoPresencePermanent(Member member, LocalDate date) {
+        if (presenceRepo.existsByMemberIdAndDateAndPresenceType(member.getId(), date, PresenceType.FULL_DAY)) return;
+        presenceRepo.save(Presence.builder()
+                .member(member)
+                .date(date)
+                .presenceType(PresenceType.FULL_DAY)
+                .status(PresenceStatus.ACTIVE)
+                .checkedInAt(date.atStartOfDay())
+                .unitsConsumed(BigDecimal.ZERO)
+                .unitaire(false)
+                .build());
+        log.debug("Présence auto permanent: {} le {}", member.getDisplayName(), date);
     }
 
     private String login() {

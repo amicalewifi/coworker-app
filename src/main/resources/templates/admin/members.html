@@ -18,6 +18,15 @@
 <div class="content">
   <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
 
+  <div th:if="${filter != null}" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+    <span th:switch="${filter}">
+      <span th:case="'present'" class="b b-g">Présents aujourd'hui</span>
+      <span th:case="'packs'"   class="b b-a">Packs actifs</span>
+      <span th:case="'permanent'" class="b" style="background:var(--pl,#ede9fe);color:var(--pd,#6d28d9);">Permanents</span>
+    </span>
+    <a th:href="@{/admin/members}" style="font-size:12px;color:var(--t3);">Voir tous →</a>
+  </div>
+
   <div class="card">
     <table class="table">
       <thead>

@@ -70,7 +70,9 @@ public class AdminController {
                             return hours;
                         })
                 ));
-        model.addAttribute("stats",                  dashboardService.getStats());
+        DashboardService.Stats stats = dashboardService.getStats();
+
+        model.addAttribute("stats",                  stats);
         model.addAttribute("todayDate",              LocalDate.now());
         model.addAttribute("presences",              memberService.getToday());
         model.addAttribute("allMembers",             memberService.getAll());
@@ -83,8 +85,22 @@ public class AdminController {
     }
 
     @GetMapping("/members")
-    public String members(Model model) {
-        model.addAttribute("members",       memberService.getAllIncludingInactive());
+    public String members(@RequestParam(required = false) String filter, Model model) {
+        List<Member> members;
+        if ("present".equals(filter)) {
+            members = memberService.getToday().stream()
+                    .map(p -> p.getMember()).distinct().collect(Collectors.toList());
+        } else if ("packs".equals(filter)) {
+            members = memberService.getAll().stream()
+                    .filter(m -> m.getMembership().name().startsWith("PACK_"))
+                    .collect(Collectors.toList());
+        } else if ("permanent".equals(filter)) {
+            members = memberRepo.findByMembershipAndActiveTrue(MembershipType.PERMANENT);
+        } else {
+            members = memberService.getAllIncludingInactive();
+        }
+        model.addAttribute("members",       members);
+        model.addAttribute("filter",        filter);
         model.addAttribute("alerts",        memberService.getPackAlerts());
         model.addAttribute("memberships",   MembershipType.values());
         model.addAttribute("presenceTypes", PresenceType.values());
