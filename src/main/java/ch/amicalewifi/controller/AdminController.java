@@ -454,11 +454,20 @@ public class AdminController {
     }
 
     @GetMapping("/printer")
-    public String printer(Model model) {
+    public String printer(@RequestParam(required = false) String month, Model model) {
+        YearMonth ym = (month != null) ? YearMonth.parse(month) : YearMonth.now();
+        LocalDateTime from = ym.atDay(1).atStartOfDay();
+        LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
+
         model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
         model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
+        model.addAttribute("monthJobs",     printerRepo.findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(PrintJobStatus.COMPLETED, from, to));
+        model.addAttribute("creditTxs",     printCreditTxRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(from, to));
         model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
         model.addAttribute("allMembers",    memberService.getAll());
+        model.addAttribute("billingMonth",  ym);
+        model.addAttribute("prevMonth",     ym.minusMonths(1).toString());
+        model.addAttribute("nextMonth",     ym.plusMonths(1).toString());
         model.addAttribute("printerOnline", printerService.isOnline());
         model.addAttribute("printerHost",   printerService.getHost());
         return "admin/printer";
@@ -470,24 +479,10 @@ public class AdminController {
         LocalDateTime from = ym.atDay(1).atStartOfDay();
         LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
 
-        List<PrinterJob> monthJobs = printerRepo
-                .findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
-                        PrintJobStatus.COMPLETED, from, to);
-        List<PackTransaction> packTxs = packTxRepo
-                .findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to);
-        List<PrintCreditTransaction> creditTxs = printCreditTxRepo
-                .findByCreatedAtBetweenOrderByCreatedAtDesc(from, to);
-
-        model.addAttribute("monthJobs",     monthJobs);
-        model.addAttribute("packTxs",       packTxs);
-        model.addAttribute("creditTxs",     creditTxs);
-        model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
-        model.addAttribute("allMembers",    memberService.getAll());
-        model.addAttribute("billingMonth",  ym);
-        model.addAttribute("prevMonth",     ym.minusMonths(1).toString());
-        model.addAttribute("nextMonth",     ym.plusMonths(1).toString());
-        model.addAttribute("printerOnline", printerService.isOnline());
-        model.addAttribute("printerHost",   printerService.getHost());
+        model.addAttribute("packTxs",      packTxRepo.findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to));
+        model.addAttribute("billingMonth", ym);
+        model.addAttribute("prevMonth",    ym.minusMonths(1).toString());
+        model.addAttribute("nextMonth",    ym.plusMonths(1).toString());
         return "admin/printer-billing";
     }
 }
