@@ -5,29 +5,98 @@
 <body>
 <th:block th:fragment="content">
 <div class="topbar">
-  <div>
-    <div class="topbar-title" th:text="${member.displayName}">Membre</div>
-    <div class="topbar-sub" th:text="${member.email}+' · '+${member.membership.label}"></div>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <a th:href="@{/admin/members}" style="display:flex;align-items:center;color:var(--t3);text-decoration:none;font-size:13px;gap:4px;" title="Retour à la liste">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 4L6 8l4 4"/></svg>
+    </a>
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="topbar-title" th:text="${member.displayName}">Membre</div>
+        <span th:if="${member.active}"  class="b b-g"  style="font-size:11px;">Actif</span>
+        <span th:unless="${member.active}" class="b b-r" style="font-size:11px;">Inactif</span>
+      </div>
+      <div class="topbar-sub" th:text="${member.email}+' · '+${member.membership.label}"></div>
+    </div>
   </div>
   <div class="topbar-r">
-    <a th:href="@{/admin/members}" class="btn btn-sm">← Retour</a>
+    <!-- Modifier -->
+    <button class="btn btn-sm" onclick="openModal('m-edit')">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>
+      Modifier
+    </button>
+
+    <!-- Renouveler pack -->
+    <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 8A6 6 0 1 1 8 2"/><path d="M14 2v4h-4"/></svg>
+      Renouveler
+    </button>
+
+    <!-- Activer / Désactiver -->
     <form th:if="${member.active}" th:action="@{/admin/members/{id}/deactivate(id=${member.id})}" method="post" style="display:inline;">
-      <button type="submit" class="btn btn-sm btn-r">Désactiver</button>
+      <button type="submit" class="btn btn-sm btn-r">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="8" cy="8" r="6"/><path d="M6 6h.01M10 6h.01M5.5 10.5s1 1.5 2.5 1.5 2.5-1.5 2.5-1.5"/><line x1="2" y1="2" x2="14" y2="14"/></svg>
+        Désactiver
+      </button>
     </form>
     <form th:unless="${member.active}" th:action="@{/admin/members/{id}/activate(id=${member.id})}" method="post" style="display:inline;">
-      <button type="submit" class="btn btn-sm btn-g">Réactiver</button>
+      <button type="submit" class="btn btn-sm btn-g">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="8" cy="8" r="6"/><path d="M6 6.5s.8-1 2-1 2 1 2 1M5.5 10.5s1 1.5 2.5 1.5 2.5-1.5 2.5-1.5"/></svg>
+        Réactiver
+      </button>
     </form>
-    <button class="btn btn-sm" onclick="openModal('m-edit')">Modifier</button>
-    <form th:if="${member.user == null}" th:action="@{/admin/members/{id}/create-account(id=${member.id})}" method="post" style="display:inline;">
-      <button type="submit" class="btn btn-g btn-sm">Créer un compte</button>
-    </form>
-    <button th:if="${member.user != null}" class="btn btn-sm" onclick="openModal('m-reset-pw')">Reset MDP</button>
-    <button th:if="${member.user != null}" class="btn btn-sm btn-r" onclick="openModal('m-unlink')">Désassocier compte</button>
-    <button class="btn btn-r btn-sm" onclick="openModal('m-delete')">Supprimer</button>
-    <button class="btn btn-o btn-sm" onclick="openModal('m-renew')">Renouveler pack</button>
-    <a th:href="@{/qr/venue}" class="btn btn-sm" target="_blank">QR d'entrée</a>
+
+    <!-- Dropdown "Plus" -->
+    <div class="act-menu" id="act-menu">
+      <button class="btn btn-sm" onclick="toggleActMenu()" id="act-trigger">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+        Plus
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg>
+      </button>
+      <div class="act-dropdown">
+        <div class="act-group-lbl">Compte</div>
+        <form th:if="${member.user == null}" th:action="@{/admin/members/{id}/create-account(id=${member.id})}" method="post">
+          <button type="submit" class="act-item">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5"/><path d="M11 9v6M8 12h6"/></svg>
+            Créer un compte
+          </button>
+        </form>
+        <button th:if="${member.user != null}" class="act-item" onclick="closeActMenu();openModal('m-reset-pw')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/><circle cx="8" cy="11" r="1" fill="currentColor" stroke="none"/></svg>
+          Réinitialiser le MDP
+        </button>
+        <button th:if="${member.user != null}" class="act-item" onclick="closeActMenu();openModal('m-unlink')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8a2 2 0 002 2h2a2 2 0 000-4H8M10 8a2 2 0 01-2-2H6a2 2 0 000 4h2"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
+          Désassocier compte
+        </button>
+        <div class="act-sep"></div>
+        <div class="act-group-lbl">Accès</div>
+        <a th:href="@{/qr/venue}" target="_blank" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="10" y="1" width="5" height="5" rx="1"/><rect x="1" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/></svg>
+          QR d'entrée ↗
+        </a>
+        <div class="act-sep"></div>
+        <div class="act-group-lbl">Zone dangereuse</div>
+        <button class="act-item act-item-r" onclick="closeActMenu();openModal('m-delete')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
+          Supprimer le membre
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+function toggleActMenu() {
+  document.getElementById('act-menu').classList.toggle('open');
+}
+function closeActMenu() {
+  document.getElementById('act-menu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('act-menu');
+  if (m && !m.contains(e.target)) m.classList.remove('open');
+});
+</script>
 <div class="content">
   <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
   <div th:if="${error}" class="flash flash-err">✕ <span th:text="${error}"></span></div>

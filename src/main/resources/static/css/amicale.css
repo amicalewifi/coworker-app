@@ -516,6 +516,52 @@ a:hover { color: var(--green-m); }
 .btn-sm { padding: 6px 13px; font-size: 13px; }
 .btn-full { width: 100%; justify-content: center; padding: 13px; font-size: 15px; }
 
+/* ── Action menu dropdown ───────────────────────────── */
+.act-menu { position: relative; display: inline-block; }
+.act-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--surf);
+  border: 1px solid var(--bdr-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  min-width: 210px;
+  z-index: 200;
+  overflow: hidden;
+  animation: dropIn .14s ease;
+}
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+.act-menu.open .act-dropdown { display: block; }
+.act-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 15px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font);
+  text-decoration: none;
+  letter-spacing: -.1px;
+  transition: background .12s;
+  white-space: nowrap;
+}
+.act-item:hover { background: var(--bg); color: var(--text); }
+.act-item-r { color: var(--red); }
+.act-item-r:hover { background: var(--red-l); color: var(--red); }
+.act-sep { height: 1px; background: var(--bdr); margin: 4px 8px; }
+.act-group-lbl { padding: 6px 15px 3px; font-size: 11px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+
 /* ── Pack bar ────────────────────────────────────────── */
 
 .pack-bar {

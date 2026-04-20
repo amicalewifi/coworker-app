@@ -356,8 +356,12 @@ public class AdminController {
 
     @PostMapping("/presences/{id}/checkout")
     public String checkout(@PathVariable UUID id, RedirectAttributes ra) {
-        memberService.checkout(id);
-        ra.addFlashAttribute("success", "Départ enregistré");
+        try {
+            memberService.checkout(id);
+            ra.addFlashAttribute("success", "Départ enregistré");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/admin/";
     }
 

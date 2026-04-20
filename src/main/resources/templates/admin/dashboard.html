@@ -97,12 +97,13 @@
               </span>
             </td>
             <td style="text-align:center;">
-              <form th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
+              <form th:if="${!p.member.permanent}" th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
                 <label class="sw" title="Cliquer pour enregistrer le départ">
                   <input type="checkbox" checked onchange="this.closest('form').submit()">
                   <span class="sw-k"></span>
                 </label>
               </form>
+              <span th:if="${p.member.permanent}" title="Membre permanent — présent toute la journée" style="color:var(--t3);font-size:18px;">∞</span>
             </td>
           </tr>
           <tr th:if="${#lists.isEmpty(presences)}">
