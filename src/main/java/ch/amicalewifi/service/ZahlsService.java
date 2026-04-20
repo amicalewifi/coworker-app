@@ -72,8 +72,8 @@ public class ZahlsService {
             params.put("vatRate",              "0");
 
             String signature = buildSignature(params);
-            log.info("Zahls signature input: {}", buildQueryString(new TreeMap<>(params)));
-            log.info("Zahls signature: {}", signature);
+            log.warn("Zahls signature input: {}", buildQueryString(new TreeMap<>(params)));
+            log.warn("Zahls signature: {}", signature);
             params.put("ApiSignature", signature);
 
             HttpHeaders headers = new HttpHeaders();
@@ -116,11 +116,15 @@ public class ZahlsService {
         StringBuilder qs = new StringBuilder();
         for (Map.Entry<String, String> e : sorted.entrySet()) {
             if (qs.length() > 0) qs.append("&");
-            qs.append(java.net.URLEncoder.encode(e.getKey(),   StandardCharsets.UTF_8))
+            qs.append(rfc3986Encode(e.getKey()))
               .append("=")
-              .append(java.net.URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8));
+              .append(rfc3986Encode(e.getValue()));
         }
         return qs.toString();
+    }
+
+    private static String rfc3986Encode(String s) {
+        return java.net.URLEncoder.encode(s, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     private String buildSignature(Map<String, String> params) throws Exception {

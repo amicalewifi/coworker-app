@@ -100,10 +100,19 @@ public class ScanService {
             return new ScanResult.Denied("pack_exhausted", member);
         }
 
+        boolean alreadyCheckedIn = presenceRepo.findByMemberIdAndDateAndPresenceType(
+                member.getId(), LocalDate.now(), presenceType).isPresent();
+
         Presence p = savePresence(member, presenceType);
-        member.setPackUnitsUsed(member.getPackUnitsUsed().add(needed));
-        Member updated = memberRepo.save(member);
-        saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, needed, null);
+
+        Member updated;
+        if (alreadyCheckedIn) {
+            updated = member;
+        } else {
+            member.setPackUnitsUsed(member.getPackUnitsUsed().add(needed));
+            updated = memberRepo.save(member);
+        }
+        saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, alreadyCheckedIn ? BigDecimal.ZERO : needed, null);
 
         return new ScanResult.Granted(updated, p, updated.getPackUnitsRemaining(), updated.getHalfDaysRemaining());
     }

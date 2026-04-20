@@ -93,6 +93,11 @@ public class MemberService {
     public Presence manualEntry(UUID memberId, PresenceType type, boolean unitaire) {
         Member m = getById(memberId);
         PresenceType effective = unitaire ? type.toUnitaire() : type;
+        boolean alreadyPresent = presenceRepo.findByMemberIdAndDateAndPresenceType(
+                m.getId(), LocalDate.now(), effective).isPresent();
+        if (alreadyPresent) {
+            return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), LocalDate.now(), effective).orElseThrow();
+        }
         BigDecimal units = m.isPermanent() ? BigDecimal.ZERO : effective.getUnits();
         Presence presence = presenceRepo.save(Presence.builder()
                 .member(m)
@@ -103,12 +108,16 @@ public class MemberService {
                 .unitsConsumed(units)
                 .unitaire(unitaire || effective.isUnitaire())
                 .build());
+        if (!m.isPermanent()) {
+            m.setPackUnitsUsed(m.getPackUnitsUsed().add(units));
+            memberRepo.save(m);
+        }
         eventRepo.save(AccessEvent.builder()
                 .member(m)
                 .badgeUid("manual")
                 .eventType(AccessEventType.ENTRY_GRANTED)
                 .presenceType(effective)
-                .unitsConsumed(effective.getUnits())
+                .unitsConsumed(units)
                 .terminalId("admin")
                 .build());
         return presence;
