@@ -117,6 +117,9 @@ public class MemberService {
     public Presence checkout(UUID presenceId) {
         Presence p = presenceRepo.findById(presenceId)
                 .orElseThrow(() -> new java.util.NoSuchElementException("Présence introuvable: " + presenceId));
+        if (p.getMember().isPermanent()) {
+            throw new IllegalStateException("Les membres permanents restent présents toute la journée.");
+        }
         p.setStatus(PresenceStatus.COMPLETED);
         p.setCheckedOutAt(LocalDateTime.now());
         return presenceRepo.save(p);
