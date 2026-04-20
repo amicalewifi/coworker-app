@@ -58,6 +58,11 @@
       </a>
 
       <div class="nav-sec">Terminaux</div>
+      <a th:href="@{/admin/qr/print}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/qr')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="10" y="1" width="5" height="5" rx="1"/><rect x="1" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/></svg>
+        QR d'entrée
+      </a>
       <a th:href="@{/borne/}" class="nav-item" target="_blank">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="9" rx="2"/><path d="M5 4V3a3 3 0 016 0v1"/><circle cx="8" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg>
         Borne d'accueil ↗
