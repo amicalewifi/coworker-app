@@ -726,3 +726,11 @@ tr.inactive-row:hover td { opacity: .72; background: var(--bg); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bdr-2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--t3); }
+
+/* ── Toggle switch ───────────────────────────────────── */
+.sw { display:inline-block; position:relative; width:44px; height:24px; cursor:pointer; vertical-align:middle; }
+.sw input { opacity:0; width:0; height:0; position:absolute; }
+.sw-k { position:absolute; inset:0; background:var(--green); border-radius:12px; transition:.25s; }
+.sw-k::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.25s; transform:translateX(20px); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.sw input:not(:checked) + .sw-k { background:var(--t3); }
+.sw input:not(:checked) + .sw-k::before { transform:translateX(0); }

@@ -361,6 +361,14 @@ public class AdminController {
         return "redirect:/admin/";
     }
 
+    @PostMapping("/presences/permanent-checkin/{memberId}")
+    public String permanentCheckin(@PathVariable UUID memberId, RedirectAttributes ra) {
+        Member m = memberService.getById(memberId);
+        memberService.permanentCheckin(memberId);
+        ra.addFlashAttribute("success", m.getDisplayName() + " enregistré comme présent aujourd'hui");
+        return "redirect:/admin/";
+    }
+
     @GetMapping("/rooms")
     public String rooms(@RequestParam(required = false)
                         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
@@ -479,10 +487,19 @@ public class AdminController {
         LocalDateTime from = ym.atDay(1).atStartOfDay();
         LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
 
-        model.addAttribute("packTxs",      packTxRepo.findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to));
-        model.addAttribute("billingMonth", ym);
-        model.addAttribute("prevMonth",    ym.minusMonths(1).toString());
-        model.addAttribute("nextMonth",    ym.plusMonths(1).toString());
+        var packTxs      = packTxRepo.findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(from, to);
+        var printCreditTxs = printCreditTxRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(from, to);
+        java.math.BigDecimal packTotal  = packTxs.stream().map(t -> t.getAmountChf()).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        java.math.BigDecimal printTotal = printCreditTxs.stream().map(t -> t.getAmountChf()).reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+        model.addAttribute("packTxs",        packTxs);
+        model.addAttribute("printCreditTxs", printCreditTxs);
+        model.addAttribute("packTotal",      packTotal);
+        model.addAttribute("printTotal",     printTotal);
+        model.addAttribute("grandTotal",     packTotal.add(printTotal));
+        model.addAttribute("billingMonth",   ym);
+        model.addAttribute("prevMonth",      ym.minusMonths(1).toString());
+        model.addAttribute("nextMonth",      ym.plusMonths(1).toString());
         return "admin/printer-billing";
     }
 }

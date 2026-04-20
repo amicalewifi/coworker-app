@@ -25,4 +25,7 @@ public interface PresenceRepository extends JpaRepository<Presence, UUID> {
 
     @Query("SELECT COUNT(p) FROM Presence p WHERE p.date = :date AND p.status = 'ACTIVE'")
     long countTodayActive(@Param("date") LocalDate date);
+
+    @Query("SELECT p FROM Presence p JOIN FETCH p.member WHERE p.date < :today AND p.status = 'ACTIVE'")
+    List<Presence> findActiveBeforeDate(@Param("today") LocalDate today);
 }

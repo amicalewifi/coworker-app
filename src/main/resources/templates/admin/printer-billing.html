@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
-<head><title>Packs — l'Amicale du WiFi</title></head>
+<head><title>Revenus — l'Amicale du WiFi</title></head>
 <body>
 <th:block th:fragment="content">
 <div class="topbar">
   <div>
-    <div class="topbar-title">Packs</div>
+    <div class="topbar-title">Revenus</div>
     <div class="topbar-sub" style="text-transform:capitalize;" th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></div>
   </div>
   <div class="topbar-r">
@@ -20,10 +20,30 @@
 
   <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
 
+  <!-- Totaux -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-lbl">Total packs membres</div>
+      <div class="stat-val" style="font-size:24px;" th:text="'Fr. '+${#numbers.formatDecimal(packTotal,1,2)}"></div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--green)"></span><span th:text="${#lists.size(packTxs)}+' transaction(s)'"</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Total packs impression</div>
+      <div class="stat-val" style="font-size:24px;" th:text="'Fr. '+${#numbers.formatDecimal(printTotal,1,2)}"></div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--blue)"></span><span th:text="${#lists.size(printCreditTxs)}+' transaction(s)'"</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Total du mois</div>
+      <div class="stat-val" style="font-size:24px;" th:text="'Fr. '+${#numbers.formatDecimal(grandTotal,1,2)}"></div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--green-m)"></span>Toutes catégories</div>
+    </div>
+  </div>
+
+  <!-- Packs membres -->
   <div class="card">
     <div class="card-hdr">
-      <span class="card-ttl">Packs vendus</span>
-      <span class="b b-g" th:text="${#lists.size(packTxs)}+' transaction(s)'"></span>
+      <span class="card-ttl">Packs membres</span>
+      <span class="b b-g" th:text="'Fr. '+${#numbers.formatDecimal(packTotal,1,2)}"></span>
     </div>
     <table class="table">
       <thead>
@@ -40,12 +60,12 @@
           <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
               th:text="${#temporals.format(tx.createdAt,'d MMM yyyy')}"></td>
           <td>
-            <div style="font-weight:600;" th:text="${tx.member.displayName}"></div>
+            <a th:href="@{/admin/members/{id}(id=${tx.member.id})}" style="font-weight:600;" th:text="${tx.member.displayName}"></a>
             <div style="font-size:11px;color:var(--t3);" th:text="${tx.member.email}"></div>
           </td>
           <td th:text="${tx.membership.label.split(' — ')[0]}"></td>
           <td>
-            <span th:if="${tx.kind == 'create'}" class="b b-g" style="font-size:10px;">Nouveau</span>
+            <span th:if="${tx.kind == 'create'}"  class="b b-g"  style="font-size:10px;">Nouveau</span>
             <span th:unless="${tx.kind == 'create'}" class="b b-o" style="font-size:10px;">Renouvellement</span>
           </td>
           <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green-d);"
@@ -57,9 +77,50 @@
       </tbody>
       <tfoot th:unless="${#lists.isEmpty(packTxs)}">
         <tr style="background:var(--surf-2);">
-          <td colspan="4" style="font-weight:700;padding:13px 18px;">Total</td>
+          <td colspan="4" style="font-weight:700;padding:13px 18px;">Total packs membres</td>
           <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);padding:13px 18px;"
-              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(packTxs.![amountChf]),1,2)}"></td>
+              th:text="'Fr. '+${#numbers.formatDecimal(packTotal,1,2)}"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Packs impression -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-ttl">Packs impression</span>
+      <span class="b b-a" th:text="'Fr. '+${#numbers.formatDecimal(printTotal,1,2)}"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Membre</th>
+          <th>Pack</th>
+          <th style="text-align:right;">Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="tx : ${printCreditTxs}">
+          <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
+              th:text="${#temporals.format(tx.createdAt,'d MMM yyyy')}"></td>
+          <td>
+            <a th:href="@{/admin/members/{id}(id=${tx.member.id})}" style="font-weight:600;" th:text="${tx.member.displayName}"></a>
+            <div style="font-size:11px;color:var(--t3);" th:text="${tx.member.email}"></div>
+          </td>
+          <td style="font-size:12px;color:var(--t2);" th:text="${tx.packType.label}"></td>
+          <td style="text-align:right;font-weight:800;font-size:15px;color:var(--green-d);"
+              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(printCreditTxs)}">
+          <td colspan="4" style="text-align:center;color:var(--t3);padding:24px;">Aucun pack impression vendu ce mois</td>
+        </tr>
+      </tbody>
+      <tfoot th:unless="${#lists.isEmpty(printCreditTxs)}">
+        <tr style="background:var(--surf-2);">
+          <td colspan="3" style="font-weight:700;padding:13px 18px;">Total packs impression</td>
+          <td style="text-align:right;font-size:16px;font-weight:900;color:var(--green-d);padding:13px 18px;"
+              th:text="'Fr. '+${#numbers.formatDecimal(printTotal,1,2)}"></td>
         </tr>
       </tfoot>
     </table>

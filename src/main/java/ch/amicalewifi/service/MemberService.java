@@ -76,16 +76,31 @@ public class MemberService {
         return saved;
     }
 
+    public Presence permanentCheckin(UUID memberId) {
+        Member m = getById(memberId);
+        LocalDate today = LocalDate.now();
+        if (presenceRepo.existsByMemberIdAndDateAndPresenceType(m.getId(), today, PresenceType.FULL_DAY)) {
+            return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), today, PresenceType.FULL_DAY).orElseThrow();
+        }
+        Presence p = presenceRepo.save(Presence.builder()
+                .member(m).date(today).presenceType(PresenceType.FULL_DAY)
+                .status(PresenceStatus.ACTIVE).checkedInAt(today.atStartOfDay())
+                .unitsConsumed(BigDecimal.ZERO).unitaire(false).build());
+        log.info("Check-in permanent manuel: {} le {}", m.getDisplayName(), today);
+        return p;
+    }
+
     public Presence manualEntry(UUID memberId, PresenceType type, boolean unitaire) {
         Member m = getById(memberId);
         PresenceType effective = unitaire ? type.toUnitaire() : type;
+        BigDecimal units = m.isPermanent() ? BigDecimal.ZERO : effective.getUnits();
         Presence presence = presenceRepo.save(Presence.builder()
                 .member(m)
                 .date(LocalDate.now())
                 .presenceType(effective)
                 .status(PresenceStatus.ACTIVE)
                 .checkedInAt(LocalDateTime.now())
-                .unitsConsumed(effective.getUnits())
+                .unitsConsumed(units)
                 .unitaire(unitaire || effective.isUnitaire())
                 .build());
         eventRepo.save(AccessEvent.builder()

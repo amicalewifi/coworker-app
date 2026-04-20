@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.math.BigDecimal;
 
@@ -88,6 +89,19 @@ public class AkuvoxSyncService {
             }
         } catch (Exception e) {
             log.warn("Akuvox sync failed: {}", e.getMessage());
+        }
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void autoCheckoutPreviousDays() {
+        LocalDate today = LocalDate.now();
+        List<Presence> stale = presenceRepo.findActiveBeforeDate(today);
+        for (Presence p : stale) {
+            p.setStatus(PresenceStatus.COMPLETED);
+            p.setCheckedOutAt(p.getDate().atTime(23, 59, 59));
+            presenceRepo.save(p);
+            log.info("Auto-checkout minuit: {} le {}", p.getMember().getDisplayName(), p.getDate());
         }
     }
 

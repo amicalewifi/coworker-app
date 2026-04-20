@@ -56,6 +56,11 @@
       <div class="stat-val" th:text="${stats.permanentMembers}">0</div>
       <div class="stat-meta"><span class="sdot" style="background:var(--purple)"></span>Accès 24/7</div>
     </a>
+    <a th:href="@{/admin/printer/billing}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
+      <div class="stat-lbl">Revenus du mois</div>
+      <div class="stat-val" style="font-size:22px;" th:text="'Fr. '+${#numbers.formatDecimal(stats.monthlyTotal,1,2)}">Fr. 0.00</div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--green-m)"></span>Voir le détail →</div>
+    </a>
   </div>
 
   <!-- Présences actives -->
@@ -91,9 +96,12 @@
                 <span th:unless="${p.presenceType.name()=='FULL_DAY'}"     class="cons cons-half">−0.5j</span>
               </span>
             </td>
-            <td>
+            <td style="text-align:center;">
               <form th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
-                <button class="btn btn-sm">Départ</button>
+                <label class="sw" title="Cliquer pour enregistrer le départ">
+                  <input type="checkbox" checked onchange="this.closest('form').submit()">
+                  <span class="sw-k"></span>
+                </label>
               </form>
             </td>
           </tr>
@@ -184,70 +192,6 @@
                     th:attr="data-mid='m-renew-'+${m.id}"
                     onclick="openModal(this.dataset.mid)">Renouveler</button>
           </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Revenus du mois -->
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-ttl">Revenus — <span th:text="${#temporals.format(todayDate,'MMMM yyyy',#locale)}"></span></span>
-      <span class="b b-g" th:text="'Fr. '+${#numbers.formatDecimal(stats.monthlyTotal,1,2)}"></span>
-    </div>
-    <div th:if="${#lists.isEmpty(stats.monthlyTransactions)}"
-         style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">
-      Aucun paiement ce mois
-    </div>
-    <table class="table" th:unless="${#lists.isEmpty(stats.monthlyTransactions)}">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Membre</th>
-          <th>Formule</th>
-          <th style="text-align:right;">Montant</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr th:each="tx : ${stats.monthlyTransactions}">
-          <td style="color:var(--t3);white-space:nowrap;"
-              th:text="${#temporals.format(tx.createdAt,'d MMM')}"></td>
-          <td>
-            <a th:href="@{/admin/members/{id}(id=${tx.member.id})}"
-               th:text="${tx.member.displayName}"
-               style="font-weight:600;"></a>
-          </td>
-          <td style="font-size:12px;color:var(--t2);"
-              th:text="${#strings.substringBefore(tx.membership.label,' —')}"></td>
-          <td style="text-align:right;font-weight:700;color:var(--gd);"
-              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
-        </tr>
-      </tbody>
-      <tfoot>
-        <tr style="border-top:2px solid var(--bdr);">
-          <td colspan="3" style="font-weight:700;padding-top:8px;">Total</td>
-          <td style="text-align:right;font-weight:800;font-size:15px;color:var(--gd);padding-top:8px;"
-              th:text="'Fr. '+${#numbers.formatDecimal(stats.monthlyTotal,1,2)}"></td>
-        </tr>
-      </tfoot>
-    </table>
-    <div th:unless="${#lists.isEmpty(stats.monthlyPrintTransactions)}"
-         style="border-top:1px solid var(--bdr);padding:12px 16px 4px;">
-      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--t3);letter-spacing:.05em;margin-bottom:6px;">Packs impression</div>
-    </div>
-    <table class="table" th:unless="${#lists.isEmpty(stats.monthlyPrintTransactions)}">
-      <tbody>
-        <tr th:each="tx : ${stats.monthlyPrintTransactions}">
-          <td style="color:var(--t3);white-space:nowrap;"
-              th:text="${#temporals.format(tx.createdAt,'d MMM')}"></td>
-          <td>
-            <a th:href="@{/admin/members/{id}(id=${tx.member.id})}"
-               th:text="${tx.member.displayName}"
-               style="font-weight:600;"></a>
-          </td>
-          <td style="font-size:12px;color:var(--t2);" th:text="${tx.packType.label}"></td>
-          <td style="text-align:right;font-weight:700;color:var(--gd);"
-              th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
         </tr>
       </tbody>
     </table>
