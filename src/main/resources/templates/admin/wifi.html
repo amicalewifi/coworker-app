@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>WiFi — l'Amicale du WiFi</title></head>
+<body>
+<th:block th:fragment="content">
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Réseau WiFi</div>
+    <div class="topbar-sub" th:text="${stats.siteName ?: 'UniFi'} + ' · ' + ${#lists.size(clients)} + ' appareil(s) connecté(s)'">UniFi</div>
+  </div>
+  <div class="topbar-r">
+    <span th:if="${!#lists.isEmpty(clients)}" class="b b-g" th:text="${#lists.size(clients)} + ' en ligne'"></span>
+    <a href="/admin/wifi" class="btn btn-sm">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 8A6 6 0 1 1 8 2"/><path d="M14 2v4h-4"/></svg>
+      Actualiser
+    </a>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Stats -->
+  <div th:unless="${stats.isEmpty()}" class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+    <div class="stat">
+      <div class="stat-lbl">Clients WiFi</div>
+      <div class="stat-val" th:text="${stats.wifiClient}">0</div>
+      <div class="stat-meta">
+        <span class="sdot" style="background:var(--green)"></span>
+        <span th:text="${stats.guestClient} + ' invité(s)'"></span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Appareils réseau</div>
+      <div class="stat-val" th:text="${stats.totalDevice}">0</div>
+      <div class="stat-meta">
+        <span class="sdot" th:style="${stats.offlineDevice > 0} ? 'background:var(--red)' : 'background:var(--green)'"></span>
+        <span th:text="${stats.wifiDevice} + ' APs · ' + ${stats.offlineDevice} + ' hors ligne'"></span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Détails clients</div>
+      <div class="stat-val" th:text="${#lists.size(clients)}">0</div>
+      <div class="stat-meta">
+        <span class="sdot" th:style="${#lists.isEmpty(clients)} ? 'background:var(--orange)' : 'background:var(--green)'"></span>
+        <span th:text="${#lists.isEmpty(clients)} ? 'API locale non joignable' : 'via contrôleur local'"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste clients -->
+  <div th:if="${!#lists.isEmpty(clients)}" class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Appareil</th>
+          <th>IP</th>
+          <th>MAC</th>
+          <th>Réseau</th>
+          <th>Signal</th>
+          <th>Connecté depuis</th>
+          <th>Trafic</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="c : ${clients}">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av" style="background:var(--gl);color:var(--gd);font-size:11px;"
+                   th:text="${c.is_guest != null and c.is_guest} ? 'G' : 'W'"></div>
+              <div>
+                <div style="font-weight:600;font-size:13px;" th:text="${c.hostname ?: (c.name ?: 'Inconnu')}">—</div>
+                <div style="font-size:11px;color:var(--t3);" th:text="${c.oui ?: ''}"></div>
+              </div>
+            </div>
+          </td>
+          <td><code style="font-size:12px;" th:text="${c.ip ?: '—'}">—</code></td>
+          <td><code style="font-size:11px;color:var(--t3);" th:text="${c.mac ?: '—'}">—</code></td>
+          <td>
+            <span th:if="${c.essid != null}" class="b"
+                  th:classappend="${c.is_guest != null and c.is_guest} ? 'b-o' : 'b-g'"
+                  th:text="${c.essid}">—</span>
+            <span th:unless="${c.essid != null}" style="color:var(--t3);">—</span>
+          </td>
+          <td>
+            <span th:if="${c.signal != null}"
+                  th:style="${c.signal >= -60} ? 'color:var(--green);font-weight:600' : (${c.signal} >= -75 ? 'color:var(--orange);font-weight:600' : 'color:var(--red);font-weight:600')"
+                  th:text="${c.signal} + ' dBm'">—</span>
+            <span th:unless="${c.signal != null}" style="color:var(--t3);">—</span>
+          </td>
+          <td style="color:var(--t3);font-size:13px;"
+              th:text="${c.uptime != null} ? ${#numbers.formatInteger(c.uptime / 60, 1)} + ' min' : '—'">—</td>
+          <td style="font-size:12px;color:var(--t3);">
+            <span th:if="${c.tx_bytes != null}">
+              ↑ <span th:text="${#numbers.formatInteger(c.tx_bytes / 1024, 1)} + ' KB'"></span>
+              · ↓ <span th:text="${#numbers.formatInteger(c.rx_bytes / 1024, 1)} + ' KB'"></span>
+            </span>
+            <span th:unless="${c.tx_bytes != null}">—</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div th:if="${#lists.isEmpty(clients)}" class="card" style="padding:24px;color:var(--t3);font-size:13px;display:flex;align-items:center;gap:10px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="currentColor" stroke="none"/></svg>
+    Détails clients non disponibles — le contrôleur local (192.168.1.107) n'est pas joignable via l'API.
+  </div>
+
+</div>
+</th:block>
+</body>
+</html>

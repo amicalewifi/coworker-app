@@ -2,10 +2,13 @@ spring:
   application:
     name: amicale-wifi
 
+  config:
+    import: optional:application-local.yml
+
   datasource:
     url:               jdbc:postgresql://localhost:5432/amicale_wifi
     username:          amicale
-    password:          amicale2024
+    password:          CHANGE_ME
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -75,21 +78,21 @@ amicale:
     qr-token: amicale-fully-2024  # Token du QR code affiché dans le coworking
 
   akuvox:
-    api-key:      4f3b0f82-ad1c-4bc6-abbf-5c112e6bdb3e
+    api-key:      CHANGE_ME
     http-port:    80
     device-url:   http://192.168.1.102
     device-user:  user
-    device-pass:  d56c5aa6ad5a7afad95396cdb38dac7d  # MD5 de CWT-gre9uvg*rad7rkw
+    device-pass:  CHANGE_ME
 
   unifi:
-    api-key:  OO-GyiG06ULRYhrLT39ZCVb2ZV0D_E-7
+    api-key:  CHANGE_ME
     site:     default
     base-url: https://api.ui.com/proxy/network
     voucher-expire-minutes: 600   # 10 heures
 
   zahls:
-    instance:    VOTRE_INSTANCE           # ex: "amicale" si votre URL est amicale.zahls.ch
-    api-key:     VOTRE_CLE_API            # backend zahls.ch > API & Intégrations
+    instance:    CHANGE_ME
+    api-key:     CHANGE_ME
     base-url:    https://api.zahls.ch/v1.14
     success-url: http://localhost:8081/mobile/?renewed=ok
     cancel-url:  http://localhost:8081/mobile/

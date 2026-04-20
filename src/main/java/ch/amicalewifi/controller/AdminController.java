@@ -35,6 +35,7 @@ public class AdminController {
     private final DashboardService          dashboardService;
     private final MemberService             memberService;
     private final RoomService               roomService;
+    private final UnifiService              unifiService;
     private final RoomRepository            roomRepo;
     private final MemberRepository          memberRepo;
     private final UserRepository            userRepo;
@@ -508,6 +509,14 @@ public class AdminController {
         model.addAttribute("prevMonth",      ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",      ym.plusMonths(1).toString());
         return "admin/printer-billing";
+    }
+
+    @GetMapping("/wifi")
+    public String wifi(Model model) {
+        var clients = unifiService.getConnectedClients();
+        model.addAttribute("clients", clients);
+        model.addAttribute("stats",   unifiService.getSiteStats());
+        return "admin/wifi";
     }
 
     @GetMapping("/qr/print")

@@ -72,6 +72,8 @@ public class ZahlsService {
             params.put("vatRate",              "0");
 
             String signature = buildSignature(params);
+            log.info("Zahls signature input: {}", buildQueryString(new TreeMap<>(params)));
+            log.info("Zahls signature: {}", signature);
             params.put("ApiSignature", signature);
 
             HttpHeaders headers = new HttpHeaders();
@@ -106,33 +108,26 @@ public class ZahlsService {
     }
 
     /**
-     * Signe les paramètres selon la méthode Payrexx :
-     * base64(HMAC-SHA256(apiKey, phpSerialize(ksort(params))))
+     * Signe les paramètres selon le SDK officiel Payrexx :
+     * base64(HMAC-SHA256(apiKey, http_build_query(ksort(params))))
+     * http_build_query = query string URL-encodée (espaces → +, RFC 1738)
      */
-    private String buildSignature(Map<String, String> params) throws Exception {
-        // ksort = tri alphabétique (TreeMap garantit cet ordre)
-        TreeMap<String, String> sorted = new TreeMap<>(params);
-        String serialized = phpSerialize(sorted);
-
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(apiKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-        byte[] hash = mac.doFinal(serialized.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(hash);
+    private String buildQueryString(TreeMap<String, String> sorted) {
+        StringBuilder qs = new StringBuilder();
+        for (Map.Entry<String, String> e : sorted.entrySet()) {
+            if (qs.length() > 0) qs.append("&");
+            qs.append(java.net.URLEncoder.encode(e.getKey(),   StandardCharsets.UTF_8))
+              .append("=")
+              .append(java.net.URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8));
+        }
+        return qs.toString();
     }
 
-    /**
-     * Sérialise une map string→string au format PHP serialize().
-     * Exemple: ["a" => "1", "b" => "2"] → a:2:{s:1:"a";s:1:"1";s:1:"b";s:1:"2";}
-     */
-    private String phpSerialize(TreeMap<String, String> sorted) {
-        StringBuilder sb = new StringBuilder("a:").append(sorted.size()).append(":{");
-        for (Map.Entry<String, String> e : sorted.entrySet()) {
-            String k = e.getKey();
-            String v = e.getValue();
-            sb.append("s:").append(k.getBytes(StandardCharsets.UTF_8).length).append(":\"").append(k).append("\";");
-            sb.append("s:").append(v.getBytes(StandardCharsets.UTF_8).length).append(":\"").append(v).append("\";");
-        }
-        sb.append("}");
-        return sb.toString();
+    private String buildSignature(Map<String, String> params) throws Exception {
+        String qs = buildQueryString(new TreeMap<>(params));
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(apiKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+        byte[] hash = mac.doFinal(qs.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(hash);
     }
 }

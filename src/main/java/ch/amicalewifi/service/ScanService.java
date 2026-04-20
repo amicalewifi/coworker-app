@@ -101,9 +101,10 @@ public class ScanService {
         }
 
         Presence p = savePresence(member, presenceType);
+        member.setPackUnitsUsed(member.getPackUnitsUsed().add(needed));
+        Member updated = memberRepo.save(member);
         saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, needed, null);
 
-        Member updated = memberRepo.findById(member.getId()).orElse(member);
         return new ScanResult.Granted(updated, p, updated.getPackUnitsRemaining(), updated.getHalfDaysRemaining());
     }
 

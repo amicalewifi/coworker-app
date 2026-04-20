@@ -57,6 +57,12 @@
         Imprimante
       </a>
 
+      <a th:href="@{/admin/wifi}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/wifi')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="11" r="1.5" fill="currentColor" stroke="none"/><path d="M4 8Q4 4 8 4Q12 4 12 8"/><path d="M1 5.5Q1 1 8 1Q15 1 15 5.5"/></svg>
+        WiFi
+      </a>
+
       <div class="nav-sec">Terminaux</div>
       <a th:href="@{/admin/qr/print}" class="nav-item"
          th:classappend="${currentUri.startsWith('/admin/qr')} ? 'active'">

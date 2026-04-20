@@ -3,9 +3,13 @@ package ch.amicalewifi.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import javax.net.ssl.*;
+import java.net.HttpURLConnection;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
 /**
@@ -31,7 +35,114 @@ public class UnifiService {
     @Value("${amicale.unifi.base-url:https://unifi.ui.com/proxy/network}") private String baseUrl;
     @Value("${amicale.unifi.voucher-expire-minutes:600}") private int expireMinutes;
 
-    private final RestTemplate rest = new RestTemplate();
+    private final RestTemplate rest = buildRestTemplate();
+
+    /** RestTemplate qui accepte les certificats SSL auto-signés (contrôleur local UniFi). */
+    private static RestTemplate buildRestTemplate() {
+        try {
+            SSLContext ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, new TrustManager[]{new X509TrustManager() {
+                public void checkClientTrusted(X509Certificate[] c, String a) {}
+                public void checkServerTrusted(X509Certificate[] c, String a) {}
+                public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+            }}, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier((h, s) -> true);
+        } catch (Exception e) {
+            // fallback sans SSL custom
+        }
+        return new RestTemplate(new SimpleClientHttpRequestFactory());
+    }
+
+    /**
+     * Retourne les statistiques du site depuis l'EA API (/ea/sites).
+     * L'API cloud UniFi n'expose pas les clients individuels.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getSiteStats() {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-API-KEY", apiKey);
+            ResponseEntity<String> resp = rest.exchange(
+                    "https://api.ui.com/ea/sites", HttpMethod.GET,
+                    new HttpEntity<>(headers), String.class);
+            if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) return Map.of();
+            Map<String, Object> body = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(resp.getBody(), Map.class);
+            List<Map<String, Object>> data = (List<Map<String, Object>>) body.get("data");
+            if (data == null || data.isEmpty()) return Map.of();
+            Map<String, Object> siteData = data.get(0);
+            Map<String, Object> stats    = (Map<String, Object>) siteData.get("statistics");
+            Map<String, Object> counts   = stats != null ? (Map<String, Object>) stats.get("counts") : Map.of();
+            Map<String, Object> meta     = (Map<String, Object>) siteData.get("meta");
+            return Map.of(
+                "siteName",       meta != null ? meta.getOrDefault("desc", "Default") : "Default",
+                "wifiClient",     counts.getOrDefault("wifiClient",     0),
+                "guestClient",    counts.getOrDefault("guestClient",    0),
+                "totalDevice",    counts.getOrDefault("totalDevice",    0),
+                "wifiDevice",     counts.getOrDefault("wifiDevice",     0),
+                "offlineDevice",  counts.getOrDefault("offlineDevice",  0)
+            );
+        } catch (Exception e) {
+            log.warn("UniFi getSiteStats: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> getConnectedClients() {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-API-KEY", apiKey);
+            String url = baseUrl + "/api/s/" + site + "/stat/sta";
+            log.debug("UniFi GET {}", url);
+            ResponseEntity<String> resp = rest.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) return List.of();
+            Map<String, Object> parsed = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(resp.getBody(), Map.class);
+            List<Map<String, Object>> data = (List<Map<String, Object>>) parsed.get("data");
+            return data != null ? data : List.of();
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.warn("UniFi clients HTTP {}: {}", e.getStatusCode(), e.getResponseBodyAsString());
+            return List.of();
+        } catch (Exception e) {
+            log.warn("UniFi clients non disponibles: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Retourne la réponse brute pour diagnostic admin. */
+    public String getConnectedClientsRaw() {
+        StringBuilder out = new StringBuilder();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-API-KEY", apiKey);
+
+        String hostId = "70A741F15DCF0000000006A67B3B0000000006F698BD0000000063065C68:727259026";
+        String[] candidates = {
+            "https://unifi.ui.com/proxy/network/api/s/default/stat/sta",
+            "https://unifi.ui.com/proxy/network/api/self/sites",
+            "https://unifi.ui.com/consoles/" + hostId + "/proxy/network/api/s/default/stat/sta",
+            "https://unifi.ui.com/consoles/" + hostId + "/proxy/network/api/self/sites",
+        };
+        for (String url : candidates) {
+            out.append("=== GET ").append(url).append(" ===\n");
+            out.append(rawGet(url, headers)).append("\n\n");
+        }
+        return out.toString();
+    }
+
+    private String rawGet(String url, HttpHeaders headers) {
+        try {
+            ResponseEntity<String> resp = rest.exchange(
+                    url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
+            return "HTTP " + resp.getStatusCode() + "\n" + resp.getBody();
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            return "HTTP " + e.getStatusCode() + "\n" + e.getResponseBodyAsString();
+        } catch (Exception e) {
+            return e.getClass().getSimpleName() + ": " + e.getMessage();
+        }
+    }
 
     /**
      * Crée un voucher hotspot WiFi à usage unique pour le membre.
