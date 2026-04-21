@@ -56,7 +56,7 @@
       <div class="stat-val" th:text="${stats.permanentMembers}">0</div>
       <div class="stat-meta"><span class="sdot" style="background:var(--purple)"></span>Accès 24/7</div>
     </a>
-    <a th:href="@{/admin/printer/billing}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
+    <a th:href="@{/admin/billing}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
       <div class="stat-lbl">Revenus du mois</div>
       <div class="stat-val" style="font-size:22px;" th:text="'Fr. '+${#numbers.formatDecimal(stats.monthlyTotal,1,2)}">Fr. 0.00</div>
       <div class="stat-meta"><span class="sdot" style="background:var(--green-m)"></span>Voir le détail →</div>

@@ -10,9 +10,9 @@
     <div class="topbar-sub" style="text-transform:capitalize;" th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></div>
   </div>
   <div class="topbar-r">
-    <a th:href="@{/admin/printer/billing(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
-    <a th:href="@{/admin/printer/billing}" class="btn btn-sm">Ce mois</a>
-    <a th:href="@{/admin/printer/billing(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
+    <a th:href="@{/admin/billing(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
+    <a th:href="@{/admin/billing}" class="btn btn-sm">Ce mois</a>
+    <a th:href="@{/admin/billing(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
     <div class="act-menu" id="act-menu">
       <button class="btn btn-sm" onclick="toggleActMenu()" id="act-trigger">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
@@ -21,15 +21,15 @@
       </button>
       <div class="act-dropdown" style="right:0;left:auto;">
         <div class="act-group-lbl">Navigation</div>
-        <a th:href="@{/admin/printer/billing}" class="act-item">
+        <a th:href="@{/admin/billing}" class="act-item">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 7h12M5 1v3M11 1v3"/></svg>
           Mois en cours
         </a>
-        <a th:href="@{/admin/printer/billing(month=${prevMonth})}" class="act-item">
+        <a th:href="@{/admin/billing(month=${prevMonth})}" class="act-item">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4L6 8l4 4"/></svg>
           Mois précédent
         </a>
-        <a th:href="@{/admin/printer/billing(month=${nextMonth})}" class="act-item">
+        <a th:href="@{/admin/billing(month=${nextMonth})}" class="act-item">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg>
           Mois suivant
         </a>

@@ -478,8 +478,8 @@ public class AdminController {
         return "admin/printer";
     }
 
-    @GetMapping("/printer/billing")
-    public String printerBilling(@RequestParam(required = false) String month, Model model) {
+    @GetMapping("/billing")
+    public String billing(@RequestParam(required = false) String month, Model model) {
         YearMonth ym = (month != null) ? YearMonth.parse(month) : YearMonth.now();
         LocalDateTime from = ym.atDay(1).atStartOfDay();
         LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
@@ -497,7 +497,7 @@ public class AdminController {
         model.addAttribute("billingMonth",   ym);
         model.addAttribute("prevMonth",      ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",      ym.plusMonths(1).toString());
-        return "admin/printer-billing";
+        return "admin/billing";
     }
 
     @GetMapping("/wifi")
