@@ -20,16 +20,18 @@
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg>
       </button>
       <div class="act-dropdown" style="right:0;left:auto;">
-        <div class="act-group-lbl">Imprimante</div>
-        <a th:href="@{/admin/printer}" class="act-item">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="12" height="7" rx="1.5"/><path d="M4 5V3h8v2M4 10h8v4H4z"/></svg>
-          Gestion imprimante
+        <div class="act-group-lbl">Navigation</div>
+        <a th:href="@{/admin/printer/billing}" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 7h12M5 1v3M11 1v3"/></svg>
+          Mois en cours
         </a>
-        <div class="act-sep"></div>
-        <div class="act-group-lbl">Liens</div>
-        <a th:href="@{/admin/members}" class="act-item">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/></svg>
-          Membres
+        <a th:href="@{/admin/printer/billing(month=${prevMonth})}" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 4L6 8l4 4"/></svg>
+          Mois précédent
+        </a>
+        <a th:href="@{/admin/printer/billing(month=${nextMonth})}" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 4l4 4-4 4"/></svg>
+          Mois suivant
         </a>
       </div>
     </div>

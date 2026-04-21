@@ -145,12 +145,12 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
         <div class="room-name" th:text="${room.name}">Salle A</div>
         <div class="room-meta">
           <span th:text="${room.capacity} + ' personnes'"></span>
-          <span th:if="${room.equipment != null and !room.equipment.isEmpty()}">
-            · <span th:text="${#strings.listJoin(room.equipment, ', ')}"></span>
+          <span th:if="${room.equipment != null and room.equipment.length > 0}">
+            · <span th:text="${#strings.arrayJoin(room.equipment, ', ')}"></span>
           </span>
         </div>
       </div>
-      <span class="room-badge" th:text="${room.roomType == T(ch.amicalewifi.model.RoomType).SALLE_CONFERENCE} ? 'Conf.' : 'Cabine'">Conf.</span>
+      <span class="room-badge" th:text="${room.roomType != null and room.roomType.name() == 'SALLE_CONFERENCE'} ? 'Conf.' : 'Cabine'">Conf.</span>
     </div>
 
     <!-- Créneaux occupés -->
@@ -194,9 +194,9 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
         </div>
         <div class="cost-preview" th:id="'cost-' + ${room.id}">
           Durée : <span id="dur">1h00</span> →
-          <span th:if="${member.confCreditsRemaining.compareTo(T(java.math.BigDecimal).ONE) >= 0}"
+          <span th:if="${member.confCreditsRemaining != null and member.confCreditsRemaining >= 1}"
                 style="color:var(--green)">déduit de vos crédits</span>
-          <span th:unless="${member.confCreditsRemaining.compareTo(T(java.math.BigDecimal).ONE) >= 0}"
+          <span th:unless="${member.confCreditsRemaining != null and member.confCreditsRemaining >= 1}"
                 style="color:var(--red)">payant (19 CHF/h)</span>
         </div>
         <button type="submit" class="btn-book">Réserver →</button>

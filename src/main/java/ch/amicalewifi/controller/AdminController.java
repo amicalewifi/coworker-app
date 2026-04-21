@@ -418,6 +418,8 @@ public class AdminController {
         model.addAttribute("monthBookingsByDay",monthBookingsByDay);
         model.addAttribute("prevMonth",         ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",         ym.plusMonths(1).toString());
+        model.addAttribute("prevDay",           d.minusDays(1).toString());
+        model.addAttribute("nextDay",           d.plusDays(1).toString());
         return "admin/rooms";
     }
 

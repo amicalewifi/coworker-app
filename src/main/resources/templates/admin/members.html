@@ -18,8 +18,9 @@
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg>
       </button>
       <div class="act-dropdown" style="right:0;left:auto;">
-        <div class="act-group-lbl">Vue rapide</div>
-        <a th:href="@{/admin/members}" class="act-item">
+        <div class="act-group-lbl">Filtrer</div>
+        <a th:href="@{/admin/members}" class="act-item"
+           th:classappend="${filter == null} ? 'act-item-active'">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/><path d="M11 2c1.5.5 2.5 2 2.5 3.5S12.5 9 11 9M15 14c0-3-1.5-4.5-4-5"/></svg>
           Tous les membres
         </a>
