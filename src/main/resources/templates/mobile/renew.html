@@ -53,9 +53,16 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
   <div class="current-pack">
     <div class="cp-lbl">Formule actuelle</div>
     <div class="cp-name" th:text="${member.membership.label}">Pack 5 jours</div>
-    <div class="cp-remaining" th:if="${member.packUnitsRemaining != null}"
-         th:text="${member.packUnitsRemaining} + ' j restantes · ' + ${member.halfDaysRemaining} + ' demi-journées'"></div>
-    <div class="cp-remaining" th:if="${member.packUnitsRemaining == null}">Pas de pack en cours</div>
+    <div th:if="${member.isPermanent()}">
+      <div class="cp-remaining" th:if="${member.packExpires != null}"
+           th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMMM yyyy', #locale)}"></div>
+      <div class="cp-remaining" th:unless="${member.packExpires != null}">Accès illimité</div>
+    </div>
+    <div th:unless="${member.isPermanent()}">
+      <div class="cp-remaining" th:if="${member.packUnitsRemaining != null}"
+           th:text="${member.packUnitsRemaining} + ' j restantes · ' + ${member.halfDaysRemaining} + ' demi-journées'"></div>
+      <div class="cp-remaining" th:unless="${member.packUnitsRemaining != null}">Pas de pack en cours</div>
+    </div>
   </div>
 
   <!-- Sélection du pack -->

@@ -41,7 +41,9 @@ public class MemberService {
         m.setPackUnitsUsed(BigDecimal.ZERO);
         m.setConfCreditsTotalH(m.getMembership().getConfCredits());
         m.setConfCreditsUsedH(BigDecimal.ZERO);
-        if (m.getMembership().hasPack()) {
+        if (m.getMembership() == MembershipType.PERMANENT) {
+            m.setPackExpires(LocalDate.now().plusMonths(1));
+        } else if (m.getMembership().hasPack()) {
             m.setPackExpires(LocalDate.now().plusMonths(3));
         }
         log.info("Création membre: {} · {}", m.getDisplayName(), m.getMembership());
@@ -61,7 +63,9 @@ public class MemberService {
         m.setMembership(membership);
         m.setPackUnitsTotal(membership.getPackUnits());
         m.setPackUnitsUsed(BigDecimal.ZERO);
-        m.setPackExpires(membership.hasPack() ? LocalDate.now().plusMonths(3) : null);
+        m.setPackExpires(membership == MembershipType.PERMANENT
+                ? LocalDate.now().plusMonths(1)
+                : (membership.hasPack() ? LocalDate.now().plusMonths(3) : null));
         m.setConfCreditsTotalH(membership.getConfCredits());
         m.setConfCreditsUsedH(BigDecimal.ZERO);
         m.setUpdatedAt(LocalDateTime.now());

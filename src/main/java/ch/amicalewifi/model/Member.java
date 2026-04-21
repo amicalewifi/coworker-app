@@ -103,6 +103,12 @@ public class Member {
      * Retourne l'alerte du pack: "ok" | "low" | "expiring" | "empty"
      */
     public String getPackAlert() {
+        if (isPermanent()) {
+            if (packExpires == null) return "ok";
+            if (!packExpires.isAfter(LocalDate.now())) return "empty";
+            if (packExpires.isBefore(LocalDate.now().plusDays(7))) return "expiring";
+            return "ok";
+        }
         BigDecimal r = getPackUnitsRemaining();
         if (r == null) return "ok";
         if (r.compareTo(BigDecimal.ZERO) <= 0) return "empty";

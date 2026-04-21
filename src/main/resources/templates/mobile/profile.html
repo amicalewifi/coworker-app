@@ -55,7 +55,15 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     <div class="ph-avatar" th:text="${member.initials}">CB</div>
     <div class="ph-name" th:text="${member.displayName}">Camille Berrut</div>
     <div class="ph-formula" th:text="${member.membership.label}">Pack 10 jours</div>
+    <div th:if="${member.isPermanent() and member.packExpires != null}" class="ph-formula"
+         th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}"></div>
     <div class="ph-email" th:text="${member.email}">camille@exemple.ch</div>
+  </div>
+  <div style="margin:-10px 0 16px;text-align:center;">
+    <a th:href="@{/mobile/renew}"
+       style="font-size:12px;font-weight:700;color:var(--gd);text-decoration:none;background:var(--gl);padding:6px 16px;border-radius:20px;border:1px solid var(--green);">
+      Renouveler / changer de pack
+    </a>
   </div>
 
   <!-- Coordonnées -->
