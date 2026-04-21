@@ -6,13 +6,13 @@
   <title>QR d'entrée — l'Amicale du WiFi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: #f6f5f2;
+      font-family: 'Open Sans', sans-serif;
+      background: #f7f8fc;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -43,7 +43,7 @@
     .logo-name {
       font-size: 20px;
       font-weight: 700;
-      color: #1a7a50;
+      color: #27348B;
       letter-spacing: -.4px;
     }
     .logo-sub {
@@ -55,7 +55,7 @@
 
     .qr-wrap {
       background: #fff;
-      border: 3px solid #1a7a50;
+      border: 3px solid #27348B;
       border-radius: 20px;
       padding: 16px;
       display: inline-flex;
@@ -101,8 +101,8 @@
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background: #e8f5ef;
-      color: #1a7a50;
+      background: #e8efff;
+      color: #27348B;
       font-weight: 700;
       font-size: 12px;
       display: flex;
@@ -135,12 +135,12 @@
     }
     .btn:hover { background: #f6f5f2; border-color: #aaa; }
     .btn-g {
-      background: linear-gradient(160deg, #22996a 0%, #0f4f34 100%);
+      background: linear-gradient(160deg, #3a4fa8 0%, #27348B 100%);
       color: #fff;
-      border-color: #0f4f34;
-      box-shadow: 0 2px 12px rgba(15,79,52,.25);
+      border-color: #1c2568;
+      box-shadow: 0 2px 12px rgba(26,37,102,.25);
     }
-    .btn-g:hover { background: linear-gradient(160deg, #28b87d 0%, #1a7a50 100%); color: #fff; }
+    .btn-g:hover { background: linear-gradient(160deg, #4a5fc0 0%, #3a4fa8 100%); color: #fff; }
 
     @media print {
       body { background: #fff; padding: 0; justify-content: flex-start; padding-top: 40px; }
@@ -154,15 +154,7 @@
 
 <div class="card">
   <div class="logo">
-    <svg width="40" height="40" viewBox="0 0 36 36" fill="none">
-      <circle cx="18" cy="22" r="4" fill="#1a7a50"/>
-      <path d="M9 17 Q9 8 18 8 Q27 8 27 17" stroke="#1a7a50" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-      <path d="M3 17 Q3 2 18 2 Q33 2 33 17" stroke="rgba(26,122,80,.35)" stroke-width="2" fill="none" stroke-linecap="round"/>
-    </svg>
-    <div>
-      <div class="logo-name">l'Amicale du WiFi</div>
-      <div class="logo-sub">Fully Coworking · CH-1926</div>
-    </div>
+    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi" style="height:44px; width:auto;">
   </div>
 
   <div class="qr-wrap">

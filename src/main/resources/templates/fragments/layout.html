@@ -8,23 +8,17 @@
   <title th:replace="${title}">Admin — l'Amicale du WiFi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/amicale.css}">
 </head>
 <body>
 <div class="layout">
 
   <aside class="sidebar">
-    <div class="brand">
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-        <circle cx="18" cy="22" r="4" fill="#4a9270"/>
-        <path d="M9 17 Q9 8 18 8 Q27 8 27 17" stroke="#4a9270" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-        <path d="M3 17 Q3 2 18 2 Q33 2 33 17" stroke="rgba(74,146,112,.4)" stroke-width="2" fill="none" stroke-linecap="round"/>
-      </svg>
-      <div>
-        <div class="brand-name">l'Amicale du WiFi</div>
-        <div class="brand-sub">Fully Coworking · CH-1926</div>
-      </div>
+    <div class="brand" style="flex-direction:column; gap:4px; align-items:flex-start; padding:22px 22px 16px;">
+      <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi"
+           style="height:46px; width:auto; filter:brightness(0) invert(1);">
+      <div class="brand-sub">Fully Coworking · CH-1926</div>
     </div>
 
     <nav>

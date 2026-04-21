@@ -6,7 +6,7 @@
   <title>Connexion — l'Amicale du WiFi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/amicale.css}">
   <style>
     body {
@@ -14,8 +14,8 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background: radial-gradient(ellipse 80% 60% at 70% -10%, rgba(26,122,80,.12) 0%, transparent 60%),
-                  radial-gradient(ellipse 60% 40% at -10% 110%, rgba(37,99,235,.07) 0%, transparent 50%),
+      background: radial-gradient(ellipse 80% 60% at 70% -10%, rgba(39,52,139,.08) 0%, transparent 60%),
+                  radial-gradient(ellipse 60% 40% at -10% 110%, rgba(39,52,139,.05) 0%, transparent 50%),
                   var(--bg);
       animation: bg-shift 14s ease-in-out infinite alternate;
     }
@@ -25,14 +25,6 @@
     }
     .login-wrap { width: 100%; max-width: 440px; padding: 24px; }
     .logo-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 36px; }
-    .logo-icon {
-      width: 56px; height: 56px;
-      background: linear-gradient(135deg, var(--green-d) 0%, var(--green) 100%);
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 20px rgba(20,92,58,.35), inset 0 1px 0 rgba(255,255,255,.15);
-      flex-shrink: 0;
-    }
     .box {
       background: var(--surf);
       border: 1px solid var(--bdr);
@@ -56,18 +48,8 @@
 <body>
 <div class="login-wrap">
 
-  <div class="logo-bar">
-    <div class="logo-icon">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
-        <circle cx="15" cy="20" r="4" fill="white"/>
-        <path d="M7 14 Q7 5 15 5 Q23 5 23 14" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-        <path d="M1 14 Q1 0 15 0 Q29 0 29 14" stroke="rgba(255,255,255,.4)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div>
-      <div style="font-size:22px;font-weight:900;letter-spacing:-.6px;color:var(--text);">l'Amicale du WiFi</div>
-      <div style="font-size:13px;color:var(--t3);font-weight:500;margin-top:2px;">Fully Coworking · Valais · CH-1926</div>
-    </div>
+  <div class="logo-bar" style="margin-bottom:30px;">
+    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi" style="height:56px; width:auto;">
   </div>
 
   <div class="box">
@@ -97,7 +79,7 @@
 
     <div style="text-align:center;font-size:13px;color:var(--t2);">
       Pas encore membre ?
-      <a th:href="@{/register}" style="color:var(--green);font-weight:600;">Créer un compte</a>
+      <a th:href="@{/register}" style="color:var(--prim);font-weight:600;">Créer un compte</a>
     </div>
   </div>
 

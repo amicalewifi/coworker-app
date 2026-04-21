@@ -140,7 +140,8 @@ public class ZahlsService {
     }
 
     private static String rfc3986Encode(String s) {
-        return java.net.URLEncoder.encode(s, StandardCharsets.UTF_8).replace("+", "%20");
+        // PHP http_build_query uses RFC 1738 (spaces → +), matching URLEncoder default behaviour
+        return java.net.URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
     private String buildSignature(Map<String, String> params) throws Exception {

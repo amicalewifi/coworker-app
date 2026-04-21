@@ -6,7 +6,7 @@
   <title>Inscription — l'Amicale du WiFi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" th:href="@{/css/amicale.css}">
   <style>
     body {
@@ -15,8 +15,8 @@
       justify-content: center;
       min-height: 100vh;
       padding: 24px;
-      background: radial-gradient(ellipse at 60% 0%, rgba(30,140,90,.10) 0%, transparent 60%),
-                  radial-gradient(ellipse at 0% 100%, rgba(37,99,235,.07) 0%, transparent 50%),
+      background: radial-gradient(ellipse at 60% 0%, rgba(0,122,245,.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 0% 100%, rgba(39,52,139,.07) 0%, transparent 50%),
                   var(--bg);
     }
     .box {
@@ -29,14 +29,6 @@
       box-shadow: var(--shadow-lg);
     }
     .logo { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
-    .logo-icon {
-      width: 52px; height: 52px;
-      background: linear-gradient(135deg, var(--green-d) 0%, var(--green) 100%);
-      border-radius: 15px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      box-shadow: 0 5px 18px rgba(20,92,58,.32), inset 0 1px 0 rgba(255,255,255,.15);
-    }
     .section {
       font-size: 11px;
       font-weight: 700;
@@ -47,29 +39,19 @@
     }
     .pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
     .pack-opt  { border: 1.5px solid var(--bdr); border-radius: var(--r); padding: 14px; cursor: pointer; transition: all .18s ease; }
-    .pack-opt:hover { border-color: var(--green-t); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-    .pack-opt.sel   { border-color: var(--green); background: var(--green-l); box-shadow: 0 0 0 3px rgba(30,140,90,.12); }
+    .pack-opt:hover { border-color: var(--prim-t); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .pack-opt.sel   { border-color: var(--prim-m); background: var(--prim-l); box-shadow: 0 0 0 3px rgba(0,122,245,.12); }
     .pack-opt input { display: none; }
     .pack-opt-name  { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
-    .pack-opt-price { font-size: 13px; color: var(--green-d); font-weight: 800; }
+    .pack-opt-price { font-size: 13px; color: var(--prim); font-weight: 800; }
     .pack-opt-desc  { font-size: 12px; color: var(--t3); margin-top: 4px; line-height: 1.4; }
   </style>
 </head>
 <body>
 <div class="box">
 
-  <div class="logo">
-    <div class="logo-icon">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="18" r="3.5" fill="white"/>
-        <path d="M7 13 Q7 6 14 6 Q21 6 21 13" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M2 13 Q2 1 14 1 Q26 1 26 13" stroke="rgba(255,255,255,.5)" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div>
-      <div style="font-size:20px;font-weight:900;letter-spacing:-.5px;">l'Amicale du WiFi</div>
-      <div style="font-size:13px;color:var(--t3);">Fully Coworking · Valais · CH-1926</div>
-    </div>
+  <div class="logo" style="margin-bottom:14px;">
+    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi" style="height:52px; width:auto;">
   </div>
 
   <div style="font-size:26px;font-weight:900;letter-spacing:-.7px;margin-bottom:6px;">Inscription</div>

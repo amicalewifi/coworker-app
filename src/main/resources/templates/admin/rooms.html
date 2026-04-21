@@ -41,7 +41,7 @@
   <!-- Salles -->
   <div class="g2">
     <div th:each="room : ${rooms}" class="card"
-         th:style="${'border-top:3px solid ' + (bookedRoomIds.contains(room.id) ? 'var(--orange)' : 'var(--green)')}">
+         th:style="${'border-top:3px solid ' + (bookedRoomIds.contains(room.id) ? 'var(--orange)' : 'var(--prim)')}">
       <div class="card-hdr">
         <div>
           <div style="font-weight:700;font-size:14px;" th:text="${room.name}"></div>
@@ -108,7 +108,7 @@
                       isToday=${monthYear.atDay(day).equals(#temporals.createToday())}"
              style="min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;"
              th:style="'min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;'
-                       + (${isToday} ? 'border-color:var(--green);background:var(--gl);' : '')
+                       + (${isToday} ? 'border-color:var(--prim);background:var(--prim-l);' : '')
                        + (${hasBookings and !isToday} ? 'border-color:var(--orange);' : '')">
           <div style="font-weight:700;margin-bottom:3px;"
                th:style="'font-weight:700;margin-bottom:3px;color:'+(${isToday} ? 'var(--gd)' : 'var(--text)')"

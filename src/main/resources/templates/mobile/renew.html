@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f4f34">
+<meta name="theme-color" content="#22305a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" th:href="@{/manifest.json}">
 <title>Renouveler mon pack — l'Amicale du WiFi</title>
@@ -15,20 +15,20 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 /* Pack cards */
 .pack-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
 .pack-card{border:2px solid var(--bdr);border-radius:16px;padding:16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;}
-.pack-card:has(input:checked){border-color:var(--green);background:var(--gl);}
+.pack-card:has(input:checked){border-color:var(--prim);background:var(--prim-l);}
 .pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .pack-name{font-size:15px;font-weight:800;color:var(--text);}
 .pack-desc{font-size:12px;color:var(--t2);margin-top:3px;}
 .pack-price{font-size:22px;font-weight:900;color:var(--gd);margin-top:6px;}
 .pack-badge{position:absolute;top:14px;right:14px;background:var(--gl);color:var(--gd);font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
-.pack-card:has(input:checked) .pack-badge{background:var(--green);color:#fff;}
+.pack-card:has(input:checked) .pack-badge{background:var(--prim);color:#fff;}
 /* Current pack info */
-.current-pack{background:linear-gradient(135deg,#0f4f34,#1a7a50);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
+.current-pack{background:linear-gradient(135deg,#22305a,#27348B);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
 .cp-lbl{font-size:11px;opacity:.6;font-weight:600;margin-bottom:6px;}
 .cp-name{font-size:18px;font-weight:800;}
 .cp-remaining{font-size:13px;opacity:.75;margin-top:4px;}
 /* Payment button */
-.pay-btn{display:block;width:100%;padding:16px;background:var(--green);color:#fff;border-radius:14px;text-align:center;font-size:16px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(26,122,80,.35);transition:all .2s;box-sizing:border-box;}
+.pay-btn{display:block;width:100%;padding:16px;background:var(--prim);color:#fff;border-radius:14px;text-align:center;font-size:16px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(39,52,139,.35);transition:all .2s;box-sizing:border-box;}
 .pay-btn:hover{background:var(--gm);transform:translateY(-1px);}
 .pay-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .pay-methods{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
@@ -36,14 +36,14 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 /* Bottom nav */
 .bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
 .nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
-.nav-btn.active{color:var(--green);}
+.nav-btn.active{color:var(--prim);}
 .nav-btn svg{width:20px;height:20px;}
 </style>
 </head>
 <body>
 
 <div class="app-topbar">
-  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
   <div class="app-title">Renouveler mon pack</div>
 </div>
 
