@@ -1,6 +1,5 @@
 package ch.amicalewifi.controller;
 
-import ch.amicalewifi.repository.MemberRepository;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
@@ -11,14 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/qr")
 @RequiredArgsConstructor
 public class QrController {
-
-    private final MemberRepository memberRepo;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
 
@@ -30,22 +26,6 @@ public class QrController {
     public byte[] venueQr(
             @RequestHeader(value = "Host", defaultValue = "localhost:8081") String host) throws Exception {
         return toQr("http://" + host + "/mobile/presence?venue=" + venueQrToken, 400);
-    }
-
-    /** QR code personnel du membre — à afficher dans le profil mobile, scannable par la borne. */
-    @GetMapping(value = "/token/{token}", produces = MediaType.IMAGE_PNG_VALUE)
-    public byte[] tokenQr(@PathVariable UUID token,
-                          @RequestHeader(value = "Host", defaultValue = "localhost:8081") String host) throws Exception {
-        return toQr("http://" + host + "/borne/member-qr?token=" + token, 300);
-    }
-
-    /** QR code par badgeUid (rétrocompatibilité NFC). */
-    @GetMapping(value = "/member/{uid}", produces = MediaType.IMAGE_PNG_VALUE)
-    public byte[] memberQr(
-            @PathVariable String uid,
-            @RequestParam(defaultValue = "FULL_DAY") String type,
-            @RequestHeader(value = "Host", defaultValue = "localhost:8081") String host) throws Exception {
-        return toQr("http://" + host + "/mobile/?presenceType=" + type + "&badgeUid=" + uid, 300);
     }
 
     /** QR code de salle. */

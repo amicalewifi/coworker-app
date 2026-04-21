@@ -1,11 +1,9 @@
 package ch.amicalewifi.controller;
 
 import ch.amicalewifi.model.AccessEventType;
-import ch.amicalewifi.model.PresenceType;
 import ch.amicalewifi.repository.AccessEventRepository;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -19,18 +17,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ApiController {
 
-    private final ScanService           scanService;
     private final MemberService         memberService;
     private final RoomService           roomService;
     private final DashboardService      dashboardService;
     private final AccessEventRepository eventRepo;
-
-    @PostMapping("/scan")
-    public ResponseEntity<?> scan(@RequestBody Map<String, String> body) {
-        String uid        = body.getOrDefault("badgeUid", "").trim().toUpperCase();
-        PresenceType type = PresenceType.valueOf(body.getOrDefault("presenceType", "FULL_DAY"));
-        return ResponseEntity.ok(scanService.processScan(uid, type));
-    }
 
     @GetMapping("/members")
     public List<?> members() {

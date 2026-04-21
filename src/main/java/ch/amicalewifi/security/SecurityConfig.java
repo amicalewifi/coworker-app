@@ -32,8 +32,6 @@ public class SecurityConfig {
                 // Ressources publiques
                 .requestMatchers("/login", "/register", "/css/**", "/js/**", "/icons/**",
                                  "/images/**", "/manifest.json", "/sw.js", "/error").permitAll()
-                // Borne: ADMIN ou TERMINAL
-                .requestMatchers("/borne/**").hasAnyRole("ADMIN","TERMINAL")
                 // Admin uniquement
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Mobile: membres et admin
@@ -47,8 +45,7 @@ public class SecurityConfig {
                 // Webhook zahls.ch — appelé par les serveurs Payrexx, pas de session
                 .requestMatchers("/api/v1/zahls/**").permitAll()
                 // API REST
-                .requestMatchers("/api/v1/scan/**").hasAnyRole("ADMIN","TERMINAL")
-                .requestMatchers("/api/**").hasAnyRole("ADMIN","MEMBER","TERMINAL")
+                .requestMatchers("/api/**").hasAnyRole("ADMIN","MEMBER")
                 // QR Code — venue public pour scan par les membres
                 .requestMatchers("/qr/venue").hasAnyRole("ADMIN","MEMBER")
                 .requestMatchers("/qr/**").hasAnyRole("ADMIN","MEMBER")

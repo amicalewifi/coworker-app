@@ -126,7 +126,6 @@ document.addEventListener('click', function(e) {
           <tr><td style="color:var(--t3);padding:5px 0;">Adresse</td><td th:text="${member.address?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Ville</td><td th:text="${(member.postalCode?:'')+' '+(member.city?:'—')}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Pays</td><td th:text="${member.country}"></td></tr>
-          <tr><td style="color:var(--t3);padding:5px 0;">QR Token</td><td><code style="font-size:11px;" th:text="${member.qrToken}"></code></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Membre depuis</td><td th:text="${#temporals.format(member.createdAt,'d MMMM yyyy')}"></td></tr>
         </table>
       </div>

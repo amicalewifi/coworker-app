@@ -25,14 +25,9 @@ public class ScanService {
     @Value("${amicale.business.opening-hour}") private int openH;
     @Value("${amicale.business.closing-hour}") private int closeH;
 
-    /**
-     * Badge NFC/RFID à la borne d'entrée : ouvre la porte et logue l'événement.
-     * Ne crée PAS de présence et ne décompte PAS de pack.
-     * La déduction se fait uniquement quand le membre déclare son type de présence
-     * via l'application mobile (WiFi).
-     */
+    /** Badge RFID Akuvox A05S — ouvre la porte, ne décompte pas de pack. */
     public ScanResult processBadgeAccess(String badgeUid) {
-        log.info("Badge access (porte uniquement): {}", badgeUid);
+        log.info("Badge access (porte): {}", badgeUid);
         Member member = memberRepo.findByBadgeUid(badgeUid).orElse(null);
         if (member == null) {
             saveEvent(null, badgeUid, AccessEventType.NEW_MEMBER_CREATED, null, null, null);
@@ -43,19 +38,13 @@ public class ScanService {
             saveEvent(member, badgeUid, AccessEventType.ENTRY_DENIED, null, null, "badge_expired");
             return new ScanResult.Denied("badge_expired", member);
         }
-        // Entrée accordée — log seulement, pas de déduction
+        if (member.isPermanent()) {
+            Presence p = savePresence(member, PresenceType.FULL_DAY, LocalDate.now());
+            saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, PresenceType.FULL_DAY, null, null);
+            return new ScanResult.Granted(member, p, null, null);
+        }
         saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, null, null, null);
         return new ScanResult.Granted(member, null, member.getPackUnitsRemaining(), member.getHalfDaysRemaining());
-    }
-
-    public ScanResult processScan(String badgeUid, PresenceType presenceType) {
-        log.info("Scan badge: {} · {}", badgeUid, presenceType);
-        Member member = memberRepo.findByBadgeUid(badgeUid).orElse(null);
-        if (member == null) {
-            saveEvent(null, badgeUid, AccessEventType.NEW_MEMBER_CREATED, null, null, null);
-            return new ScanResult.NewMember(badgeUid);
-        }
-        return processScanForMember(member, badgeUid, presenceType);
     }
 
     public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType) {
