@@ -5,12 +5,13 @@ import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -27,13 +28,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MobileController {
 
-    private final MemberService    memberService;
-    private final RoomService      roomService;
-    private final ScanService      scanService;
-    private final UnifiService     unifiService;
-    private final ZahlsService     zahlsService;
-    private final MemberRepository memberRepo;
-    private final RoomRepository   roomRepo;
+    private final MemberService       memberService;
+    private final RoomService         roomService;
+    private final ScanService         scanService;
+    private final UnifiService        unifiService;
+    private final ZahlsService        zahlsService;
+    private final PrinterService      printerService;
+    private final PrinterJobRepository printerJobRepo;
+    private final MemberRepository    memberRepo;
+    private final RoomRepository      roomRepo;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
 
@@ -202,6 +205,95 @@ public class MobileController {
                     ra.addFlashAttribute("error",
                             "Impossible de créer le lien de paiement zahls.ch. Contactez l'admin.");
                     return "redirect:/mobile/";
+                });
+    }
+
+    @GetMapping("/print")
+    public String printPage(Authentication auth,
+                            @RequestParam(required = false) String bought,
+                            Model model) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if ("ok".equals(bought)) {
+            model.addAttribute("success", "Paiement reçu — vos crédits d'impression ont été ajoutés !");
+        }
+        model.addAttribute("member",       member);
+        model.addAttribute("declarations", memberService.getPrintDeclarations(member.getId()).stream().limit(10).toList());
+        model.addAttribute("purchases",    memberService.getPrintPurchases(member.getId()).stream().limit(5).toList());
+        model.addAttribute("printPacks",   List.of(PrintPackType.values()));
+        return "mobile/print";
+    }
+
+    @PostMapping("/print/declare")
+    public String declare(Authentication auth,
+                          @RequestParam(defaultValue = "0") int pagesBw,
+                          @RequestParam(defaultValue = "0") int pagesColor,
+                          RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        try {
+            memberService.declarePrint(member.getId(), pagesBw, pagesColor);
+            ra.addFlashAttribute("success", "Impression déclarée — crédits déduits.");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/mobile/print";
+    }
+
+    @PostMapping(value = "/print/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String uploadPrint(Authentication auth,
+                              @RequestParam MultipartFile file,
+                              @RequestParam(defaultValue = "1") int pages,
+                              @RequestParam(defaultValue = "1") int copies,
+                              @RequestParam(defaultValue = "false") boolean color,
+                              @RequestParam(defaultValue = "false") boolean duplex,
+                              RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        int credits = pages * copies * (color ? 2 : 1);
+        try {
+            memberService.deductPrintCredits(member.getId(), credits);
+
+            String filename = file.getOriginalFilename();
+            String lang = (filename != null && filename.toLowerCase().endsWith(".ps")) ? "POSTSCRIPT" : "PDF";
+            BigDecimal cppChf = color ? new BigDecimal("0.200") : new BigDecimal("0.100");
+
+            PrinterJob job = printerJobRepo.save(PrinterJob.builder()
+                    .member(member)
+                    .filename(filename != null ? filename : "document.pdf")
+                    .pages(pages).copies(copies).color(color).duplex(duplex)
+                    .status(PrintJobStatus.PRINTING)
+                    .costPerPage(cppChf)
+                    .build());
+            try {
+                printerService.print(file.getBytes(), job.getFilename(), lang);
+                job.setStatus(PrintJobStatus.COMPLETED);
+                job.setCompletedAt(LocalDateTime.now());
+                printerJobRepo.save(job);
+                ra.addFlashAttribute("success",
+                        "Document envoyé à l'imprimante — " + credits + " crédit(s) déduits.");
+            } catch (Exception e) {
+                job.setStatus(PrintJobStatus.ERROR);
+                job.setErrorMessage(e.getMessage());
+                printerJobRepo.save(job);
+                memberService.refundPrintCredits(member.getId(), credits);
+                ra.addFlashAttribute("error",
+                        "Erreur d'impression : " + e.getMessage() + " — crédits remboursés.");
+            }
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/mobile/print";
+    }
+
+    @PostMapping("/print/buy")
+    public String buyPrintPack(Authentication auth,
+                               @RequestParam PrintPackType pack,
+                               RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        return zahlsService.createPrintPackPaymentLink(member.getId(), pack)
+                .map(url -> "redirect:" + url)
+                .orElseGet(() -> {
+                    ra.addFlashAttribute("error",
+                            "Impossible de créer le lien de paiement. Contactez l'admin.");
+                    return "redirect:/mobile/print";
                 });
     }
 

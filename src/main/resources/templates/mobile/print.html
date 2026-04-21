@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f4f34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Impressions — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.app-content{flex:1;padding:16px;overflow-y:auto;padding-bottom:24px;}
+
+/* Quota card */
+.quota-card{background:linear-gradient(135deg,#0f4f34,#1a7a50);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
+.qc-lbl{font-size:11px;opacity:.6;font-weight:600;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
+.qc-val{font-size:42px;font-weight:900;line-height:1;}
+.qc-unit{font-size:14px;font-weight:500;opacity:.75;margin-top:2px;}
+.qc-bar{background:rgba(255,255,255,.2);border-radius:99px;height:6px;margin-top:14px;overflow:hidden;}
+.qc-bar-fill{background:#fff;height:100%;border-radius:99px;transition:width .4s;}
+.qc-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;opacity:.65;}
+
+/* Section headers */
+.section-title{font-size:13px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;}
+
+/* Declare form */
+.declare-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:16px;margin-bottom:4px;}
+.input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.input-group label{font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;}
+.input-group input[type=number]{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:var(--bg);color:var(--text);font-family:var(--font);box-sizing:border-box;}
+.input-group input[type=number]:focus{outline:none;border-color:var(--green);}
+.credit-preview{background:var(--gl);border:1px solid var(--green);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--gd);font-weight:600;display:flex;align-items:center;gap:8px;}
+.credit-preview .big{font-size:20px;font-weight:900;}
+.input-hint{font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.5;}
+
+/* Packs */
+.pack-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.pack-card{border:2px solid var(--bdr);border-radius:14px;padding:14px 16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:space-between;}
+.pack-card:has(input:checked){border-color:var(--green);background:var(--gl);}
+.pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.pack-name{font-size:14px;font-weight:800;color:var(--text);}
+.pack-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.pack-price{font-size:18px;font-weight:900;color:var(--gd);}
+
+/* Buttons */
+.btn-primary{display:block;width:100%;padding:14px;background:var(--green);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(26,122,80,.3);transition:all .18s;box-sizing:border-box;margin-top:4px;}
+.btn-primary:hover{background:var(--gm);transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+.pay-methods{display:flex;gap:5px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+.pay-m{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--surf-2);color:var(--t2);border:1px solid var(--bdr);}
+
+/* History */
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);}
+.history-item:last-child{border-bottom:none;}
+.history-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.history-icon.decl{background:var(--surf-2);}
+.history-icon.buy{background:var(--gl);}
+.history-info{flex:1;min-width:0;}
+.history-main{font-size:13px;font-weight:600;color:var(--text);}
+.history-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+.history-credits{font-size:13px;font-weight:800;text-align:right;white-space:nowrap;}
+.history-credits.used{color:var(--red);}
+.history-credits.added{color:var(--green);}
+
+/* Alert */
+.alert{padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.alert-ok{background:var(--gl);color:var(--gd);border:1px solid var(--green);}
+.alert-err{background:#fff0f0;color:#c0392b;border:1px solid #e74c3c;}
+
+/* Bottom nav */
+.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:20px;height:20px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <div class="app-title">Mes impressions</div>
+</div>
+
+<div class="app-content">
+
+  <!-- Alerts -->
+  <div th:if="${success}" class="alert alert-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="alert alert-err">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="currentColor" stroke="none"/></svg>
+    <span th:text="${error}"></span>
+  </div>
+
+  <!-- Quota -->
+  <div class="quota-card">
+    <div class="qc-lbl">Crédits d'impression</div>
+    <div class="qc-val" th:text="${member.printQuota - member.printUsed}">0</div>
+    <div class="qc-unit">crédits restants</div>
+    <div class="qc-bar">
+      <div class="qc-bar-fill"
+           th:style="${member.printQuota > 0}
+             ? 'width:' + ${#numbers.formatDecimal((member.printQuota - member.printUsed) * 100.0 / member.printQuota, 1, 0)} + '%'
+             : 'width:0%'"></div>
+    </div>
+    <div class="qc-meta">
+      <span th:text="${member.printUsed} + ' utilisés'"></span>
+      <span th:text="${member.printQuota} + ' total'"></span>
+    </div>
+  </div>
+
+  <!-- Déclarer -->
+  <div class="section-title">Déclarer des impressions</div>
+  <div class="declare-card">
+    <form th:action="@{/mobile/print/declare}" method="post" id="declareForm">
+      <div class="input-row">
+        <div class="input-group">
+          <label>Pages N&B</label>
+          <input type="number" name="pagesBw" id="pagesBw" min="0" value="0"
+                 oninput="updatePreview()">
+        </div>
+        <div class="input-group">
+          <label>Pages couleur</label>
+          <input type="number" name="pagesColor" id="pagesColor" min="0" value="0"
+                 oninput="updatePreview()">
+        </div>
+      </div>
+      <div class="input-hint">1 crédit par page N&B · 2 crédits par page couleur</div>
+      <div class="credit-preview" id="creditPreview">
+        <span class="big" id="previewCredits">0</span>
+        <span>crédit(s) seront déduits</span>
+      </div>
+      <button type="submit" class="btn-primary" id="declareBtn"
+              th:disabled="${member.printQuota - member.printUsed <= 0}">
+        Déclarer les impressions
+      </button>
+    </form>
+  </div>
+  <div th:if="${member.printQuota - member.printUsed <= 0}"
+       style="font-size:12px;color:var(--t3);text-align:center;margin:6px 0 16px;padding:0 8px;">
+    Aucun crédit disponible — achetez un pack ci-dessous.
+  </div>
+
+  <!-- Upload fichier -->
+  <div class="section-title">Imprimer un fichier</div>
+  <div class="declare-card">
+    <form th:action="@{/mobile/print/upload}" method="post" enctype="multipart/form-data" id="uploadForm">
+      <div style="margin-bottom:12px;">
+        <label style="font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;">Fichier (PDF)</label>
+        <input type="file" name="file" accept=".pdf,.ps" required style="width:100%;font-size:13px;box-sizing:border-box;"
+               onchange="updateUploadPreview()">
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Pages</label>
+          <input type="number" name="pages" id="uploadPages" min="1" value="1" oninput="updateUploadPreview()">
+        </div>
+        <div class="input-group">
+          <label>Copies</label>
+          <input type="number" name="copies" id="uploadCopies" min="1" value="1" oninput="updateUploadPreview()">
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-bottom:12px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" name="color" value="true" id="uploadColor" onchange="updateUploadPreview()">
+          Couleur
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
+          <input type="checkbox" name="duplex" value="true" checked>
+          Recto-verso
+        </label>
+      </div>
+      <div class="input-hint">N&B : 1 crédit/page · Couleur : 2 crédits/page (× copies)</div>
+      <div class="credit-preview" id="uploadPreview">
+        <span class="big" id="uploadCredits">1</span>
+        <span>crédit(s) seront déduits</span>
+      </div>
+      <button type="submit" class="btn-primary" id="uploadBtn">
+        Envoyer à l'imprimante →
+      </button>
+    </form>
+  </div>
+
+  <!-- Acheter -->
+  <div class="section-title">Acheter des crédits</div>
+  <form th:action="@{/mobile/print/buy}" method="post" id="buyForm">
+    <div class="pack-grid">
+      <label class="pack-card" th:each="pack : ${printPacks}">
+        <input type="radio" name="pack" th:value="${pack.name()}" onchange="updateBuyBtn(this)">
+        <div>
+          <div class="pack-name" th:text="${pack.label}">Pack 50 crédits</div>
+          <div class="pack-sub"
+               th:text="${pack.credits / 2} + ' pages couleur · ' + ${pack.credits} + ' pages N&B'"></div>
+        </div>
+        <div class="pack-price" th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 5.–</div>
+      </label>
+    </div>
+    <button type="submit" class="btn-primary" id="buyBtn" disabled>
+      Sélectionnez un pack
+    </button>
+    <div class="pay-methods">
+      <span class="pay-m">TWINT</span>
+      <span class="pay-m">Visa / Mastercard</span>
+      <span class="pay-m">PostFinance</span>
+      <span class="pay-m">Apple Pay</span>
+    </div>
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:10px;line-height:1.5;">
+      Paiement sécurisé via zahls.ch · Crédits ajoutés immédiatement après confirmation.
+    </div>
+  </form>
+
+  <!-- Historique -->
+  <div th:if="${!#lists.isEmpty(declarations) or !#lists.isEmpty(purchases)}">
+    <div class="section-title">Historique</div>
+    <div class="declare-card" style="padding:4px 16px;">
+
+      <div th:each="d : ${declarations}" class="history-item">
+        <div class="history-icon decl">🖨️</div>
+        <div class="history-info">
+          <div class="history-main">
+            <span th:if="${d.pagesBw > 0}" th:text="${d.pagesBw} + ' p. N&B'"></span>
+            <span th:if="${d.pagesBw > 0 and d.pagesColor > 0}"> · </span>
+            <span th:if="${d.pagesColor > 0}" th:text="${d.pagesColor} + ' p. couleur'"></span>
+          </div>
+          <div class="history-sub"
+               th:text="${#temporals.format(d.declaredAt, 'dd.MM.yyyy HH:mm')}"></div>
+        </div>
+        <div class="history-credits used" th:text="'−' + ${d.creditsUsed} + ' cr.'"></div>
+      </div>
+
+      <div th:each="p : ${purchases}" class="history-item">
+        <div class="history-icon buy">✅</div>
+        <div class="history-info">
+          <div class="history-main" th:text="${p.packType.label}">Pack 100 crédits</div>
+          <div class="history-sub"
+               th:text="${#temporals.format(p.createdAt, 'dd.MM.yyyy HH:mm')} + ' · Fr. ' + ${p.amountChf}"></div>
+        </div>
+        <div class="history-credits added" th:text="'+' + ${p.creditsAdded} + ' cr.'"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+  <a th:href="@{/mobile/print}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
+    Imprimer
+  </a>
+</div>
+
+<script th:inline="javascript">
+const remaining = /*[[${member.printQuota - member.printUsed}]]*/ 0;
+
+function updatePreview() {
+  const bw    = parseInt(document.getElementById('pagesBw').value)    || 0;
+  const col   = parseInt(document.getElementById('pagesColor').value) || 0;
+  const total = bw + col * 2;
+  document.getElementById('previewCredits').textContent = total;
+  const btn = document.getElementById('declareBtn');
+  if (total > 0 && total <= remaining) {
+    btn.disabled = false;
+    btn.textContent = 'Déclarer — ' + total + ' crédit(s)';
+  } else if (total > remaining) {
+    btn.disabled = true;
+    btn.textContent = 'Crédits insuffisants (' + remaining + ' disponibles)';
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'Déclarer les impressions';
+  }
+}
+
+function updateUploadPreview() {
+  const pages  = parseInt(document.getElementById('uploadPages').value)  || 1;
+  const copies = parseInt(document.getElementById('uploadCopies').value) || 1;
+  const color  = document.getElementById('uploadColor').checked;
+  const total  = pages * copies * (color ? 2 : 1);
+  document.getElementById('uploadCredits').textContent = total;
+  const btn = document.getElementById('uploadBtn');
+  if (total <= remaining && total > 0) {
+    btn.disabled = false;
+    btn.textContent = 'Envoyer à l\'imprimante → ' + total + ' crédit(s)';
+  } else if (total > remaining) {
+    btn.disabled = true;
+    btn.textContent = 'Crédits insuffisants (' + remaining + ' disponibles)';
+  }
+}
+updateUploadPreview();
+
+function updateBuyBtn(radio) {
+  const labels = {
+    PACK_50:   'Fr. 5.–',  PACK_100: 'Fr. 10.–',
+    PACK_200:  'Fr. 20.–', PACK_500: 'Fr. 50.–',
+    PACK_1000: 'Fr. 100.–'
+  };
+  const btn = document.getElementById('buyBtn');
+  btn.textContent = 'Payer ' + (labels[radio.value] || '') + ' avec zahls.ch →';
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

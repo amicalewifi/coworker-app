@@ -1,6 +1,7 @@
 package ch.amicalewifi.controller;
 
 import ch.amicalewifi.model.MembershipType;
+import ch.amicalewifi.model.PrintPackType;
 import ch.amicalewifi.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,13 +58,20 @@ public class ZahlsController {
                 return ResponseEntity.ok().build();
             }
 
-            // Format : "{memberId}:{MembershipType}"
-            String[] parts = referenceId.split(":", 2);
-            UUID memberId = UUID.fromString(parts[0]);
-            MembershipType membership = MembershipType.valueOf(parts[1]);
+            // Format : "{memberId}:{MembershipType}"  ou  "{memberId}:PRINT:{PrintPackType}"
+            String[] parts   = referenceId.split(":", 2);
+            UUID     memberId = UUID.fromString(parts[0]);
+            String   kind    = parts[1];
 
-            memberService.renewPack(memberId, membership);
-            log.info("Zahls webhook: pack renouvelé — membre={} formule={}", memberId, membership);
+            if (kind.startsWith("PRINT:")) {
+                PrintPackType pack = PrintPackType.valueOf(kind.substring(6));
+                memberService.addPrintCredits(memberId, pack);
+                log.info("Zahls webhook: crédits impression — membre={} pack={}", memberId, pack);
+            } else {
+                MembershipType membership = MembershipType.valueOf(kind);
+                memberService.renewPack(memberId, membership);
+                log.info("Zahls webhook: pack renouvelé — membre={} formule={}", memberId, membership);
+            }
 
         } catch (Exception e) {
             // On répond toujours 200 pour éviter les retentatives Payrexx

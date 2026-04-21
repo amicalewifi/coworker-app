@@ -1,6 +1,8 @@
 package ch.amicalewifi.service;
 
+import ch.amicalewifi.model.ConfHourPackType;
 import ch.amicalewifi.model.MembershipType;
+import ch.amicalewifi.model.PrintPackType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -36,6 +38,8 @@ public class ZahlsService {
     @Value("${amicale.zahls.base-url:https://api.zahls.ch/v1.14}")        private String baseUrl;
     @Value("${amicale.zahls.success-url}")                                private String successUrl;
     @Value("${amicale.zahls.cancel-url}")                                 private String cancelUrl;
+    @Value("${amicale.zahls.print-success-url}")                          private String printSuccessUrl;
+    @Value("${amicale.zahls.print-cancel-url}")                           private String printCancelUrl;
 
     private final RestTemplate rest = new RestTemplate();
 
@@ -51,34 +55,37 @@ public class ZahlsService {
             log.warn("Zahls: formule {} sans prix, pas de lien créé", membership);
             return Optional.empty();
         }
+        int amountRappen = membership.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
+        String referenceId = memberId + ":" + membership.name();
+        return createLink(referenceId, "Renouvellement " + membership.getLabel(),
+                amountRappen, successUrl, cancelUrl);
+    }
+
+    public Optional<String> createPrintPackPaymentLink(UUID memberId, PrintPackType pack) {
+        int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
+        String referenceId = memberId + ":PRINT:" + pack.name();
+        return createLink(referenceId, "Crédits impression · " + pack.getLabel(),
+                amountRappen, printSuccessUrl, printCancelUrl);
+    }
+
+    private Optional<String> createLink(String referenceId, String purpose,
+                                         int amountRappen, String successRedirect, String cancelRedirect) {
         try {
-            // Montant en centimes (Rappen)
-            int amountRappen = membership.getPriceChf()
-                    .multiply(BigDecimal.valueOf(100))
-                    .intValue();
-
-            // Référence interne : memberId:PACK_10J — permet d'identifier le renouvellement dans le webhook
-            String referenceId = memberId.toString() + ":" + membership.name();
-
             Map<String, String> params = new LinkedHashMap<>();
             params.put("amount",               String.valueOf(amountRappen));
-            params.put("cancelRedirectUrl",    cancelUrl);
+            params.put("cancelRedirectUrl",    cancelRedirect);
             params.put("chargeOnAuthentication", "0");
             params.put("currency",             "CHF");
             params.put("preAuthorization",     "0");
-            params.put("purpose",              "Renouvellement " + membership.getLabel());
+            params.put("purpose",              purpose);
             params.put("referenceId",          referenceId);
-            params.put("successRedirectUrl",   successUrl);
+            params.put("successRedirectUrl",   successRedirect);
             params.put("vatRate",              "0");
 
-            String signature = buildSignature(params);
-            log.warn("Zahls signature input: {}", buildQueryString(new TreeMap<>(params)));
-            log.warn("Zahls signature: {}", signature);
-            params.put("ApiSignature", signature);
+            params.put("ApiSignature", buildSignature(params));
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             params.forEach(body::add);
 
@@ -86,7 +93,7 @@ public class ZahlsService {
             ResponseEntity<Map> resp = rest.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
 
             if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
-                log.warn("Zahls createPaymentLink HTTP {}: {}", resp.getStatusCode(), resp.getBody());
+                log.warn("Zahls createLink HTTP {}: {}", resp.getStatusCode(), resp.getBody());
                 return Optional.empty();
             }
 
@@ -98,11 +105,11 @@ public class ZahlsService {
             }
 
             String link = (String) data.get(0).get("link");
-            log.info("Zahls lien créé: {} pour {} ({})", link, memberId, membership);
+            log.info("Zahls lien créé: {} ref={}", link, referenceId);
             return Optional.ofNullable(link);
 
         } catch (Exception e) {
-            log.error("Zahls createPaymentLink erreur: {}", e.getMessage(), e);
+            log.error("Zahls createLink erreur: {}", e.getMessage(), e);
             return Optional.empty();
         }
     }

@@ -7,8 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,10 +19,13 @@ import java.util.UUID;
 @Slf4j
 public class MemberService {
 
-    private final MemberRepository          memberRepo;
-    private final PresenceRepository        presenceRepo;
-    private final PackTransactionRepository packTxRepo;
-    private final AccessEventRepository     eventRepo;
+    private final MemberRepository                 memberRepo;
+    private final PresenceRepository               presenceRepo;
+    private final PackTransactionRepository        packTxRepo;
+    private final AccessEventRepository            eventRepo;
+    private final PrintCreditTransactionRepository printCreditTxRepo;
+    private final PrintDeclarationRepository       printDeclarationRepo;
+    private final ConfCreditTransactionRepository  confCreditTxRepo;
 
     public List<Member>   getAll()                 { return memberRepo.findByActiveTrueOrderByLastNameAsc(); }
     public List<Member>   getAllIncludingInactive() { return memberRepo.findAllOrderByActiveDescLastNameAsc(); }
@@ -121,6 +122,78 @@ public class MemberService {
                 .terminalId("admin")
                 .build());
         return presence;
+    }
+
+    public void addPrintCredits(UUID memberId, PrintPackType pack) {
+        Member m = getById(memberId);
+        m.setPrintQuota(m.getPrintQuota() + pack.getCredits());
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        printCreditTxRepo.save(PrintCreditTransaction.builder()
+                .member(m).packType(pack)
+                .creditsAdded(pack.getCredits())
+                .amountChf(pack.getPriceChf())
+                .build());
+        log.info("Crédits impression: +{} pour {}", pack.getCredits(), m.getDisplayName());
+    }
+
+    public void refundPrintCredits(UUID memberId, int credits) {
+        Member m = getById(memberId);
+        m.setPrintUsed(Math.max(0, m.getPrintUsed() - credits));
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        log.info("Remboursement impression: {} crédits pour {}", credits, m.getDisplayName());
+    }
+
+    public void deductPrintCredits(UUID memberId, int credits) {
+        Member m = getById(memberId);
+        int remaining = m.getPrintQuota() - m.getPrintUsed();
+        if (credits > remaining) {
+            throw new IllegalStateException(
+                "Crédits insuffisants — " + remaining + " disponibles, " + credits + " requis.");
+        }
+        m.setPrintUsed(m.getPrintUsed() + credits);
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+    }
+
+    public void declarePrint(UUID memberId, int pagesBw, int pagesColor) {
+        Member m = getById(memberId);
+        int credits = pagesBw + pagesColor * 2;
+        int remaining = m.getPrintQuota() - m.getPrintUsed();
+        if (credits > remaining) {
+            throw new IllegalStateException(
+                "Crédits insuffisants — " + remaining + " disponibles, " + credits + " requis.");
+        }
+        m.setPrintUsed(m.getPrintUsed() + credits);
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        printDeclarationRepo.save(PrintDeclaration.builder()
+                .member(m).pagesBw(pagesBw).pagesColor(pagesColor)
+                .creditsUsed(credits).build());
+        log.info("Déclaration impression: {}N&B + {}C = {} crédits pour {}",
+                pagesBw, pagesColor, credits, m.getDisplayName());
+    }
+
+    public void addConfCredits(UUID memberId, ConfHourPackType pack) {
+        Member m = getById(memberId);
+        m.setConfCreditsTotalH(m.getConfCreditsTotalH().add(pack.getHours()));
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        confCreditTxRepo.save(ConfCreditTransaction.builder()
+                .member(m).packType(pack)
+                .hoursAdded(pack.getHours())
+                .amountChf(pack.getPriceChf())
+                .build());
+        log.info("Crédits conf ajoutés: +{}h pour {}", pack.getHours(), m.getDisplayName());
+    }
+
+    public List<PrintDeclaration>       getPrintDeclarations(UUID memberId) {
+        return printDeclarationRepo.findByMemberIdOrderByDeclaredAtDesc(memberId);
+    }
+
+    public List<PrintCreditTransaction> getPrintPurchases(UUID memberId) {
+        return printCreditTxRepo.findByMemberIdOrderByCreatedAtDesc(memberId);
     }
 
     public Presence checkout(UUID presenceId) {

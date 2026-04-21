@@ -43,9 +43,9 @@ public class PrinterJob {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
-    @Column(name = "cost_per_page", precision = 4, scale = 3)
+    @Column(name = "cost_per_page", precision = 5, scale = 3)
     @Builder.Default
-    private BigDecimal costPerPage = new BigDecimal("0.050");
+    private BigDecimal costPerPage = new BigDecimal("0.100");
 
     @Column(name = "created_at")
     @Builder.Default
