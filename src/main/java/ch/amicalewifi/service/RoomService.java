@@ -31,7 +31,7 @@ public class RoomService {
     public List<RoomBooking> getForMonth(YearMonth ym)       { return bookingRepo.findByDateBetweenAndStatusOrderByDateAscStartTimeAsc(ym.atDay(1), ym.atEndOfMonth(), BookingStatus.CONFIRMED); }
 
     public RoomBooking book(RoomBooking b) {
-        if (!bookingRepo.findConflicts(b.getRoom().getId(), b.getDate(), b.getStartTime(), b.getEndTime()).isEmpty()) {
+        if (!bookingRepo.findConflicts(b.getRoom().getId(), b.getDate(), b.getStartTime(), b.getEndTime(), BookingStatus.CONFIRMED).isEmpty()) {
             throw new IllegalStateException("La salle est déjà réservée sur ce créneau");
         }
         log.info("Réservation: {} · {} {}–{}", b.getRoom().getName(), b.getDate(), b.getStartTime(), b.getEndTime());

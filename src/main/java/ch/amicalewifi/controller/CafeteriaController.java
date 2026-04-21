@@ -66,7 +66,7 @@ public class CafeteriaController {
         if (online) {
             try {
                 byte[] data = file.getBytes();
-                printerService.print(data, filename);
+                printerService.print(data, filename, "PDF", copies, duplex);
 
                 job.setStatus(PrintJobStatus.COMPLETED);
                 job.setCompletedAt(LocalDateTime.now());

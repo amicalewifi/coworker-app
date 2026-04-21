@@ -38,10 +38,18 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .room-meta{font-size:11px;color:var(--t3);margin-top:2px;}
 .room-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;background:var(--gl);color:var(--gd);}
 
-/* Time slots */
-.slots{padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:4px;}
-.slot{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--surf-2);color:var(--t2);}
-.slot.busy{background:#fee;color:#c0392b;text-decoration:line-through;}
+/* Occupancy timeline */
+.occ-wrap{padding:0 16px 4px;}
+.occ-timeline{display:flex;height:22px;border-radius:8px;overflow:hidden;border:1px solid var(--bdr);margin-bottom:6px;background:var(--gl);}
+.occ-seg{height:100%;transition:background .1s;}
+.occ-seg.free{background:var(--gl);}
+.occ-seg.busy{background:#e74c3c;}
+.occ-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);font-weight:700;margin-bottom:8px;}
+.occ-bookings{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+.occ-bk{display:flex;align-items:center;gap:8px;padding:5px 8px;background:#fff0f0;border-radius:8px;border-left:3px solid #e74c3c;}
+.occ-bk-time{font-size:12px;font-weight:800;color:#c0392b;white-space:nowrap;}
+.occ-bk-title{font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.occ-free-badge{font-size:11px;color:var(--gd);font-weight:700;padding:4px 8px;background:var(--gl);border-radius:8px;border-left:3px solid var(--green);margin-bottom:8px;}
 .no-bookings{font-size:12px;color:var(--t3);padding:0 16px 12px;}
 
 /* Book form */
@@ -153,14 +161,27 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
       <span class="room-badge" th:text="${room.roomType != null and room.roomType.name() == 'SALLE_CONFERENCE'} ? 'Conf.' : 'Cabine'">Conf.</span>
     </div>
 
-    <!-- Créneaux occupés -->
-    <div th:with="slots=${bookingsByRoom.get(room.id)}">
-      <div th:if="${slots != null and !slots.isEmpty()}" class="slots">
-        <span class="slot busy" th:each="b : ${slots}"
-              th:text="${b.startTime.toString().substring(0,5)} + '–' + ${b.endTime.toString().substring(0,5)}"></span>
+    <!-- Timeline d'occupation 7h–21h -->
+    <div class="occ-wrap" th:with="slots=${bookingsByRoom.get(room.id)},busyH=${busyHoursByRoom.get(room.id)}">
+      <div class="occ-timeline">
+        <div th:each="h : ${#numbers.sequence(7,20)}"
+             class="occ-seg"
+             th:classappend="${busyH != null and busyH.contains(h)} ? 'busy' : 'free'"
+             style="flex:1;"
+             th:title="${h} + ':00'"></div>
       </div>
-      <div th:unless="${slots != null and !slots.isEmpty()}" class="no-bookings">
-        Aucune réservation — disponible toute la journée
+      <div class="occ-labels">
+        <span>7h</span><span>9h</span><span>11h</span><span>13h</span><span>15h</span><span>17h</span><span>19h</span><span>21h</span>
+      </div>
+      <div th:if="${slots != null and !slots.isEmpty()}">
+        <div th:each="b : ${slots}" class="occ-bk">
+          <span class="occ-bk-time"
+                th:text="${b.startTime.toString().substring(0,5)} + ' – ' + ${b.endTime.toString().substring(0,5)}"></span>
+          <span class="occ-bk-title" th:text="${b.title != null ? b.title : (b.member != null ? b.member.firstName : 'Réservé')}"></span>
+        </div>
+      </div>
+      <div th:unless="${slots != null and !slots.isEmpty()}" class="occ-free-badge">
+        Disponible toute la journée
       </div>
     </div>
 
@@ -261,21 +282,21 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
     Accueil
   </a>
-  <a th:href="@{/mobile/history}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-    Historique
-  </a>
   <a th:href="@{/mobile/rooms}" class="nav-btn active">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
     Salles
   </a>
-  <a th:href="@{/mobile/profile}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
-    Profil
-  </a>
   <a th:href="@{/mobile/print}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
     Imprimer
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
   </a>
 </div>
 

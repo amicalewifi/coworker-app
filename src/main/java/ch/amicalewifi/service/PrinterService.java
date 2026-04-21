@@ -49,12 +49,18 @@ public class PrinterService {
      * @throws IOException si la connexion ou l'envoi échoue
      */
     public void print(byte[] data, String filename, String language) throws IOException {
+        print(data, filename, language, 1, false);
+    }
+
+    public void print(byte[] data, String filename, String language, int copies, boolean duplex) throws IOException {
         // UEL = Universal Exit Language : séquence de réinitialisation Kyocera
         String uel = "\033%-12345X";
 
         String pjlHeader = uel
                 + "@PJL JOB NAME=\"" + sanitize(filename) + "\"\r\n"
-                + "@PJL SET COPIES=1\r\n"
+                + "@PJL SET COPIES=" + Math.max(1, copies) + "\r\n"
+                + "@PJL SET DUPLEX=" + (duplex ? "ON" : "OFF") + "\r\n"
+                + (duplex ? "@PJL SET BINDING=LONGEDGE\r\n" : "")
                 + "@PJL ENTER LANGUAGE=" + language + "\r\n";
 
         String pjlFooter = "\r\n" + uel + "@PJL EOJ\r\n" + uel;

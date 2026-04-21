@@ -20,7 +20,7 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> 
     List<RoomBooking> findByDateAndStatusOrderByStartTime(LocalDate date, BookingStatus status);
 
     @EntityGraph(attributePaths = {"room", "member"})
-    List<RoomBooking> findByRoomIdAndDateOrderByStartTime(UUID roomId, LocalDate date);
+    List<RoomBooking> findByRoomIdAndDateAndStatusOrderByStartTime(UUID roomId, LocalDate date, BookingStatus status);
 
     @EntityGraph(attributePaths = {"room", "member"})
     List<RoomBooking> findByMemberIdOrderByDateDescStartTimeDesc(UUID memberId);
@@ -33,11 +33,12 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> 
 
     @Query("""
         SELECT b FROM RoomBooking b
-        WHERE b.room.id = :rid AND b.date = :date AND b.status = 'CONFIRMED'
+        WHERE b.room.id = :rid AND b.date = :date AND b.status = :status
           AND b.startTime < :end AND b.endTime > :start
     """)
-    List<RoomBooking> findConflicts(@Param("rid")   UUID rid,
-                                    @Param("date")  LocalDate date,
-                                    @Param("start") LocalTime start,
-                                    @Param("end")   LocalTime end);
+    List<RoomBooking> findConflicts(@Param("rid")    UUID rid,
+                                    @Param("date")   LocalDate date,
+                                    @Param("start")  LocalTime start,
+                                    @Param("end")    LocalTime end,
+                                    @Param("status") BookingStatus status);
 }

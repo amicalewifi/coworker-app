@@ -107,15 +107,19 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
       </div>
     </div>
 
-    <div class="mc-stats">
+    <div class="mc-stats" style="grid-template-columns:1fr 1fr 1fr;">
       <div class="mc-stat">
         <div class="mc-stat-val" th:text="${member.halfDaysRemaining!=null?member.halfDaysRemaining:'∞'}">7</div>
-        <div class="mc-stat-lbl">demi-journées restantes</div>
+        <div class="mc-stat-lbl">demi-journées</div>
       </div>
       <div class="mc-stat">
         <div class="mc-stat-val"
              th:text="${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsRemaining,1,1) : '—'}+'h'">—h</div>
-        <div class="mc-stat-lbl">crédits conférence</div>
+        <div class="mc-stat-lbl">salle conf.</div>
+      </div>
+      <div class="mc-stat">
+        <div class="mc-stat-val" th:text="${member.printQuota - member.printUsed}">0</div>
+        <div class="mc-stat-lbl">crédits print</div>
       </div>
     </div>
   </div>
@@ -168,15 +172,6 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
         <span class="type-opt-hours">12:30–19:00</span>
         <span class="type-opt-cost" style="color:var(--od);">−0.5j</span>
       </label>
-    </div>
-
-    <div class="unit-toggle" id="unitToggle" onclick="toggleUnit()">
-      <div>
-        <div style="font-size:13px;font-weight:600;">Entrée unitaire (hors pack)</div>
-        <div style="font-size:11px;color:var(--t2);">Ne décompte pas vos unités</div>
-      </div>
-      <span class="toggle-chip" id="utChip">OFF</span>
-      <input type="hidden" name="unitaire" id="unitaire" value="false">
     </div>
 
     <div style="margin-bottom:12px;">
@@ -232,21 +227,21 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
     Accueil
   </a>
-  <a th:href="@{/mobile/history}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-    Historique
-  </a>
   <a th:href="@{/mobile/rooms}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
     Salles
   </a>
-  <a th:href="@{/mobile/profile}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
-    Profil
-  </a>
   <a th:href="@{/mobile/print}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
     Imprimer
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
   </a>
 </div>
 

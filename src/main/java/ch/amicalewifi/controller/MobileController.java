@@ -294,28 +294,35 @@ public class MobileController {
             String filename = file.getOriginalFilename();
             String lang = (filename != null && filename.toLowerCase().endsWith(".ps")) ? "POSTSCRIPT" : "PDF";
             BigDecimal cppChf = color ? new BigDecimal("0.200") : new BigDecimal("0.100");
+            boolean online = printerService.isOnline();
 
             PrinterJob job = printerJobRepo.save(PrinterJob.builder()
                     .member(member)
                     .filename(filename != null ? filename : "document.pdf")
                     .pages(pages).copies(copies).color(color).duplex(duplex)
-                    .status(PrintJobStatus.PRINTING)
+                    .status(online ? PrintJobStatus.PRINTING : PrintJobStatus.QUEUED)
                     .costPerPage(cppChf)
                     .build());
-            try {
-                printerService.print(file.getBytes(), job.getFilename(), lang);
-                job.setStatus(PrintJobStatus.COMPLETED);
-                job.setCompletedAt(LocalDateTime.now());
-                printerJobRepo.save(job);
+
+            if (online) {
+                try {
+                    printerService.print(file.getBytes(), job.getFilename(), lang, copies, duplex);
+                    job.setStatus(PrintJobStatus.COMPLETED);
+                    job.setCompletedAt(LocalDateTime.now());
+                    printerJobRepo.save(job);
+                    ra.addFlashAttribute("success",
+                            "Document envoyé à l'imprimante — " + credits + " crédit(s) déduits.");
+                } catch (Exception e) {
+                    job.setStatus(PrintJobStatus.ERROR);
+                    job.setErrorMessage(e.getMessage());
+                    printerJobRepo.save(job);
+                    memberService.refundPrintCredits(member.getId(), credits);
+                    ra.addFlashAttribute("error",
+                            "Erreur d'impression : " + e.getMessage() + " — crédits remboursés.");
+                }
+            } else {
                 ra.addFlashAttribute("success",
-                        "Document envoyé à l'imprimante — " + credits + " crédit(s) déduits.");
-            } catch (Exception e) {
-                job.setStatus(PrintJobStatus.ERROR);
-                job.setErrorMessage(e.getMessage());
-                printerJobRepo.save(job);
-                memberService.refundPrintCredits(member.getId(), credits);
-                ra.addFlashAttribute("error",
-                        "Erreur d'impression : " + e.getMessage() + " — crédits remboursés.");
+                        "Imprimante hors ligne — document mis en file d'attente. " + credits + " crédit(s) déduits.");
             }
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -350,16 +357,28 @@ public class MobileController {
         List<Room> rooms = roomService.getAll();
         java.util.Map<UUID, List<RoomBooking>> bookingsByRoom = new java.util.HashMap<>();
         rooms.forEach(r -> bookingsByRoom.put(r.getId(),
-                bookingRepo.findByRoomIdAndDateOrderByStartTime(r.getId(), selectedDate)));
+                bookingRepo.findByRoomIdAndDateAndStatusOrderByStartTime(r.getId(), selectedDate, BookingStatus.CONFIRMED)));
+        // precompute busy hours (7-20) per room for the timeline display
+        java.util.Map<UUID, Set<Integer>> busyHoursByRoom = new java.util.HashMap<>();
+        bookingsByRoom.forEach((rid, bookings) -> {
+            Set<Integer> hours = new java.util.HashSet<>();
+            for (RoomBooking b : bookings) {
+                int startH = b.getStartTime().getHour();
+                int endH = b.getEndTime().getHour() + (b.getEndTime().getMinute() > 0 ? 1 : 0);
+                for (int h = startH; h < endH; h++) hours.add(h);
+            }
+            busyHoursByRoom.put(rid, hours);
+        });
         List<RoomBooking> myBookings = roomService.getForMember(member.getId()).stream()
                 .filter(b -> !b.getDate().isBefore(LocalDate.now()) && b.getStatus() == BookingStatus.CONFIRMED)
                 .limit(5).toList();
-        model.addAttribute("member",        member);
-        model.addAttribute("rooms",         rooms);
-        model.addAttribute("selectedDate",  selectedDate);
-        model.addAttribute("bookingsByRoom", bookingsByRoom);
-        model.addAttribute("myBookings",    myBookings);
-        model.addAttribute("confPacks",     List.of(ConfHourPackType.values()));
+        model.addAttribute("member",          member);
+        model.addAttribute("rooms",           rooms);
+        model.addAttribute("selectedDate",    selectedDate);
+        model.addAttribute("bookingsByRoom",  bookingsByRoom);
+        model.addAttribute("busyHoursByRoom", busyHoursByRoom);
+        model.addAttribute("myBookings",      myBookings);
+        model.addAttribute("confPacks",       List.of(ConfHourPackType.values()));
         return "mobile/rooms";
     }
 
