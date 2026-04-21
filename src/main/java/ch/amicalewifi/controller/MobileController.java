@@ -14,7 +14,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import ch.amicalewifi.model.User;
+import ch.amicalewifi.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,15 +33,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MobileController {
 
-    private final MemberService       memberService;
-    private final RoomService         roomService;
-    private final ScanService         scanService;
-    private final UnifiService        unifiService;
-    private final ZahlsService        zahlsService;
-    private final PrinterService      printerService;
-    private final PrinterJobRepository printerJobRepo;
-    private final MemberRepository    memberRepo;
-    private final RoomRepository      roomRepo;
+    private final MemberService            memberService;
+    private final RoomService              roomService;
+    private final ScanService              scanService;
+    private final UnifiService             unifiService;
+    private final ZahlsService             zahlsService;
+    private final PrinterService           printerService;
+    private final PrinterJobRepository     printerJobRepo;
+    private final MemberRepository         memberRepo;
+    private final UserRepository           userRepo;
+    private final RoomRepository           roomRepo;
+    private final RoomBookingRepository    bookingRepo;
+    private final PasswordEncoder          passwordEncoder;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
 
@@ -70,11 +78,13 @@ public class MobileController {
     public String scan(Authentication auth,
                        @RequestParam(defaultValue = "FULL_DAY") PresenceType presenceType,
                        @RequestParam(defaultValue = "false") boolean unitaire,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if (member == null) return "redirect:/mobile/";
         if (unitaire) presenceType = presenceType.toUnitaire();
-        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType);
+        LocalDate presenceDate = (date != null) ? date : LocalDate.now();
+        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType, presenceDate);
         model.addAttribute("result", result);
         model.addAttribute("member", member);
         return "mobile/scan-result";
@@ -131,6 +141,36 @@ public class MobileController {
         return "redirect:/mobile/profile";
     }
 
+    @PostMapping("/profile/password")
+    public String changePassword(Authentication auth,
+                                 @RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 RedirectAttributes ra) {
+        Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        User user = m.getUser();
+        if (user == null) {
+            ra.addFlashAttribute("error", "Aucun compte associé à ce profil.");
+            return "redirect:/mobile/profile";
+        }
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            ra.addFlashAttribute("pwError", "Mot de passe actuel incorrect.");
+            return "redirect:/mobile/profile";
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            ra.addFlashAttribute("pwError", "Les nouveaux mots de passe ne correspondent pas.");
+            return "redirect:/mobile/profile";
+        }
+        if (newPassword.length() < 8) {
+            ra.addFlashAttribute("pwError", "Le mot de passe doit contenir au moins 8 caractères.");
+            return "redirect:/mobile/profile";
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+        ra.addFlashAttribute("success", "Mot de passe modifié avec succès.");
+        return "redirect:/mobile/profile";
+    }
+
     /** Page ouverte après scan du QR code du coworking. */
     @GetMapping("/presence")
     public String presenceScan(@RequestParam(required = false) String venue,
@@ -151,6 +191,7 @@ public class MobileController {
     public String presenceConfirm(@RequestParam(required = false) String venue,
                                   @RequestParam(defaultValue = "FULL_DAY") PresenceType presenceType,
                                   @RequestParam(defaultValue = "false") boolean unitaire,
+                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                                   Authentication auth, Model model) {
         if (venue == null || !venue.equals(venueQrToken)) {
             return "redirect:/mobile/?error=qr_invalide";
@@ -158,7 +199,8 @@ public class MobileController {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if (member == null) return "redirect:/mobile/";
         if (unitaire) presenceType = presenceType.toUnitaire();
-        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType);
+        LocalDate presenceDate = (date != null) ? date : LocalDate.now();
+        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType, presenceDate);
         if (result instanceof ScanResult.Granted) {
             unifiService.createVoucher(member.getDisplayName())
                     .ifPresent(code -> model.addAttribute("wifiVoucher", code));
@@ -294,6 +336,101 @@ public class MobileController {
                     ra.addFlashAttribute("error",
                             "Impossible de créer le lien de paiement. Contactez l'admin.");
                     return "redirect:/mobile/print";
+                });
+    }
+
+    @GetMapping("/rooms")
+    public String roomsPage(Authentication auth,
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                            @RequestParam(required = false) String bought,
+                            Model model) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        LocalDate selectedDate = date != null ? date : LocalDate.now();
+        if ("ok".equals(bought)) {
+            model.addAttribute("success", "Paiement reçu — vos crédits de salle ont été ajoutés !");
+        }
+        List<Room> rooms = roomService.getAll();
+        java.util.Map<UUID, List<RoomBooking>> bookingsByRoom = new java.util.HashMap<>();
+        rooms.forEach(r -> bookingsByRoom.put(r.getId(),
+                bookingRepo.findByRoomIdAndDateOrderByStartTime(r.getId(), selectedDate)));
+        List<RoomBooking> myBookings = roomService.getForMember(member.getId()).stream()
+                .filter(b -> !b.getDate().isBefore(LocalDate.now()) && b.getStatus() == BookingStatus.CONFIRMED)
+                .limit(5).toList();
+        model.addAttribute("member",        member);
+        model.addAttribute("rooms",         rooms);
+        model.addAttribute("selectedDate",  selectedDate);
+        model.addAttribute("bookingsByRoom", bookingsByRoom);
+        model.addAttribute("myBookings",    myBookings);
+        model.addAttribute("confPacks",     List.of(ConfHourPackType.values()));
+        return "mobile/rooms";
+    }
+
+    @PostMapping("/rooms/book")
+    public String bookRoomWithCredits(Authentication auth,
+                                      @RequestParam UUID roomId,
+                                      @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+                                      @RequestParam String startTime,
+                                      @RequestParam String endTime,
+                                      @RequestParam(defaultValue = "1") int participants,
+                                      @RequestParam(required = false) String title,
+                                      RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        Room   room   = roomRepo.findById(roomId).orElseThrow();
+        LocalTime start = LocalTime.parse(startTime);
+        LocalTime end   = LocalTime.parse(endTime);
+        BigDecimal hours = BigDecimal.valueOf(Duration.between(start, end).toMinutes())
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+
+        if (!member.isPermanent()) {
+            BigDecimal remaining = member.getConfCreditsRemaining();
+            if (remaining.compareTo(hours) < 0) {
+                ra.addFlashAttribute("error",
+                    remaining.compareTo(BigDecimal.ZERO) > 0
+                        ? "Crédits insuffisants — " + remaining + "h disponibles, " + hours + "h requises. Achetez des crédits ci-dessous."
+                        : "Vous n'avez pas de crédits de salle. Achetez un pack ci-dessous ou directement à l'Amicale (19 CHF/h).");
+                ra.addFlashAttribute("neededHours", hours.subtract(remaining).max(BigDecimal.ZERO));
+                return "redirect:/mobile/rooms?date=" + date;
+            }
+        }
+        try {
+            roomService.book(RoomBooking.builder()
+                    .room(room).member(member).date(date)
+                    .startTime(start).endTime(end)
+                    .participants(participants).title(title)
+                    .billedFromCredits(true).build());
+            if (!member.isPermanent()) {
+                member.setConfCreditsUsedH(member.getConfCreditsUsedH().add(hours));
+                member.setUpdatedAt(LocalDateTime.now());
+                memberRepo.save(member);
+            }
+            ra.addFlashAttribute("success", "Salle réservée : " + room.getName() + " — " + hours + "h déduit(es).");
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/mobile/rooms?date=" + date;
+    }
+
+    @PostMapping("/rooms/cancel/{id}")
+    public String cancelBooking(@PathVariable UUID id, RedirectAttributes ra) {
+        try {
+            roomService.cancel(id);
+            ra.addFlashAttribute("success", "Réservation annulée.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/mobile/rooms";
+    }
+
+    @PostMapping("/rooms/buy-credits")
+    public String buyConfCredits(Authentication auth,
+                                 @RequestParam ConfHourPackType pack,
+                                 RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        return zahlsService.createConfCreditPaymentLink(member.getId(), pack)
+                .map(url -> "redirect:" + url)
+                .orElseGet(() -> {
+                    ra.addFlashAttribute("error", "Impossible de créer le lien de paiement. Contactez l'admin.");
+                    return "redirect:/mobile/rooms";
                 });
     }
 

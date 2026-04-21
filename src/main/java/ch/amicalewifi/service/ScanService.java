@@ -59,15 +59,23 @@ public class ScanService {
     }
 
     public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType) {
-        log.info("Scan QR: {} · {}", qrToken, presenceType);
+        return processScanByToken(qrToken, presenceType, LocalDate.now());
+    }
+
+    public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType, LocalDate date) {
+        log.info("Scan QR: {} · {} · {}", qrToken, presenceType, date);
         Member member = memberRepo.findByQrToken(qrToken).orElse(null);
         if (member == null) {
             return new ScanResult.Denied("token_invalid", null);
         }
-        return processScanForMember(member, "qr:" + qrToken, presenceType);
+        return processScanForMember(member, "qr:" + qrToken, presenceType, date);
     }
 
     private ScanResult processScanForMember(Member member, String uid, PresenceType presenceType) {
+        return processScanForMember(member, uid, presenceType, LocalDate.now());
+    }
+
+    private ScanResult processScanForMember(Member member, String uid, PresenceType presenceType, LocalDate date) {
         if (!member.isBadgeActive() ||
                 (member.getBadgeExpires() != null && member.getBadgeExpires().isBefore(LocalDate.now()))) {
             saveEvent(member, uid, AccessEventType.ENTRY_DENIED, null, null, "badge_expired");
@@ -75,21 +83,24 @@ public class ScanService {
         }
 
         if (member.isPermanent()) {
-            Presence p = savePresence(member, presenceType);
+            Presence p = savePresence(member, presenceType, date);
             saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, new BigDecimal("1.0"), null);
             return new ScanResult.Granted(member, p, null, null);
         }
 
         if (member.getMembership() == MembershipType.JOURNEE_ESSAI) {
-            Presence p = savePresence(member, PresenceType.TRIAL);
+            Presence p = savePresence(member, PresenceType.TRIAL, date);
             saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, PresenceType.TRIAL, BigDecimal.ZERO, null);
             return new ScanResult.Granted(member, p, null, null);
         }
 
-        int hour = LocalTime.now().getHour();
-        if (hour < openH || hour >= closeH) {
-            saveEvent(member, uid, AccessEventType.ENTRY_DENIED, null, null, "outside_hours");
-            return new ScanResult.Denied("outside_hours", member);
+        // Only enforce opening hours for same-day registration
+        if (!date.isAfter(LocalDate.now())) {
+            int hour = LocalTime.now().getHour();
+            if (hour < openH || hour >= closeH) {
+                saveEvent(member, uid, AccessEventType.ENTRY_DENIED, null, null, "outside_hours");
+                return new ScanResult.Denied("outside_hours", member);
+            }
         }
 
         BigDecimal needed    = presenceType.getUnits();
@@ -101,9 +112,9 @@ public class ScanService {
         }
 
         boolean alreadyCheckedIn = presenceRepo.findByMemberIdAndDateAndPresenceType(
-                member.getId(), LocalDate.now(), presenceType).isPresent();
+                member.getId(), date, presenceType).isPresent();
 
-        Presence p = savePresence(member, presenceType);
+        Presence p = savePresence(member, presenceType, date);
 
         Member updated;
         if (alreadyCheckedIn) {
@@ -117,11 +128,10 @@ public class ScanService {
         return new ScanResult.Granted(updated, p, updated.getPackUnitsRemaining(), updated.getHalfDaysRemaining());
     }
 
-    private Presence savePresence(Member m, PresenceType type) {
-        // Idempotent : si la même présence existe déjà aujourd'hui, on la retourne sans réinsérer
-        return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), LocalDate.now(), type)
+    private Presence savePresence(Member m, PresenceType type, LocalDate date) {
+        return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), date, type)
                 .orElseGet(() -> presenceRepo.save(Presence.builder()
-                        .member(m).date(LocalDate.now()).presenceType(type)
+                        .member(m).date(date).presenceType(type)
                         .status(PresenceStatus.ACTIVE).checkedInAt(LocalDateTime.now())
                         .unitsConsumed(type.getUnits()).unitaire(type.isUnitaire())
                         .build()));

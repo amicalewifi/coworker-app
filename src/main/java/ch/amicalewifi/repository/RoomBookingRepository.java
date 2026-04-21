@@ -31,8 +31,6 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> 
     @EntityGraph(attributePaths = {"room", "member"})
     List<RoomBooking> findByDateBetweenAndStatusOrderByDateAscStartTimeAsc(LocalDate from, LocalDate to, BookingStatus status);
 
-    java.util.Optional<RoomBooking> findByKoalendarUid(String koalendarUid);
-
     @Query("""
         SELECT b FROM RoomBooking b
         WHERE b.room.id = :rid AND b.date = :date AND b.status = 'CONFIRMED'

@@ -98,6 +98,8 @@ amicale:
     cancel-url:        http://localhost:8081/mobile/
     print-success-url: http://localhost:8081/mobile/print?bought=ok
     print-cancel-url:  http://localhost:8081/mobile/print
+    conf-success-url:  http://localhost:8081/mobile/rooms?bought=ok
+    conf-cancel-url:   http://localhost:8081/mobile/rooms
 
 management:
   endpoints:

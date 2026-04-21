@@ -42,7 +42,4 @@ public class Room {
     @Builder.Default
     private boolean active = true;
 
-    /** Slug Koalendar (ex: "salle-a" → koalendar.com/e/salle-a). Null = réservation manuelle seulement. */
-    @Column(name = "koalendar_slug", unique = true)
-    private String koalendarSlug;
 }

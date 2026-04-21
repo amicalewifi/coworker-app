@@ -40,6 +40,8 @@ public class ZahlsService {
     @Value("${amicale.zahls.cancel-url}")                                 private String cancelUrl;
     @Value("${amicale.zahls.print-success-url}")                          private String printSuccessUrl;
     @Value("${amicale.zahls.print-cancel-url}")                           private String printCancelUrl;
+    @Value("${amicale.zahls.conf-success-url}")                           private String confSuccessUrl;
+    @Value("${amicale.zahls.conf-cancel-url}")                            private String confCancelUrl;
 
     private final RestTemplate rest = new RestTemplate();
 
@@ -59,6 +61,13 @@ public class ZahlsService {
         String referenceId = memberId + ":" + membership.name();
         return createLink(referenceId, "Renouvellement " + membership.getLabel(),
                 amountRappen, successUrl, cancelUrl);
+    }
+
+    public Optional<String> createConfCreditPaymentLink(UUID memberId, ConfHourPackType pack) {
+        int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
+        return createLink(memberId + ":CONFCREDIT:" + pack.name(),
+                "Salle de conférence · " + pack.getLabel(),
+                amountRappen, confSuccessUrl, confCancelUrl);
     }
 
     public Optional<String> createPrintPackPaymentLink(UUID memberId, PrintPackType pack) {

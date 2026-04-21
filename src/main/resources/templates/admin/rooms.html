@@ -66,22 +66,6 @@
           </form>
         </div>
 
-        <!-- Koalendar config -->
-        <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr);">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--t3);margin-bottom:6px;">Koalendar</div>
-          <form th:action="@{/admin/rooms/{id}/koalendar(id=${room.id})}" method="post"
-                style="display:flex;gap:8px;align-items:center;">
-            <input name="slug" class="form-in" style="font-size:12px;padding:5px 8px;flex:1;"
-                   th:value="${room.koalendarSlug}"
-                   placeholder="mon-slug (ex: salle-a)">
-            <button class="btn btn-sm" style="white-space:nowrap;">Enregistrer</button>
-          </form>
-          <div th:if="${room.koalendarSlug != null}"
-               style="font-size:10px;color:var(--t3);margin-top:4px;line-height:1.4;">
-            Embed : <code th:text="'koalendar.com/e/'+${room.koalendarSlug}"></code><br>
-            Webhook : <code th:text="'/api/v1/koalendar/webhook/'+${room.koalendarSlug}"></code>
-          </div>
-        </div>
       </div>
     </div>
   </div>

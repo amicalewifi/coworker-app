@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f4f34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Salles — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
+.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.app-content{flex:1;padding:16px;overflow-y:auto;padding-bottom:24px;}
+
+/* Credits card */
+.credits-card{background:linear-gradient(135deg,#0f4f34,#1a7a50);border-radius:16px;padding:16px 18px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+.cc-left .lbl{font-size:11px;opacity:.6;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.cc-left .val{font-size:30px;font-weight:900;line-height:1;}
+.cc-left .unit{font-size:12px;opacity:.7;margin-top:2px;}
+.cc-right{text-align:right;}
+.cc-right .sub{font-size:11px;opacity:.6;margin-bottom:3px;}
+.cc-right .total{font-size:14px;font-weight:700;}
+
+/* Section */
+.section-title{font-size:13px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;}
+
+/* Date nav */
+.date-nav{display:flex;align-items:center;gap:8px;margin-bottom:16px;background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:8px 12px;}
+.date-nav a{color:var(--t2);text-decoration:none;font-size:18px;font-weight:700;padding:0 6px;}
+.date-nav .date-label{flex:1;text-align:center;font-size:14px;font-weight:700;color:var(--text);}
+.date-input{display:none;}
+
+/* Room cards */
+.room-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;margin-bottom:12px;overflow:hidden;}
+.room-header{padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-start;}
+.room-name{font-size:15px;font-weight:800;}
+.room-meta{font-size:11px;color:var(--t3);margin-top:2px;}
+.room-badge{font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px;background:var(--gl);color:var(--gd);}
+
+/* Time slots */
+.slots{padding:0 16px 12px;display:flex;flex-wrap:wrap;gap:4px;}
+.slot{font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--surf-2);color:var(--t2);}
+.slot.busy{background:#fee;color:#c0392b;text-decoration:line-through;}
+.no-bookings{font-size:12px;color:var(--t3);padding:0 16px 12px;}
+
+/* Book form */
+.book-form{border-top:1px solid var(--bdr);padding:12px 16px 14px;background:var(--surf-2);}
+.book-form-title{font-size:11px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.form-group label{font-size:10px;font-weight:700;color:var(--t2);display:block;margin-bottom:3px;}
+.form-group input, .form-group select{width:100%;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text);font-family:var(--font);box-sizing:border-box;}
+.form-group input:focus, .form-group select:focus{outline:none;border-color:var(--green);}
+.cost-preview{font-size:12px;color:var(--t3);margin-bottom:8px;font-weight:600;}
+.cost-preview span{color:var(--gd);font-weight:800;}
+
+/* Buttons */
+.btn-book{width:100%;padding:11px;background:var(--green);color:#fff;border-radius:10px;font-size:14px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 2px 8px rgba(26,122,80,.25);transition:all .15s;box-sizing:border-box;}
+.btn-book:hover{background:var(--gm);}
+.btn-book:disabled{opacity:.45;cursor:not-allowed;}
+.btn-sm-cancel{font-size:11px;font-weight:700;color:var(--red);background:none;border:1px solid #e0b0b0;border-radius:8px;padding:4px 10px;cursor:pointer;font-family:var(--font);}
+
+/* My bookings */
+.booking-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);}
+.booking-item:last-child{border-bottom:none;}
+.booking-date{width:42px;text-align:center;background:var(--gl);border-radius:10px;padding:6px 4px;flex-shrink:0;}
+.booking-date .dd{font-size:18px;font-weight:900;color:var(--gd);line-height:1;}
+.booking-date .mo{font-size:10px;color:var(--gd);opacity:.7;font-weight:600;}
+.booking-info{flex:1;min-width:0;}
+.booking-room{font-size:13px;font-weight:700;}
+.booking-time{font-size:11px;color:var(--t3);margin-top:2px;}
+.booking-title{font-size:11px;color:var(--t2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Pack grid */
+.pack-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
+.pack-card{border:2px solid var(--bdr);border-radius:14px;padding:12px 14px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:space-between;}
+.pack-card:has(input:checked){border-color:var(--green);background:var(--gl);}
+.pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.pack-name{font-size:13px;font-weight:800;}
+.pack-sub{font-size:11px;color:var(--t3);margin-top:1px;}
+.pack-price{font-size:17px;font-weight:900;color:var(--gd);}
+.btn-primary{display:block;width:100%;padding:14px;background:var(--green);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(26,122,80,.3);transition:all .18s;box-sizing:border-box;margin-top:4px;}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed;}
+.pay-methods{display:flex;gap:5px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
+.pay-m{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--surf-2);color:var(--t2);border:1px solid var(--bdr);}
+
+/* Alert */
+.alert{padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.alert-ok{background:var(--gl);color:var(--gd);border:1px solid var(--green);}
+.alert-err{background:#fff0f0;color:#c0392b;border:1px solid #e74c3c;}
+
+/* Bottom nav */
+.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
+.nav-btn{flex:1;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:9px;font-weight:600;text-decoration:none;transition:color .15s;}
+.nav-btn.active{color:var(--green);}
+.nav-btn svg{width:19px;height:19px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <div class="app-title">Salles de conférence</div>
+</div>
+
+<div class="app-content">
+
+  <!-- Alerts -->
+  <div th:if="${success}" class="alert alert-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="alert alert-err">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="currentColor" stroke="none"/></svg>
+    <span th:text="${error}"></span>
+  </div>
+
+  <!-- Crédits -->
+  <div class="credits-card">
+    <div class="cc-left">
+      <div class="lbl">Crédits conférence</div>
+      <div class="val" th:text="${#numbers.formatDecimal(member.confCreditsRemaining, 1, 1)}">0.0</div>
+      <div class="unit">heures disponibles</div>
+    </div>
+    <div class="cc-right">
+      <div class="sub" th:text="${member.isPermanent()} ? 'Accès illimité' : 'Inclus dans le pack'"></div>
+      <div class="total" th:unless="${member.isPermanent()}"
+           th:text="${#numbers.formatDecimal(member.confCreditsTotalH, 1, 1)} + 'h total · ' + ${#numbers.formatDecimal(member.confCreditsUsedH, 1, 1)} + 'h utilisées'"></div>
+      <div style="font-size:11px;opacity:.7;margin-top:4px;">19 CHF/h hors crédits</div>
+    </div>
+  </div>
+
+  <!-- Navigation date -->
+  <div class="section-title">Disponibilités</div>
+  <div class="date-nav">
+    <a th:href="@{/mobile/rooms(date=${selectedDate.minusDays(1)})}">‹</a>
+    <div class="date-label" th:text="${#temporals.format(selectedDate, 'EEEE d MMMM yyyy', #locale)}">Aujourd'hui</div>
+    <a th:href="@{/mobile/rooms(date=${selectedDate.plusDays(1)})}">›</a>
+  </div>
+
+  <!-- Salles -->
+  <div th:each="room : ${rooms}" class="room-card">
+    <div class="room-header">
+      <div>
+        <div class="room-name" th:text="${room.name}">Salle A</div>
+        <div class="room-meta">
+          <span th:text="${room.capacity} + ' personnes'"></span>
+          <span th:if="${room.equipment != null and !room.equipment.isEmpty()}">
+            · <span th:text="${#strings.listJoin(room.equipment, ', ')}"></span>
+          </span>
+        </div>
+      </div>
+      <span class="room-badge" th:text="${room.roomType == T(ch.amicalewifi.model.RoomType).SALLE_CONFERENCE} ? 'Conf.' : 'Cabine'">Conf.</span>
+    </div>
+
+    <!-- Créneaux occupés -->
+    <div th:with="slots=${bookingsByRoom.get(room.id)}">
+      <div th:if="${slots != null and !slots.isEmpty()}" class="slots">
+        <span class="slot busy" th:each="b : ${slots}"
+              th:text="${b.startTime.toString().substring(0,5)} + '–' + ${b.endTime.toString().substring(0,5)}"></span>
+      </div>
+      <div th:unless="${slots != null and !slots.isEmpty()}" class="no-bookings">
+        Aucune réservation — disponible toute la journée
+      </div>
+    </div>
+
+    <!-- Formulaire réservation -->
+    <div class="book-form">
+      <div class="book-form-title">Réserver ce créneau</div>
+      <form th:action="@{/mobile/rooms/book}" method="post">
+        <input type="hidden" name="roomId" th:value="${room.id}">
+        <input type="hidden" name="date"   th:value="${selectedDate}">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Heure début</label>
+            <input type="time" name="startTime" value="09:00" min="07:00" max="19:00" step="1800"
+                   th:id="'start-' + ${room.id}" onchange="updateCost(this, true)">
+          </div>
+          <div class="form-group">
+            <label>Heure fin</label>
+            <input type="time" name="endTime" value="10:00" min="07:00" max="19:00" step="1800"
+                   th:id="'end-' + ${room.id}" onchange="updateCost(this, false)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Titre (optionnel)</label>
+            <input type="text" name="title" placeholder="Réunion…">
+          </div>
+          <div class="form-group">
+            <label>Participants</label>
+            <input type="number" name="participants" value="2" min="1" th:max="${room.capacity}">
+          </div>
+        </div>
+        <div class="cost-preview" th:id="'cost-' + ${room.id}">
+          Durée : <span id="dur">1h00</span> →
+          <span th:if="${member.confCreditsRemaining.compareTo(T(java.math.BigDecimal).ONE) >= 0}"
+                style="color:var(--green)">déduit de vos crédits</span>
+          <span th:unless="${member.confCreditsRemaining.compareTo(T(java.math.BigDecimal).ONE) >= 0}"
+                style="color:var(--red)">payant (19 CHF/h)</span>
+        </div>
+        <button type="submit" class="btn-book">Réserver →</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mes réservations -->
+  <div th:if="${!#lists.isEmpty(myBookings)}">
+    <div class="section-title">Mes réservations à venir</div>
+    <div class="room-card" style="padding:4px 16px;">
+      <div th:each="b : ${myBookings}" class="booking-item">
+        <div class="booking-date">
+          <div class="dd" th:text="${b.date.dayOfMonth}">15</div>
+          <div class="mo" th:text="${#temporals.format(b.date, 'MMM', #locale)}">avr</div>
+        </div>
+        <div class="booking-info">
+          <div class="booking-room" th:text="${b.room.name}">Salle A</div>
+          <div class="booking-time" th:text="${b.startTime.toString().substring(0,5)} + ' – ' + ${b.endTime.toString().substring(0,5)}"></div>
+          <div th:if="${b.title != null}" class="booking-title" th:text="${b.title}"></div>
+        </div>
+        <form th:action="@{'/mobile/rooms/cancel/' + ${b.id}}" method="post">
+          <button type="submit" class="btn-sm-cancel"
+                  onclick="return confirm('Annuler cette réservation ?')">Annuler</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acheter des crédits -->
+  <div th:unless="${member.isPermanent()}">
+    <div class="section-title">Acheter des crédits de salle</div>
+    <form th:action="@{/mobile/rooms/buy-credits}" method="post">
+      <div class="pack-grid">
+        <label class="pack-card" th:each="pack : ${confPacks}">
+          <input type="radio" name="pack" th:value="${pack.name()}" onchange="updateBuyBtn(this)">
+          <div>
+            <div class="pack-name" th:text="${pack.label}">2 heures</div>
+            <div class="pack-sub">19 CHF / heure</div>
+          </div>
+          <div class="pack-price" th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 38.–</div>
+        </label>
+      </div>
+      <button type="submit" class="btn-primary" id="buyBtn" disabled>Sélectionnez un pack</button>
+      <div class="pay-methods">
+        <span class="pay-m">TWINT</span>
+        <span class="pay-m">Visa / Mastercard</span>
+        <span class="pay-m">PostFinance</span>
+        <span class="pay-m">Apple Pay</span>
+      </div>
+      <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:10px;line-height:1.5;">
+        Paiement sécurisé via zahls.ch · Crédits ajoutés immédiatement.
+      </div>
+    </form>
+  </div>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/history}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+    Historique
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+  <a th:href="@{/mobile/print}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
+    Imprimer
+  </a>
+</div>
+
+<script>
+function updateCost(el, isStart) {
+  const card   = el.closest('.book-form');
+  const startEl = card.querySelector('[name=startTime]');
+  const endEl   = card.querySelector('[name=endTime]');
+  if (!startEl.value || !endEl.value) return;
+  const [sh, sm] = startEl.value.split(':').map(Number);
+  const [eh, em] = endEl.value.split(':').map(Number);
+  const mins = (eh * 60 + em) - (sh * 60 + sm);
+  if (mins <= 0) return;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const label = h + 'h' + (m > 0 ? (m < 10 ? '0' + m : m) : '00');
+  const durEl = card.querySelector('#dur');
+  if (durEl) durEl.textContent = label;
+}
+
+function updateBuyBtn(radio) {
+  const prices = {
+    H1:'Fr. 19.–', H2:'Fr. 38.–', H3:'Fr. 57.–', H4:'Fr. 76.–',
+    H5:'Fr. 95.–', H6:'Fr. 114.–', H8:'Fr. 152.–', H10:'Fr. 190.–'
+  };
+  const btn = document.getElementById('buyBtn');
+  btn.textContent = 'Payer ' + (prices[radio.value] || '') + ' avec zahls.ch →';
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>

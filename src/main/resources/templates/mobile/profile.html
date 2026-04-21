@@ -48,6 +48,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 <div class="app-content">
   <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">✓ <span th:text="${success}"></span></div>
   <div th:if="${error}"   class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${error}"></span></div>
+  <div th:if="${pwError}" class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${pwError}"></span></div>
 
   <!-- Entête profil -->
   <div class="profile-header">
@@ -106,6 +107,28 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
     <button type="submit" class="save-btn">Enregistrer les modifications</button>
   </form>
 
+  <!-- Changer le mot de passe -->
+  <form th:action="@{/mobile/profile/password}" method="post">
+    <div class="form-card" style="margin-top:14px;">
+      <div class="form-card-title">Changer le mot de passe</div>
+
+      <div class="field-row">
+        <label class="field-lbl">Mot de passe actuel</label>
+        <input type="password" name="currentPassword" class="field-in" placeholder="••••••••" required>
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Nouveau mot de passe</label>
+        <input type="password" name="newPassword" class="field-in" placeholder="Min. 8 caractères" minlength="8" required>
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Confirmer le nouveau mot de passe</label>
+        <input type="password" name="confirmPassword" class="field-in" placeholder="••••••••" required>
+      </div>
+    </div>
+
+    <button type="submit" class="save-btn" style="background:var(--t2);">Changer le mot de passe</button>
+  </form>
+
   <div style="height:8px;"></div>
 </div>
 
@@ -117,6 +140,10 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
   <a th:href="@{/mobile/history}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
     Historique
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
   </a>
   <a th:href="@{/mobile/profile}" class="nav-btn active">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>

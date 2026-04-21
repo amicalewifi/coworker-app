@@ -1,5 +1,6 @@
 package ch.amicalewifi.controller;
 
+import ch.amicalewifi.model.ConfHourPackType;
 import ch.amicalewifi.model.MembershipType;
 import ch.amicalewifi.model.PrintPackType;
 import ch.amicalewifi.service.MemberService;
@@ -67,6 +68,10 @@ public class ZahlsController {
                 PrintPackType pack = PrintPackType.valueOf(kind.substring(6));
                 memberService.addPrintCredits(memberId, pack);
                 log.info("Zahls webhook: crédits impression — membre={} pack={}", memberId, pack);
+            } else if (kind.startsWith("CONFCREDIT:")) {
+                ConfHourPackType pack = ConfHourPackType.valueOf(kind.substring(11));
+                memberService.addConfCredits(memberId, pack);
+                log.info("Zahls webhook: crédits conf — membre={} pack={}", memberId, pack);
             } else {
                 MembershipType membership = MembershipType.valueOf(kind);
                 memberService.renewPack(memberId, membership);

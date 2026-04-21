@@ -179,6 +179,13 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
       <input type="hidden" name="unitaire" id="unitaire" value="false">
     </div>
 
+    <div style="margin-bottom:12px;">
+      <label style="font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;">Date de présence</label>
+      <input type="date" name="date" class="field-in"
+             th:value="${#temporals.format(#temporals.createToday(),'yyyy-MM-dd')}"
+             style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;">
+    </div>
+
     <button type="submit" class="scan-btn">Enregistrer ma présence</button>
   </form>
 
@@ -228,6 +235,10 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
   <a th:href="@{/mobile/history}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
     Historique
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
   </a>
   <a th:href="@{/mobile/profile}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
