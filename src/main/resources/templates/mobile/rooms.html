@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#22305a">
+<meta name="theme-color" content="#2e4080">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" th:href="@{/manifest.json}">
 <title>Salles — l'Amicale du WiFi</title>
@@ -14,7 +14,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .app-content{flex:1;padding:16px;overflow-y:auto;padding-bottom:24px;}
 
 /* Credits card */
-.credits-card{background:linear-gradient(135deg,#22305a,#27348B);border-radius:16px;padding:16px 18px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
+.credits-card{background:linear-gradient(135deg,#2e4080,#27348B);border-radius:16px;padding:16px 18px;margin-bottom:20px;color:#fff;display:flex;justify-content:space-between;align-items:center;}
 .cc-left .lbl{font-size:11px;opacity:.6;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
 .cc-left .val{font-size:30px;font-weight:900;line-height:1;}
 .cc-left .unit{font-size:12px;opacity:.7;margin-top:2px;}
@@ -107,7 +107,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 <body>
 
 <div class="app-topbar">
-  <a th:href="@{/mobile/}" style="color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;">←</a>
+  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
   <div class="app-title">Salles de conférence</div>
 </div>
 

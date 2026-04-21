@@ -74,7 +74,8 @@
   --shadow-md: 0 6px 20px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.06);
   --shadow-lg: 0 12px 40px rgba(0,0,0,.14), 0 4px 10px rgba(0,0,0,.07);
 
-  --font: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font:         'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-heading: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -99,7 +100,7 @@ a:hover { color: var(--prim-m); }
 
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #22305a 0%, #1a2448 60%, #131b38 100%);
+  background: linear-gradient(180deg, #2e4080 0%, #263672 60%, #1e2c62 100%);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -144,33 +145,36 @@ a:hover { color: var(--prim-m); }
 }
 
 .brand-sub {
-  color: rgba(255,255,255,.38);
+  color: rgba(255,255,255,.50);
   font-size: 11px;
   margin-top: 3px;
-  font-weight: 500;
-  letter-spacing: .03em;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-family: var(--font-heading);
 }
 
 .nav-sec {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .12em;
-  color: rgba(255,255,255,.22);
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.45);
   padding: 18px 22px 6px;
+  font-family: var(--font-heading);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
+  gap: 11px;
+  padding: 10px 16px;
   border-radius: var(--r);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  color: rgba(255,255,255,.52);
+  color: rgba(255,255,255,.82);
   transition: all .18s ease;
-  margin: 1px 10px;
+  margin: 2px 10px;
   text-decoration: none;
   letter-spacing: -.1px;
 }
@@ -188,11 +192,12 @@ a:hover { color: var(--prim-m); }
 }
 
 .nav-item svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
-  opacity: .65;
+  opacity: .72;
   transition: opacity .18s;
+  flex-shrink: 0;
 }
 
 .nav-item.active svg { opacity: 1; }
@@ -240,10 +245,11 @@ a:hover { color: var(--prim-m); }
 }
 
 .topbar-title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
-  letter-spacing: -.5px;
+  letter-spacing: -.4px;
   color: var(--text);
+  font-family: var(--font-heading);
 }
 
 .topbar-sub {
@@ -339,6 +345,7 @@ a:hover { color: var(--prim-m); }
   line-height: 1;
   letter-spacing: -1.5px;
   color: var(--text);
+  font-family: var(--font-heading);
 }
 
 .stat-meta {
@@ -385,10 +392,11 @@ a:hover { color: var(--prim-m); }
 }
 
 .card-ttl {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -.1px;
   color: var(--text);
+  font-family: var(--font-heading);
 }
 
 .card-body { padding: 18px 22px; }
@@ -705,7 +713,7 @@ a:hover { color: var(--prim-m); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.modal-ttl { font-size: 20px; font-weight: 800; margin-bottom: 5px; letter-spacing: -.5px; }
+.modal-ttl { font-size: 20px; font-weight: 800; margin-bottom: 5px; letter-spacing: -.5px; font-family: var(--font-heading); }
 .modal-sub { font-size: 13px; color: var(--t2); margin-bottom: 22px; line-height: 1.5; }
 .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--bdr); }
 
@@ -771,6 +779,7 @@ tr.inactive-row:hover td { opacity: .72; background: var(--bg); }
   line-height: 1;
   letter-spacing: -1.8px;
   color: var(--text);
+  font-family: var(--font-heading);
 }
 
 /* ── Scrollbar ───────────────────────────────────────── */

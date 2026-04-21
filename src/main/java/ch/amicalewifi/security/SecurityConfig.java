@@ -31,7 +31,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Ressources publiques
                 .requestMatchers("/login", "/register", "/css/**", "/js/**", "/icons/**",
-                                 "/manifest.json", "/sw.js", "/error").permitAll()
+                                 "/images/**", "/manifest.json", "/sw.js", "/error").permitAll()
                 // Borne: ADMIN ou TERMINAL
                 .requestMatchers("/borne/**").hasAnyRole("ADMIN","TERMINAL")
                 // Admin uniquement

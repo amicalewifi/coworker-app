@@ -15,9 +15,9 @@
 <div class="layout">
 
   <aside class="sidebar">
-    <div class="brand" style="flex-direction:column; gap:4px; align-items:flex-start; padding:22px 22px 16px;">
+    <div class="brand" style="flex-direction:column; gap:6px; align-items:flex-start; padding:24px 22px 18px;">
       <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi"
-           style="height:46px; width:auto; filter:brightness(0) invert(1);">
+           style="height:58px; width:auto; filter:brightness(0) invert(1);">
       <div class="brand-sub">Fully Coworking · CH-1926</div>
     </div>
 
@@ -84,6 +84,15 @@
         · <form th:action="@{/logout}" method="post" style="display:inline;">
             <button type="submit" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-family:inherit;font-size:inherit;padding:0;">Déconnexion</button>
           </form>
+      </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);">
+        <a href="https://amicalewifi.ch/" target="_blank"
+           style="color:rgba(255,255,255,.38);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:5px;transition:color .15s;"
+           onmouseover="this.style.color='rgba(255,255,255,.65)'" onmouseout="this.style.color='rgba(255,255,255,.38)'">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="width:10px;height:10px;flex-shrink:0;">
+            <circle cx="6" cy="6" r="5"/><path d="M4 6h4M6 4v4"/></svg>
+          amicalewifi.ch ↗
+        </a>
       </div>
     </div>
   </aside>

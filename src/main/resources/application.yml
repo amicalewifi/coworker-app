@@ -100,6 +100,8 @@ amicale:
     print-cancel-url:  http://localhost:8081/mobile/print
     conf-success-url:  http://localhost:8081/mobile/rooms?bought=ok
     conf-cancel-url:   http://localhost:8081/mobile/rooms
+    # Liens de paiement statiques (optionnel — prioritaire sur l'API si défini)
+    # Configurer dans application-local.yml sous amicale.zahls.gateways:
 
 management:
   endpoints:

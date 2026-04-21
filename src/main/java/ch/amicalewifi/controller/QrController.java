@@ -32,11 +32,11 @@ public class QrController {
         return toQr("http://" + host + "/mobile/presence?venue=" + venueQrToken, 400);
     }
 
-    /** QR code par token membre (admin → fiche membre). */
+    /** QR code personnel du membre — à afficher dans le profil mobile, scannable par la borne. */
     @GetMapping(value = "/token/{token}", produces = MediaType.IMAGE_PNG_VALUE)
     public byte[] tokenQr(@PathVariable UUID token,
                           @RequestHeader(value = "Host", defaultValue = "localhost:8081") String host) throws Exception {
-        return toQr("http://" + host + "/mobile/presence?venue=" + venueQrToken, 300);
+        return toQr("http://" + host + "/borne/member-qr?token=" + token, 300);
     }
 
     /** QR code par badgeUid (rétrocompatibilité NFC). */
