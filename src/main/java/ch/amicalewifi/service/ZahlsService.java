@@ -2,6 +2,7 @@ package ch.amicalewifi.service;
 
 import ch.amicalewifi.config.ZahlsProperties;
 import ch.amicalewifi.model.ConfHourPackType;
+import ch.amicalewifi.model.Member;
 import ch.amicalewifi.model.MembershipType;
 import ch.amicalewifi.model.PrintPackType;
 import lombok.extern.slf4j.Slf4j;
@@ -48,50 +49,58 @@ public class ZahlsService {
 
     private final RestTemplate rest = new RestTemplate();
 
-    public Optional<String> createPaymentLink(UUID memberId, MembershipType membership) {
+    public Optional<String> createPaymentLink(Member member, MembershipType membership) {
         if (!membership.hasPack() && membership.getPriceChf().compareTo(BigDecimal.ZERO) <= 0) {
             log.warn("Zahls: formule {} sans prix, pas de lien créé", membership);
             return Optional.empty();
         }
-        String referenceId = memberId + ":" + membership.name();
+        String referenceId = member.getId() + ":" + membership.name();
         String staticUrl = zahlsProperties.getGateways().get(membership.name());
         if (staticUrl != null && !staticUrl.isBlank()) {
-            return buildStaticLink(staticUrl, referenceId);
+            return buildStaticLink(staticUrl, referenceId, member);
         }
         int amountRappen = membership.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Renouvellement " + membership.getLabel(),
                 amountRappen, successUrl, cancelUrl);
     }
 
-    public Optional<String> createConfCreditPaymentLink(UUID memberId, ConfHourPackType pack) {
-        String referenceId = memberId + ":CONFCREDIT:" + pack.name();
+    public Optional<String> createConfCreditPaymentLink(Member member, ConfHourPackType pack) {
+        String referenceId = member.getId() + ":CONFCREDIT:" + pack.name();
         String staticUrl = zahlsProperties.getGateways().get("CONFCREDIT_" + pack.name());
         if (staticUrl != null && !staticUrl.isBlank()) {
-            return buildStaticLink(staticUrl, referenceId);
+            return buildStaticLink(staticUrl, referenceId, member);
         }
         int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Salle de conférence · " + pack.getLabel(),
                 amountRappen, confSuccessUrl, confCancelUrl);
     }
 
-    public Optional<String> createPrintPackPaymentLink(UUID memberId, PrintPackType pack) {
-        String referenceId = memberId + ":PRINT:" + pack.name();
+    public Optional<String> createPrintPackPaymentLink(Member member, PrintPackType pack) {
+        String referenceId = member.getId() + ":PRINT:" + pack.name();
         String staticUrl = zahlsProperties.getGateways().get("PRINT_" + pack.name());
         if (staticUrl != null && !staticUrl.isBlank()) {
-            return buildStaticLink(staticUrl, referenceId);
+            return buildStaticLink(staticUrl, referenceId, member);
         }
         int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Crédits impression · " + pack.getLabel(),
                 amountRappen, printSuccessUrl, printCancelUrl);
     }
 
-    /** Ajoute referenceId à un lien de paiement statique zahls.ch. */
-    private Optional<String> buildStaticLink(String baseLink, String referenceId) {
+    /** Ajoute referenceId + infos membre à un lien de paiement statique zahls.ch. */
+    private Optional<String> buildStaticLink(String baseLink, String referenceId, Member member) {
         try {
-            String encoded = URLEncoder.encode(referenceId, StandardCharsets.UTF_8);
-            String url = baseLink + (baseLink.contains("?") ? "&" : "?") + "referenceId=" + encoded;
-            log.info("Zahls lien statique: {} ref={}", baseLink, referenceId);
-            return Optional.of(url);
+            StringBuilder url = new StringBuilder(baseLink);
+            url.append(baseLink.contains("?") ? "&" : "?");
+            url.append("referenceId=").append(URLEncoder.encode(referenceId, StandardCharsets.UTF_8));
+            appendIfNotBlank(url, "contact_forename", member.getFirstName());
+            appendIfNotBlank(url, "contact_surname",  member.getLastName());
+            appendIfNotBlank(url, "contact_email",    member.getEmail());
+            appendIfNotBlank(url, "contact_phone",    member.getPhone());
+            appendIfNotBlank(url, "contact_street",   member.getAddress());
+            appendIfNotBlank(url, "contact_postcode", member.getPostalCode());
+            appendIfNotBlank(url, "contact_place",    member.getCity());
+            log.info("Zahls lien statique complet: {}", url);
+            return Optional.of(url.toString());
         } catch (Exception e) {
             log.error("Zahls buildStaticLink erreur: {}", e.getMessage(), e);
             return Optional.empty();
@@ -144,6 +153,11 @@ public class ZahlsService {
             log.error("Zahls createApiLink erreur: {}", e.getMessage(), e);
             return Optional.empty();
         }
+    }
+
+    private void appendIfNotBlank(StringBuilder url, String param, String value) throws Exception {
+        if (value != null && !value.isBlank())
+            url.append("&").append(param).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
     }
 
     private String buildQueryString(TreeMap<String, String> sorted) {

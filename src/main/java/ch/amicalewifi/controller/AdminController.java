@@ -135,7 +135,9 @@ public class AdminController {
         memberService.create(Member.builder()
                 .firstName(firstName).lastName(lastName).email(email)
                 .phone(phone).company(company).tvaNumber(tvaNumber).badgeUid(badgeUid)
-                .address(address).city(city).postalCode(postalCode)
+                .address(address != null && !address.isBlank() ? address : null)
+                .city(city != null && !city.isBlank() ? city : null)
+                .postalCode(postalCode != null && !postalCode.isBlank() ? postalCode : null)
                 .country(country != null && !country.isBlank() ? country : "Suisse")
                 .membership(membership).build());
         ra.addFlashAttribute("success", "Membre " + firstName + " " + lastName + " créé avec succès");
@@ -199,9 +201,9 @@ public class AdminController {
         m.setCompany(company);
         m.setTvaNumber(tvaNumber);
         m.setBadgeUid(badgeUid != null && !badgeUid.isBlank() ? badgeUid : null);
-        m.setAddress(address);
-        m.setCity(city);
-        m.setPostalCode(postalCode);
+        m.setAddress(address != null && !address.isBlank() ? address : null);
+        m.setCity(city != null && !city.isBlank() ? city : null);
+        m.setPostalCode(postalCode != null && !postalCode.isBlank() ? postalCode : null);
         m.setCountry(country != null && !country.isBlank() ? country : "Suisse");
         m.setNotes(notes);
         m.setUpdatedAt(LocalDateTime.now());

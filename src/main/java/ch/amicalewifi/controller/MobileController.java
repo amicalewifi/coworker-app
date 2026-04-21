@@ -239,7 +239,7 @@ public class MobileController {
                                   @RequestParam MembershipType membership,
                                   RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        return zahlsService.createPaymentLink(member.getId(), membership)
+        return zahlsService.createPaymentLink(member, membership)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
                     ra.addFlashAttribute("error",
@@ -335,7 +335,7 @@ public class MobileController {
                                @RequestParam PrintPackType pack,
                                RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        return zahlsService.createPrintPackPaymentLink(member.getId(), pack)
+        return zahlsService.createPrintPackPaymentLink(member, pack)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
                     ra.addFlashAttribute("error",
@@ -443,7 +443,7 @@ public class MobileController {
                                  @RequestParam ConfHourPackType pack,
                                  RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        return zahlsService.createConfCreditPaymentLink(member.getId(), pack)
+        return zahlsService.createConfCreditPaymentLink(member, pack)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
                     ra.addFlashAttribute("error", "Impossible de créer le lien de paiement. Contactez l'admin.");
