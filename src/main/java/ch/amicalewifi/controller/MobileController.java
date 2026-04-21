@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import ch.amicalewifi.model.User;
-import ch.amicalewifi.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

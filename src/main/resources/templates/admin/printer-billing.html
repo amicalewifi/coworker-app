@@ -11,10 +11,37 @@
   </div>
   <div class="topbar-r">
     <a th:href="@{/admin/printer/billing(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
-    <a th:href="@{/admin/printer/billing}" class="btn btn-sm">Mois en cours</a>
+    <a th:href="@{/admin/printer/billing}" class="btn btn-sm">Ce mois</a>
     <a th:href="@{/admin/printer/billing(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
+    <div class="act-menu" id="act-menu">
+      <button class="btn btn-sm" onclick="toggleActMenu()" id="act-trigger">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg>
+        Plus
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 3.5l3 3 3-3"/></svg>
+      </button>
+      <div class="act-dropdown" style="right:0;left:auto;">
+        <div class="act-group-lbl">Imprimante</div>
+        <a th:href="@{/admin/printer}" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="5" width="12" height="7" rx="1.5"/><path d="M4 5V3h8v2M4 10h8v4H4z"/></svg>
+          Gestion imprimante
+        </a>
+        <div class="act-sep"></div>
+        <div class="act-group-lbl">Liens</div>
+        <a th:href="@{/admin/members}" class="act-item">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="5" r="3"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5"/></svg>
+          Membres
+        </a>
+      </div>
+    </div>
   </div>
 </div>
+<script>
+function toggleActMenu() { document.getElementById('act-menu').classList.toggle('open'); }
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('act-menu');
+  if (m && !m.contains(e.target)) m.classList.remove('open');
+});
+</script>
 
 <div class="content">
 
