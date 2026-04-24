@@ -2,38 +2,37 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#2e4080">
+<meta name="theme-color" content="#0c1222">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" th:href="@{/manifest.json}">
 <title>Impressions — l'Amicale du WiFi</title>
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
-body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
-.section-title{font-size:13px;font-weight:800;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;}
-.quota-card{background:linear-gradient(135deg,#2e4080,#27348B);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
+.quota-card{background:linear-gradient(135deg,#0c1222 0%,#1a2a50 100%);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
 .qc-lbl{font-size:11px;opacity:.6;font-weight:600;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase;}
-.qc-val{font-size:42px;font-weight:900;line-height:1;}
+.qc-val{font-size:42px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;}
 .qc-unit{font-size:14px;font-weight:500;opacity:.75;margin-top:2px;}
 .qc-bar{background:rgba(255,255,255,.2);border-radius:99px;height:6px;margin-top:14px;overflow:hidden;}
 .qc-bar-fill{background:#fff;height:100%;border-radius:99px;transition:width .4s;}
 .qc-meta{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;opacity:.65;}
-.declare-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:16px;margin-bottom:4px;}
+.declare-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:16px;margin-bottom:4px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
 .input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .input-group label{font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;}
-.input-group input[type=number]{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:var(--bg);color:var(--text);font-family:var(--font);box-sizing:border-box;}
+.input-group input[type=number]{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:var(--surf-2);color:var(--text);font-family:var(--font);box-sizing:border-box;}
 .input-group input[type=number]:focus{outline:none;border-color:var(--prim);}
 .credit-preview{background:var(--gl);border:1px solid var(--prim);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--prim-d);font-weight:600;display:flex;align-items:center;gap:8px;}
 .credit-preview .big{font-size:20px;font-weight:900;}
 .input-hint{font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.5;}
 .pack-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:4px;}
-.pack-card{border:2px solid var(--bdr);border-radius:14px;padding:14px 16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:space-between;}
+.pack-card{border:1px solid var(--bdr);border-radius:16px;padding:14px 16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 4px rgba(0,0,0,.04);}
 .pack-card:has(input:checked){border-color:var(--prim);background:var(--prim-l);}
 .pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .pack-name{font-size:14px;font-weight:800;color:var(--text);}
 .pack-sub{font-size:11px;color:var(--t3);margin-top:2px;}
 .pack-price{font-size:18px;font-weight:900;color:var(--gd);}
-.btn-primary{display:block;width:100%;padding:14px;background:var(--prim);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(39,52,139,.3);transition:all .18s;box-sizing:border-box;margin-top:4px;}
-.btn-primary:hover{background:var(--gm);transform:translateY(-1px);}
+.btn-primary{display:block;width:100%;padding:14px;background:var(--prim);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 3px 12px rgba(0,122,245,.30);transition:all .18s;box-sizing:border-box;margin-top:4px;}
+.btn-primary:hover{background:var(--prim-d);transform:translateY(-1px);}
 .btn-primary:disabled{opacity:.45;cursor:not-allowed;transform:none;}
 .pay-methods{display:flex;gap:5px;justify-content:center;margin-top:8px;flex-wrap:wrap;}
 .pay-m{font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--surf-2);color:var(--t2);border:1px solid var(--bdr);}
@@ -49,8 +48,8 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .history-credits.used{color:var(--red);}
 .history-credits.added{color:var(--green);}
 .alert{padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.alert-ok{background:#e0f7fa;color:#0e7490;border:1px solid #67e8f9;}
-.alert-err{background:#fff0f0;color:#c0392b;border:1px solid #e74c3c;}
+.alert-ok{background:var(--green-l);color:var(--green);border:1px solid var(--green-t);}
+.alert-err{background:var(--red-l);color:var(--red);border:1px solid var(--red-t);}
 </style>
 </head>
 <body>

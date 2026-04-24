@@ -2,13 +2,13 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="fr">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#2e4080">
+<meta name="theme-color" content="#0c1222">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <link rel="manifest" th:href="@{/manifest.json}">
 <title>Présence — l'Amicale du WiFi</title>
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
-body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
 .app-content{flex:1;padding:20px 16px;display:flex;flex-direction:column;align-items:center;}
 /* Welcome card */
 .welcome-card{background:linear-gradient(135deg,#2e4080,#27348B);border-radius:20px;padding:28px 24px;text-align:center;color:#fff;width:100%;margin-bottom:20px;box-shadow:0 8px 28px rgba(26,37,102,.28);position:relative;overflow:hidden;}
@@ -26,7 +26,7 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .type-card{background:var(--surf);border:2px solid var(--bdr);border-radius:16px;padding:16px 10px;text-align:center;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .type-card.sel{border-color:var(--prim);background:var(--prim-l);box-shadow:0 0 0 3px rgba(39,52,139,.12);}
 .type-card input{display:none;}
-.tc-icon{font-size:22px;margin-bottom:4px;}
+.tc-icon{margin-bottom:4px;color:var(--t3);}
 .tc-name{font-size:13px;font-weight:700;color:var(--text);}
 .tc-hours{font-size:10px;color:var(--t3);}
 .tc-cost{font-size:12px;font-weight:700;margin-top:4px;}
@@ -75,21 +75,21 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
       <div class="type-grid">
         <label class="type-card" onclick="selType(this)">
           <input type="radio" name="presenceType" value="HALF_AM">
-          <span class="tc-icon">🌅</span>
+          <svg class="tc-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41"/></svg>
           <span class="tc-name">½ Matin</span>
           <span class="tc-hours">07:00–12:30</span>
           <span class="tc-cost" style="color:var(--od);">−0.5j</span>
         </label>
         <label class="type-card sel" onclick="selType(this)">
           <input type="radio" name="presenceType" value="FULL_DAY" checked>
-          <span class="tc-icon">☀️</span>
+          <svg class="tc-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
           <span class="tc-name">Journée</span>
           <span class="tc-hours">07:00–19:00</span>
           <span class="tc-cost" style="color:var(--gd);">−1.0j</span>
         </label>
         <label class="type-card" onclick="selType(this)">
           <input type="radio" name="presenceType" value="HALF_PM">
-          <span class="tc-icon">🌇</span>
+          <svg class="tc-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
           <span class="tc-name">½ AP-M</span>
           <span class="tc-hours">12:30–19:00</span>
           <span class="tc-cost" style="color:var(--od);">−0.5j</span>

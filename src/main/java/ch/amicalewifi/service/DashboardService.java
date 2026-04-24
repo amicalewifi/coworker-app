@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -52,11 +51,14 @@ public class DashboardService {
         List<Member>      alerts     = memberService.getPackAlerts();
         List<Member>      allActive  = memberRepo.findByActiveTrueOrderByLastNameAsc();
 
-        LocalTime now     = LocalTime.now();
         int occupied      = (int) bookings.stream()
-                .filter(b -> !now.isBefore(b.getStartTime()) && !now.isAfter(b.getEndTime())).count();
+                .map(b -> b.getRoom().getId())
+                .distinct()
+                .count();
         int packs         = (int) allActive.stream()
-                .filter(m -> m.getMembership().name().startsWith("PACK_")).count();
+                .filter(m -> m.getMembership().name().startsWith("PACK_"))
+                .filter(m -> !"empty".equals(m.getPackAlert()))
+                .count();
 
         // Daily income for current month
         LocalDate firstOfMonth = today.withDayOfMonth(1);
