@@ -13,10 +13,6 @@
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
 body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
-.app-topbar{background:var(--gd);color:#fff;padding:16px 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(0,0,0,.18);}
-.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.app-sub{font-size:10px;opacity:.55;margin-top:1px;font-weight:500;}
-.app-content{flex:1;padding:16px;overflow-y:auto;}
 .member-card{background:linear-gradient(135deg,#2e4080 0%,#27348B 55%,#3a4fa8 100%);border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(26,37,102,.3);}
 .member-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06);}
 .member-card::after{content:'';position:absolute;bottom:-40px;left:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);}
@@ -32,7 +28,6 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .mc-stat{background:rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);}
 .mc-stat-val{font-size:22px;font-weight:800;letter-spacing:-.5px;}
 .mc-stat-lbl{font-size:10px;opacity:.6;margin-top:2px;font-weight:500;}
-.section-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:10px;margin-top:20px;}
 .scan-btn{display:block;padding:16px;background:var(--prim);color:#fff;border-radius:14px;text-align:center;font-size:15px;font-weight:700;margin-bottom:12px;border:none;cursor:pointer;font-family:var(--font);width:100%;box-shadow:0 4px 16px rgba(39,52,139,.3);transition:all .2s;}
 .scan-btn:hover{background:var(--gm);transform:translateY(-1px);box-shadow:0 6px 20px rgba(39,52,139,.4);}
 .type-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
@@ -45,34 +40,26 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .unit-toggle.on{border-color:var(--orange);background:var(--ol);}
 .toggle-chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:var(--bg);color:var(--t3);}
 .unit-toggle.on .toggle-chip{background:var(--orange);color:#fff;}
-/* QR Card */
 .qr-card{background:var(--surf);border:1px solid var(--bdr);border-radius:20px;padding:22px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,.06);margin-bottom:16px;}
 .qr-hint{font-size:12px;color:var(--t3);margin-bottom:2px;font-weight:500;}
 .qr-img{width:180px;height:180px;border-radius:12px;border:3px solid var(--gl);margin:12px auto;display:block;image-rendering:pixelated;}
 .qr-type-row{display:flex;gap:8px;justify-content:center;margin-top:14px;}
 .qr-type-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px solid var(--bdr-2);color:var(--t2);background:var(--surf);text-decoration:none;transition:all .15s;cursor:pointer;}
 .qr-type-btn.qr-sel,.qr-type-btn:hover{border-color:var(--prim);background:var(--prim-l);color:var(--gd);}
-/* Room cards */
 .room-card{border:1px solid var(--bdr);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;background:var(--surf);}
 .rc-name{font-size:13px;font-weight:700;}
 .rc-info{font-size:11px;color:var(--t3);margin-top:2px;}
-/* History items */
 .history-item{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--surf);border-radius:12px;border:1px solid var(--bdr);border-left-width:4px;margin-bottom:7px;}
 .history-item.full{border-left-color:var(--green);}
 .history-item.half{border-left-color:var(--orange);}
 .history-item.unit{border-left-color:var(--t4);}
 .hi-date{font-size:11px;color:var(--t3);font-weight:500;}
 .hi-type{font-size:13px;font-weight:700;margin-top:2px;color:var(--text);}
-/* Bottom nav */
-.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
-.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
-.nav-btn.active{color:var(--prim);}
-.nav-btn svg{width:20px;height:20px;}
 </style>
 </head>
 <body>
 
-<div class="app-topbar">
+<div class="app-topbar app-topbar-spread">
   <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi"
        style="height:28px;width:auto;filter:brightness(0) invert(1);">
   <form th:action="@{/logout}" method="post" style="display:inline;">
@@ -81,8 +68,14 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 </div>
 
 <div class="app-content">
-  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">✓ <span th:text="${success}"></span></div>
-  <div th:if="${error}"   class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${error}"></span></div>
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
 
   <!-- Carte membre -->
   <div class="member-card">

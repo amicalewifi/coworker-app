@@ -9,17 +9,12 @@
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
 body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
-.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
-.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.app-content{flex:1;padding:16px;overflow-y:auto;}
-/* Profile header */
 .profile-header{background:linear-gradient(135deg,#2e4080,#27348B);border-radius:20px;padding:28px 20px 24px;margin-bottom:16px;text-align:center;color:#fff;box-shadow:0 8px 28px rgba(26,37,102,.28);position:relative;overflow:hidden;}
 .profile-header::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.05);}
 .ph-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.15);display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;border:2px solid rgba(255,255,255,.25);margin-bottom:12px;position:relative;z-index:1;}
 .ph-name{font-size:20px;font-weight:800;letter-spacing:-.4px;position:relative;z-index:1;}
 .ph-formula{font-size:12px;opacity:.65;margin-top:3px;font-weight:500;position:relative;z-index:1;}
 .ph-email{font-size:12px;opacity:.5;margin-top:4px;font-weight:500;position:relative;z-index:1;}
-/* Form card */
 .form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
 .form-card-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:16px;}
 .field-row{margin-bottom:14px;}
@@ -31,11 +26,6 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .field-g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .save-btn{display:block;width:100%;padding:14px;background:var(--prim);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(39,52,139,.3);transition:all .2s;margin-top:4px;}
 .save-btn:hover{background:var(--gm);transform:translateY(-1px);}
-/* Bottom nav */
-.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
-.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
-.nav-btn.active{color:var(--prim);}
-.nav-btn svg{width:20px;height:20px;}
 </style>
 </head>
 <body>
@@ -46,9 +36,18 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 </div>
 
 <div class="app-content">
-  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">✓ <span th:text="${success}"></span></div>
-  <div th:if="${error}"   class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${error}"></span></div>
-  <div th:if="${pwError}" class="flash flash-err" style="margin-bottom:12px;">✕ <span th:text="${pwError}"></span></div>
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
+  <div th:if="${pwError}" class="flash flash-err" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${pwError}"></span>
+  </div>
 
   <!-- Entête profil -->
   <div class="profile-header">

@@ -11,6 +11,12 @@
     <div class="topbar-sub">Matin Fr. 15.- · AP-M Fr. 15.- · 1j Fr. 29.- · 5j Fr. 109.- · 10j Fr. 199.- · 15j Fr. 279.- · Permanent Fr. 329.-/mois</div>
   </div>
   <div class="topbar-r">
+    <div class="search-wrap" style="max-width:280px;">
+      <span class="search-icon">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6.5" cy="6.5" r="5"/><path d="M10.5 10.5l3 3"/></svg>
+      </span>
+      <input type="text" class="search-in" id="member-search" placeholder="Rechercher…">
+    </div>
     <div class="act-menu" id="act-menu">
       <button class="btn btn-sm" onclick="toggleActMenu()" id="act-trigger">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
@@ -50,7 +56,10 @@ document.addEventListener('click', function(e) {
 </script>
 
 <div class="content">
-  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+  <div th:if="${success}" class="flash flash-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
 
   <div th:if="${filter != null}" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
     <span th:switch="${filter}">
@@ -78,7 +87,8 @@ document.addEventListener('click', function(e) {
         </tr>
       </thead>
       <tbody>
-        <tr th:each="m : ${members}" th:classappend="${!m.active} ? 'inactive-row'">
+        <tr th:each="m : ${members}" th:classappend="${!m.active} ? 'inactive-row'"
+            th:attr="data-search=${m.displayName + ' ' + m.email + ' ' + (m.company != null ? m.company : '')}">
           <td>
             <div style="display:flex;align-items:center;gap:8px;">
               <div class="av"
@@ -144,10 +154,14 @@ document.addEventListener('click', function(e) {
             <div style="display:flex;gap:4px;">
               <a th:href="@{/admin/members/{id}(id=${m.id})}" class="btn btn-sm">Détail</a>
               <form th:if="${m.active}" th:action="@{/admin/members/{id}/deactivate(id=${m.id})}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-r" title="Désactiver le membre">✕</button>
+                <button type="submit" class="btn btn-sm btn-r" title="Désactiver le membre">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2l8 8M10 2l-8 8"/></svg>
+                </button>
               </form>
               <form th:unless="${m.active}" th:action="@{/admin/members/{id}/activate(id=${m.id})}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-sm btn-g" title="Réactiver le membre">✓</button>
+                <button type="submit" class="btn btn-sm btn-g" title="Réactiver le membre">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 6l3 3 5-5"/></svg>
+                </button>
               </form>
             </div>
           </td>
@@ -196,6 +210,19 @@ document.addEventListener('click', function(e) {
     </form>
   </div>
 </div>
+
+<script>
+(function () {
+  var input = document.getElementById('member-search');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var q = this.value.toLowerCase().trim();
+    document.querySelectorAll('tbody tr[data-search]').forEach(function (row) {
+      row.style.display = (!q || row.dataset.search.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+})();
+</script>
 
 </th:block>
 </body>

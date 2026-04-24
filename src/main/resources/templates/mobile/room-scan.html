@@ -6,8 +6,6 @@
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
 body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
-.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;}
-.app-content{flex:1;padding:16px;}
 </style>
 </head>
 <body>
@@ -20,8 +18,14 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 </div>
 <div class="app-content">
 
-  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
-  <div th:if="${error}"   class="flash flash-err">✕ <span th:text="${error}"></span></div>
+  <div th:if="${success}" class="flash flash-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="flash flash-err">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
 
   <!-- Équipement -->
   <div class="card" style="margin-bottom:14px;">

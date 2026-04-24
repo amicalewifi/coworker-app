@@ -59,7 +59,10 @@
     Créez votre compte membre et choisissez votre formule.
   </div>
 
-  <div th:if="${error}" class="flash flash-err" style="margin-bottom:16px;">✕ <span th:text="${error}"></span></div>
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:16px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
 
   <form th:action="@{/register}" method="post">
 

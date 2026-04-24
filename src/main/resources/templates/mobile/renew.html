@@ -9,10 +9,6 @@
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
 body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
-.app-topbar{background:var(--gd);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.18);}
-.app-title{font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.app-content{flex:1;padding:16px;overflow-y:auto;}
-/* Pack cards */
 .pack-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
 .pack-card{border:2px solid var(--bdr);border-radius:16px;padding:16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;}
 .pack-card:has(input:checked){border-color:var(--prim);background:var(--prim-l);}
@@ -22,22 +18,15 @@ body{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:
 .pack-price{font-size:22px;font-weight:900;color:var(--gd);margin-top:6px;}
 .pack-badge{position:absolute;top:14px;right:14px;background:var(--gl);color:var(--gd);font-size:10px;font-weight:800;padding:3px 9px;border-radius:20px;}
 .pack-card:has(input:checked) .pack-badge{background:var(--prim);color:#fff;}
-/* Current pack info */
 .current-pack{background:linear-gradient(135deg,#2e4080,#27348B);border-radius:16px;padding:18px;margin-bottom:20px;color:#fff;}
 .cp-lbl{font-size:11px;opacity:.6;font-weight:600;margin-bottom:6px;}
 .cp-name{font-size:18px;font-weight:800;}
 .cp-remaining{font-size:13px;opacity:.75;margin-top:4px;}
-/* Payment button */
 .pay-btn{display:block;width:100%;padding:16px;background:var(--prim);color:#fff;border-radius:14px;text-align:center;font-size:16px;font-weight:800;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 16px rgba(39,52,139,.35);transition:all .2s;box-sizing:border-box;}
 .pay-btn:hover{background:var(--gm);transform:translateY(-1px);}
 .pay-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 .pay-methods{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
 .pay-m{font-size:10px;font-weight:700;padding:3px 10px;border-radius:6px;background:var(--surf-2);color:var(--t2);border:1px solid var(--bdr);}
-/* Bottom nav */
-.bottom-nav{display:flex;border-top:1px solid var(--bdr);background:var(--surf);position:sticky;bottom:0;box-shadow:0 -4px 16px rgba(0,0,0,.06);}
-.nav-btn{flex:1;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;font-family:var(--font);color:var(--t3);font-size:10px;font-weight:600;text-decoration:none;transition:color .15s;}
-.nav-btn.active{color:var(--prim);}
-.nav-btn svg{width:20px;height:20px;}
 </style>
 </head>
 <body>

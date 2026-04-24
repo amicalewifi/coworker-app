@@ -25,10 +25,13 @@
 
 <div class="content">
 
-  <div th:if="${success}" class="flash flash-ok">✓ <span th:text="${success}"></span></div>
+  <div th:if="${success}" class="flash flash-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
   <div th:unless="${printerOnline}" class="flash flash-err">
-    ✕ Imprimante non joignable sur <strong th:text="${printerHost}+':9100'"></strong>.
-    Vérifiez que l'imprimante est allumée et connectée au réseau.
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span>Imprimante non joignable sur <strong th:text="${printerHost}+':9100'"></strong>. Vérifiez que l'imprimante est allumée et connectée au réseau.</span>
   </div>
 
   <!-- Queue -->

@@ -56,10 +56,22 @@
     <div style="font-size:26px;font-weight:900;letter-spacing:-.7px;margin-bottom:6px;">Connexion</div>
     <div style="font-size:14px;color:var(--t2);margin-bottom:26px;">Accédez à votre espace membre.</div>
 
-    <div th:if="${param.error}"      class="flash flash-err" style="margin-bottom:16px;">Email ou mot de passe incorrect.</div>
-    <div th:if="${param.logout}"     class="flash flash-ok"  style="margin-bottom:16px;">Vous avez été déconnecté.</div>
-    <div th:if="${param.registered}" class="flash flash-ok"  style="margin-bottom:16px;">Compte créé avec succès — connectez-vous.</div>
-    <div th:if="${success}"          class="flash flash-ok"  style="margin-bottom:16px;" th:text="${success}"></div>
+    <div th:if="${param.error}" class="flash flash-err" style="margin-bottom:16px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+      <span>Email ou mot de passe incorrect.</span>
+    </div>
+    <div th:if="${param.logout}" class="flash flash-ok" style="margin-bottom:16px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Vous avez été déconnecté.</span>
+    </div>
+    <div th:if="${param.registered}" class="flash flash-ok" style="margin-bottom:16px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Compte créé avec succès — connectez-vous.</span>
+    </div>
+    <div th:if="${success}" class="flash flash-ok" style="margin-bottom:16px;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span th:text="${success}"></span>
+    </div>
 
     <form th:action="@{/login}" method="post">
       <div class="form-row">
