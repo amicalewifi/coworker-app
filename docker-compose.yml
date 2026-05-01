@@ -7,12 +7,13 @@ services:
     image: amicale-wifi:latest
     container_name: amicale_app
     restart: unless-stopped
+    env_file: .env
     environment:
-      SPRING_DATASOURCE_URL:      jdbc:postgresql://postgres:5432/amicale_wifi
-      SPRING_DATASOURCE_USERNAME: amicale
-      SPRING_DATASOURCE_PASSWORD: amicale2024
-    ports:
-      - "8081:8081"
+      SPRING_DATASOURCE_URL:      jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+    expose:
+      - "8081"
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,16 +23,16 @@ services:
     container_name: amicale_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB:       amicale_wifi
-      POSTGRES_USER:     amicale
-      POSTGRES_PASSWORD: amicale2024
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U amicale -d amicale_wifi"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout:  5s
       retries:  5
@@ -41,21 +42,37 @@ services:
     container_name: amicale_pgadmin
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL:    admin@amicalewifi.ch
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL:    ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
       PGADMIN_LISTEN_PORT:      5050
     ports:
-      - "5050:5050"
+      - "127.0.0.1:5050:5050"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres:
         condition: service_healthy
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: amicale_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
 volumes:
   postgres_data:
   pgadmin_data:
+  caddy_data:
+  caddy_config:
 
-# pgAdmin → http://localhost:5050
-# Email: admin@amicalewifi.ch  /  Password: admin
-# Serveur: host=postgres  port=5432  db=amicale_wifi  user=amicale  pass=amicale2024
+# Public:    https://coworker.amicalewifi.ch  → Caddy → app:8081
+# pgAdmin:   http://127.0.0.1:5050           (SSH-tunnel from your laptop)
+# Postgres:  127.0.0.1:5432                  (SSH-tunnel from your laptop)

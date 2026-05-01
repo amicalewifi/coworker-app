@@ -1,0 +1,8 @@
+{
+    email admin@amicalewifi.ch
+}
+
+coworker.amicalewifi.ch {
+    encode gzip
+    reverse_proxy app:8081
+}
