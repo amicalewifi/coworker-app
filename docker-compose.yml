@@ -9,9 +9,10 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      SPRING_DATASOURCE_URL:      jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_URL:                       jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME:                  ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD:                  ${POSTGRES_PASSWORD}
+      SPRING_FLYWAY_PLACEHOLDERS_DATABASUSPWD:     ${DATABASUS_PWD}
     expose:
       - "8081"
     depends_on:
