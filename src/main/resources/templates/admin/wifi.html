@@ -88,54 +88,54 @@ document.addEventListener('click', function(e) {
           <td>
             <div style="display:flex;align-items:center;gap:8px;">
               <div class="av" style="background:var(--gl);color:var(--gd);font-size:11px;"
-                   th:text="${c.is_guest != null and c.is_guest} ? 'G' : 'W'"></div>
+                   th:text="${c['is_guest'] != null and c['is_guest']} ? 'G' : 'W'"></div>
               <div>
-                <div style="font-weight:600;font-size:13px;" th:text="${c.hostname ?: (c.name ?: 'Inconnu')}">—</div>
-                <div style="font-size:11px;color:var(--t3);" th:text="${c.oui ?: ''}"></div>
+                <div style="font-weight:600;font-size:13px;" th:text="${c['hostname'] ?: (c['name'] ?: 'Inconnu')}">—</div>
+                <div style="font-size:11px;color:var(--t3);" th:text="${c['oui'] ?: ''}"></div>
               </div>
             </div>
           </td>
-          <td><code style="font-size:12px;" th:text="${c.ip ?: '—'}">—</code></td>
-          <td><code style="font-size:11px;color:var(--t3);" th:text="${c.mac ?: '—'}">—</code></td>
+          <td><code style="font-size:12px;" th:text="${c['ip'] ?: '—'}">—</code></td>
+          <td><code style="font-size:11px;color:var(--t3);" th:text="${c['mac'] ?: '—'}">—</code></td>
           <td>
             <div>
-              <span th:if="${c.essid != null}" class="b"
-                    th:classappend="${c.is_guest != null and c.is_guest} ? 'b-o' : 'b-g'"
-                    th:text="${c.essid}">—</span>
-              <span th:unless="${c.essid != null}" style="color:var(--t3);">—</span>
-              <div th:if="${c.radio != null}" style="font-size:11px;color:var(--t3);margin-top:2px;">
-                <span th:text="${c.radio == 'ng'} ? '2.4 GHz' : (${c.radio == 'na'} ? '5 GHz' : (${c.radio == '6e'} ? '6 GHz' : c.radio))"></span>
-                <span th:if="${c.radio_proto != null}">
-                  · <span th:text="${c.radio_proto == 'ax'} ? 'Wi-Fi 6' : (${c.radio_proto == 'ac'} ? 'Wi-Fi 5' : (${c.radio_proto == 'n'} ? 'Wi-Fi 4' : c.radio_proto))"></span>
+              <span th:if="${c['essid'] != null}" class="b"
+                    th:classappend="${c['is_guest'] != null and c['is_guest']} ? 'b-o' : 'b-g'"
+                    th:text="${c['essid']}">—</span>
+              <span th:unless="${c['essid'] != null}" style="color:var(--t3);">—</span>
+              <div th:if="${c['radio'] != null}" style="font-size:11px;color:var(--t3);margin-top:2px;">
+                <span th:text="${c['radio'] == 'ng' ? '2.4 GHz' : (c['radio'] == 'na' ? '5 GHz' : (c['radio'] == '6e' ? '6 GHz' : c['radio']))}"></span>
+                <span th:if="${c['radio_proto'] != null}">
+                  · <span th:text="${c['radio_proto'] == 'ax' ? 'Wi-Fi 6' : (c['radio_proto'] == 'ac' ? 'Wi-Fi 5' : (c['radio_proto'] == 'n' ? 'Wi-Fi 4' : c['radio_proto']))}"></span>
                 </span>
               </div>
             </div>
           </td>
           <td>
             <div>
-              <span th:if="${c.signal != null}"
-                    th:style="${c.signal >= -60} ? 'color:var(--green);font-weight:600' : (${c.signal} >= -75 ? 'color:var(--orange);font-weight:600' : 'color:var(--red);font-weight:600')"
-                    th:text="${c.signal} + ' dBm'">—</span>
-              <span th:unless="${c.signal != null}" style="color:var(--t3);">—</span>
-              <div th:if="${c.tx_rate != null}" style="font-size:11px;color:var(--t3);margin-top:2px;">
-                ↑ <span th:text="${#numbers.formatInteger(c.tx_rate / 1000, 1)} + ' Mbps'"></span>
-                <span th:if="${c.rx_rate != null}"> · ↓ <span th:text="${#numbers.formatInteger(c.rx_rate / 1000, 1)} + ' Mbps'"></span></span>
+              <span th:if="${c['signal'] != null}"
+                    th:style="${c['signal'] >= -60 ? 'color:var(--green);font-weight:600' : (c['signal'] >= -75 ? 'color:var(--orange);font-weight:600' : 'color:var(--red);font-weight:600')}"
+                    th:text="${c['signal']} + ' dBm'">—</span>
+              <span th:unless="${c['signal'] != null}" style="color:var(--t3);">—</span>
+              <div th:if="${c['tx_rate'] != null}" style="font-size:11px;color:var(--t3);margin-top:2px;">
+                ↑ <span th:text="${#numbers.formatInteger(c['tx_rate'] / 1000, 1)} + ' Mbps'"></span>
+                <span th:if="${c['rx_rate'] != null}"> · ↓ <span th:text="${#numbers.formatInteger(c['rx_rate'] / 1000, 1)} + ' Mbps'"></span></span>
               </div>
             </div>
           </td>
-          <td style="color:var(--t3);font-size:13px;" th:if="${c.uptime != null}">
-            <span th:if="${c.uptime < 3600}" th:text="${#numbers.formatInteger(c.uptime / 60, 1)} + ' min'"></span>
-            <span th:unless="${c.uptime < 3600}" th:text="${#numbers.formatInteger(c.uptime / 3600, 1)} + 'h ' + ${#numbers.formatInteger((c.uptime % 3600) / 60, 1)} + 'm'"></span>
+          <td style="color:var(--t3);font-size:13px;" th:if="${c['uptime'] != null}">
+            <span th:if="${c['uptime'] < 3600}" th:text="${#numbers.formatInteger(c['uptime'] / 60, 1)} + ' min'"></span>
+            <span th:unless="${c['uptime'] < 3600}" th:text="|${#numbers.formatInteger(c['uptime'] / 3600, 1)}h ${#numbers.formatInteger((c['uptime'] % 3600) / 60, 1)}m|"></span>
           </td>
-          <td style="color:var(--t3);font-size:13px;" th:unless="${c.uptime != null}">—</td>
+          <td style="color:var(--t3);font-size:13px;" th:unless="${c['uptime'] != null}">—</td>
           <td style="font-size:12px;color:var(--t3);">
-            <span th:if="${c.tx_bytes != null}">
-              ↑ <span th:if="${c.tx_bytes >= 1048576}" th:text="${#numbers.formatDecimal(c.tx_bytes / 1048576.0, 1, 1)} + ' MB'"></span>
-                 <span th:unless="${c.tx_bytes >= 1048576}" th:text="${#numbers.formatInteger(c.tx_bytes / 1024, 1)} + ' KB'"></span>
-              · ↓ <span th:if="${c.rx_bytes >= 1048576}" th:text="${#numbers.formatDecimal(c.rx_bytes / 1048576.0, 1, 1)} + ' MB'"></span>
-                  <span th:unless="${c.rx_bytes >= 1048576}" th:text="${#numbers.formatInteger(c.rx_bytes / 1024, 1)} + ' KB'"></span>
+            <span th:if="${c['tx_bytes'] != null}">
+              ↑ <span th:if="${c['tx_bytes'] >= 1048576}" th:text="${#numbers.formatDecimal(c['tx_bytes'] / 1048576.0, 1, 1)} + ' MB'"></span>
+                 <span th:unless="${c['tx_bytes'] >= 1048576}" th:text="${#numbers.formatInteger(c['tx_bytes'] / 1024, 1)} + ' KB'"></span>
+              · ↓ <span th:if="${c['rx_bytes'] >= 1048576}" th:text="${#numbers.formatDecimal(c['rx_bytes'] / 1048576.0, 1, 1)} + ' MB'"></span>
+                  <span th:unless="${c['rx_bytes'] >= 1048576}" th:text="${#numbers.formatInteger(c['rx_bytes'] / 1024, 1)} + ' KB'"></span>
             </span>
-            <span th:unless="${c.tx_bytes != null}">—</span>
+            <span th:unless="${c['tx_bytes'] != null}">—</span>
           </td>
         </tr>
       </tbody>
