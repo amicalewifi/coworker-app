@@ -2,9 +2,13 @@ version: '3.9'
 services:
 
   app:
+    # In production the VPS pulls from GHCR (image built and pushed by GitHub
+    # Actions on every merge to main — see .github/workflows/deploy.yml).
+    # `build:` is kept so local dev (`docker compose build app`) still works;
+    # the build will be tagged with the same image name.
+    image: ghcr.io/amicalewifi/coworker-app:latest
     build:
       context: .
-    image: amicale-wifi:latest
     container_name: amicale_app
     restart: unless-stopped
     env_file: .env
