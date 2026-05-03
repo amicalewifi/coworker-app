@@ -114,4 +114,4 @@ out of this public repo. See `ops/README.md` for a short pointer.
 
 ## License
 
-Proprietary — © Amicale du WiFi. All rights reserved.
+Licensed under the [Apache License, Version 2.0](LICENSE). © 2026 Amicale du WiFi.
