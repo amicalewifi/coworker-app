@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+# Opt into Node 24 for all JS-based actions ahead of GitHub's June 2026 switch.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   test:
     name: Gradle test
