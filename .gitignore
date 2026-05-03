@@ -4,10 +4,11 @@ out/
 *.class
 *.jar
 *.war
+# …but the Gradle wrapper jar IS tracked (CI needs it).
+!gradle/wrapper/gradle-wrapper.jar
 
 # Gradle
 .gradle/
-gradle-wrapper.jar
 
 # IDE
 .idea/
