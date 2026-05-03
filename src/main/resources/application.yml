@@ -37,6 +37,14 @@ spring:
       # V14 immediately drops the role).
       databasuspwd:      unused-removed-in-v14
 
+  # HTTP sessions persisted in Postgres so they survive container restarts.
+  # Schema is created by Flyway (V15), not by Spring Session itself.
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: never
+    timeout: 3650d   # ~10 years; effectively "never expire" — users only logged out via explicit logout
+
   thymeleaf:
     cache:    false
     mode:     HTML
@@ -62,7 +70,14 @@ server:
   port: 8081
   servlet:
     session:
-      timeout: 8h
+      # Effectively "never expire" — users only logged out via explicit logout.
+      timeout: 3650d
+      cookie:
+        # Persistent cookie (max-age set) — survives browser close.
+        max-age:   3650d
+        http-only: true
+        same-site: lax
+        secure:    true   # Caddy terminates TLS in front; cookie only sent over HTTPS
 
 # Règles métier Amicale du WiFi
 amicale:
