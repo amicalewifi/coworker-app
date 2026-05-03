@@ -103,10 +103,26 @@ Runtime configuration comes from two sources:
 
 `.env` is gitignored. Production values live only on the VPS.
 
+## CI/CD
+
+Two GitHub Actions workflows live under `.github/workflows/`:
+
+| Workflow | Trigger | What it does |
+| --- | --- | --- |
+| `ci.yml` | Pull request → `main` | Runs `./gradlew test`. Becomes the required status check on `main`. |
+| `deploy.yml` | Push → `main` | Runs tests, builds the Docker image, pushes it to `ghcr.io/amicalewifi/coworker-app:{latest,<sha>}`, then SSHes into the VPS and rolls forward. |
+
+Merging a PR to `main` is therefore the deploy trigger — there's no separate
+"deploy" button. Concurrency is constrained: only one deploy runs at a time,
+and an in-progress deploy is never cancelled.
+
+The Docker image is **public** on GHCR (the source repo is too — no secrets in
+the image). The VPS pulls it without authentication.
+
 ## Production / deployment
 
-Provisioning, deployment, backups, and operational runbooks live in a
-**separate private** repo:
+Provisioning, backups, the SSH deploy key registration, and operational
+runbooks live in a **separate private** repo:
 [`amicalewifi/coworker-deploy`](https://github.com/amicalewifi/coworker-deploy).
 
 That keeps VPS layout, deploy procedures, and any future encrypted secrets
