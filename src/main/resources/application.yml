@@ -66,6 +66,14 @@ spring:
     restart:
       enabled: true
 
+  # Run Tomcat request handlers, @Async tasks, JdbcTemplate calls and
+  # WebClient/RestClient on virtual threads (Loom, Java 21+). Better
+  # throughput for I/O-bound workloads (JPA queries, outbound calls to
+  # Zahls / UniFi / Akuvox) at no code cost.
+  threads:
+    virtual:
+      enabled: true
+
   # Max time given to in-flight requests to finish during a graceful shutdown
   # (see server.shutdown: graceful below). 20s ≤ Docker's default 10s SIGTERM
   # timeout × 2; in compose we may also want to bump stop_grace_period.
