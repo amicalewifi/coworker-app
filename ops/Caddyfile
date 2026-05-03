@@ -4,5 +4,12 @@
 
 coworker.amicalewifi.ch {
     encode gzip
-    reverse_proxy app:8081
+    reverse_proxy app:8081 {
+        # During a deploy the `app` container is briefly unreachable while it
+        # restarts (~25s). Instead of returning 502s to users, Caddy holds the
+        # request for up to 45s, retrying the upstream every 500ms until it
+        # answers. The user sees a slow page load instead of an error.
+        lb_try_duration 45s
+        lb_try_interval 500ms
+    }
 }

@@ -10,6 +10,10 @@ services:
       context: .
     container_name: amicale_app
     restart: unless-stopped
+    # Give Spring Boot's graceful shutdown enough time to finish in-flight
+    # requests on SIGTERM (server.shutdown=graceful + 20s in application.yml).
+    # Default Docker SIGTERM-to-SIGKILL gap is 10s, which would cut it short.
+    stop_grace_period: 30s
     env_file: .env
     environment:
       SPRING_DATASOURCE_URL:                       jdbc:postgresql://postgres:5432/${POSTGRES_DB}
