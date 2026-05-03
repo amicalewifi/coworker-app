@@ -12,7 +12,6 @@ services:
       SPRING_DATASOURCE_URL:                       jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME:                  ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD:                  ${POSTGRES_PASSWORD}
-      SPRING_FLYWAY_PLACEHOLDERS_DATABASUSPWD:     ${DATABASUS_PWD}
     expose:
       - "8081"
     depends_on:
@@ -68,26 +67,12 @@ services:
     depends_on:
       - app
 
-  databasus:
-    image: databasus/databasus:latest
-    container_name: amicale_databasus
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:4005:4005"
-    volumes:
-      - databasus_data:/databasus-data
-    depends_on:
-      postgres:
-        condition: service_healthy
-
 volumes:
   postgres_data:
   pgadmin_data:
   caddy_data:
   caddy_config:
-  databasus_data:
 
 # Public:    https://coworker.amicalewifi.ch  → Caddy → app:8081
 # pgAdmin:   http://127.0.0.1:5050           (SSH-tunnel from your laptop)
-# Databasus: http://127.0.0.1:4005           (SSH-tunnel from your laptop)
 # Postgres:  127.0.0.1:5432                  (SSH-tunnel from your laptop)

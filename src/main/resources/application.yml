@@ -31,6 +31,11 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: true
     clean-disabled:      true
+    placeholders:
+      # V13 created a 'databasus' PG role; V14 drops it. The placeholder here
+      # only matters for fresh installs (V13 needs a value to substitute before
+      # V14 immediately drops the role).
+      databasuspwd:      unused-removed-in-v14
 
   thymeleaf:
     cache:    false
