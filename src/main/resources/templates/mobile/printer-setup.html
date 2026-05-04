@@ -31,6 +31,8 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .step-num{flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--prim);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
 .step-text{flex:1;color:var(--text);}
 .step-text code{background:var(--surf-2);padding:1px 6px;border-radius:5px;font-size:12px;font-family:var(--mono,ui-monospace,monospace);word-break:break-all;}
+.step-img{display:block;margin:10px 0 4px 32px;max-width:calc(100% - 32px);border:1px solid var(--bdr);border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.step-img-cap{font-size:11px;color:var(--t3);margin:0 0 8px 32px;line-height:1.4;}
 .warn-box{background:var(--gl);border:1px solid var(--prim);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12px;color:var(--prim-d);line-height:1.5;}
 .btn-secondary{display:block;width:100%;padding:12px;background:var(--surf);color:var(--red);border:1.5px solid var(--red-t);border-radius:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);box-sizing:border-box;}
 .btn-secondary:hover{background:var(--red-l);}
@@ -103,12 +105,50 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   </div>
 
   <div id="tab-macos" class="tab-content active">
-    <div class="step"><div class="step-num">1</div><div class="step-text">Plus simple — en terminal :
-      <code th:text="'sudo lpadmin -p Claudine -E -v ipps://' + ${publicHost} + '/printers/' + ${queueName} + ' -m drv:///sample.drv/generic.ppd -o auth-info-required=username,password -L &quot;Claudine&quot;'"></code>
+    <div class="step"><div class="step-num">1</div><div class="step-text">
+      Ouvre <strong>Réglages Système → Imprimantes & scanners → Ajouter une imprimante</strong>.
+      La barre d'icônes par défaut ne propose pas l'option dont on a besoin (Avancé) — clique
+      <strong>« Customise Toolbar… »</strong> en haut à droite pour l'ajouter.
     </div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Sinon, GUI : <strong>Réglages Système → Imprimantes & scanners → Ajouter une imprimante → onglet IP</strong>.</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Protocole : <strong>Internet Printing Protocol — IPPS</strong>. Adresse : <code th:text="${publicHost}"></code>. File : <code th:text="'printers/' + ${queueName}"></code>. Pilote : <strong>Imprimante PostScript générique</strong>.</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">Au premier print, macOS demande user/password. Entre ton email et ton token (cocher « Mémoriser dans le trousseau »).</div></div>
+    <img class="step-img" th:src="@{/images/claudine/01-add-printer-default.png}" alt="Add Printer dialog avec barre par défaut">
+    <p class="step-img-cap">La barre par défaut ne montre que les sources locales — il faut ajouter Avancé.</p>
+
+    <div class="step"><div class="step-num">2</div><div class="step-text">
+      <strong>Glisse l'icône « Advanced » (engrenage)</strong> de la zone du haut vers la barre d'outils
+      en haut de la fenêtre Add Printer. Clique <strong>Done</strong>.
+    </div></div>
+    <img class="step-img" th:src="@{/images/claudine/02-customise-toolbar.png}" alt="Customise Toolbar — drag de l'icône Advanced">
+    <p class="step-img-cap">Drag « Advanced » vers la barre d'outils, puis Done.</p>
+
+    <div class="step"><div class="step-num">3</div><div class="step-text">
+      Clique sur la nouvelle icône <strong>Advanced</strong> (engrenage bleu) puis remplis :
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.6;">
+        <li><strong>Type</strong> : Internet Printing Protocol (ipps)</li>
+        <li><strong>Device</strong> : Another Device</li>
+        <li><strong>URL</strong> : <code th:text="'ipps://' + ${publicHost} + '/printers/' + ${queueName}"></code></li>
+        <li><strong>Name</strong> : Claudine</li>
+        <li><strong>Location</strong> : Amicale du Wifi (libre)</li>
+        <li><strong>Use</strong> : Generic PostScript Printer</li>
+      </ul>
+      Clique <strong>Add</strong>. macOS peut afficher « Unable to communicate » — c'est OK, clique
+      <strong>Continue</strong>, l'imprimante se crée quand même.
+    </div></div>
+    <img class="step-img" th:src="@{/images/claudine/03-advanced-form.png}" alt="Onglet Avancé rempli avec ipps://print.amicalewifi.ch/printers/claudine">
+    <p class="step-img-cap">Tous les champs remplis. URL = ipps://, jamais http(s)://.</p>
+
+    <div class="step"><div class="step-num">4</div><div class="step-text">
+      Imprime un PDF de test (ex : Aperçu → Cmd-P → Claudine → Imprimer). macOS demande
+      ton <strong>nom d'utilisateur (email)</strong> et ton <strong>mot de passe (token)</strong>
+      en haut. Coche <strong>« Remember this password in my keychain »</strong> pour ne plus
+      avoir à le retaper.
+    </div></div>
+    <img class="step-img" th:src="@{/images/claudine/04-auth-dialog.png}" alt="Dialog auth macOS — email + token + remember in keychain">
+    <p class="step-img-cap">Entre ton email + ton token (les deux sont en haut de cette page).</p>
+
+    <div class="step"><div class="step-num">5</div><div class="step-text">
+      C'est tout — la feuille sort à l'Amicale et tes crédits sont débités automatiquement.
+      Les prochains prints se font sans demander de mot de passe (il est dans le trousseau).
+    </div></div>
   </div>
 
   <div id="tab-windows" class="tab-content">
