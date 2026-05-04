@@ -9,13 +9,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -120,6 +124,30 @@ public class AdminController {
         return "admin/member-detail";
     }
 
+    @GetMapping("/members/{id}/photo")
+    public ResponseEntity<byte[]> memberPhoto(@PathVariable UUID id) {
+        return memberRepo.findById(id)
+                .filter(m -> m.getPhoto() != null)
+                .map(m -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(m.getPhotoType()))
+                        .body(m.getPhoto()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/members/{id}/photo")
+    public String uploadMemberPhoto(@PathVariable UUID id,
+                                    @RequestParam("file") MultipartFile file,
+                                    RedirectAttributes ra) throws IOException {
+        var member = memberRepo.findById(id).orElseThrow();
+        if (!file.isEmpty() && file.getContentType() != null && file.getContentType().startsWith("image/")) {
+            member.setPhoto(file.getBytes());
+            member.setPhotoType(file.getContentType());
+            memberRepo.save(member);
+            ra.addFlashAttribute("success", "Photo mise à jour.");
+        }
+        return "redirect:/admin/members/" + id;
+    }
+
     @PostMapping("/members/create")
     public String createMember(@RequestParam String firstName,
                                @RequestParam String lastName,
@@ -149,8 +177,10 @@ public class AdminController {
     @PostMapping("/members/{id}/renew")
     public String renewPack(@PathVariable UUID id,
                             @RequestParam MembershipType membership,
+                            @RequestParam(required = false) String validUntil,
                             RedirectAttributes ra) {
-        Member m = memberService.renewPack(id, membership);
+        LocalDate expiryDate = (validUntil != null && !validUntil.isBlank()) ? LocalDate.parse(validUntil) : null;
+        Member m = memberService.renewPack(id, membership, expiryDate);
         ra.addFlashAttribute("success", "Pack renouvelé: " + membership.getLabel() + " pour " + m.getDisplayName());
         return "redirect:/admin/members/" + id;
     }
@@ -195,6 +225,8 @@ public class AdminController {
                                @RequestParam(required = false) String postalCode,
                                @RequestParam(required = false) String country,
                                @RequestParam(required = false) String notes,
+                               @RequestParam(required = false) String website,
+                               @RequestParam(required = false) String linkedinUrl,
                                RedirectAttributes ra) {
         Member m = memberRepo.findById(id).orElseThrow();
         if (firstName != null && !firstName.isBlank()) m.setFirstName(firstName);
@@ -207,6 +239,8 @@ public class AdminController {
         m.setCity(city != null && !city.isBlank() ? city : null);
         m.setPostalCode(postalCode != null && !postalCode.isBlank() ? postalCode : null);
         m.setCountry(country != null && !country.isBlank() ? country : "Suisse");
+        m.setWebsite(website != null && !website.isBlank() ? website : null);
+        m.setLinkedinUrl(linkedinUrl != null && !linkedinUrl.isBlank() ? linkedinUrl : null);
         m.setNotes(notes);
         m.setUpdatedAt(LocalDateTime.now());
         memberRepo.save(m);

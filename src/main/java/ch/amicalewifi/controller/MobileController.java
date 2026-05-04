@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -88,14 +89,14 @@ public class MobileController {
         return "mobile/scan-result";
     }
 
-    @GetMapping("/history")
-    public String history(Authentication auth, Model model) {
+    @GetMapping("/pack")
+    public String pack(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         List<Presence> presences = memberService.getForMember(member.getId());
 
-        long fullDays  = presences.stream().filter(p -> p.getPresenceType() == PresenceType.FULL_DAY).count();
-        long halfDays  = presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
-                                                     || p.getPresenceType() == PresenceType.HALF_PM).count();
+        long fullDays = presences.stream().filter(p -> p.getPresenceType() == PresenceType.FULL_DAY).count();
+        long halfDays = presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
+                                                    || p.getPresenceType() == PresenceType.HALF_PM).count();
         BigDecimal totalChf = presences.stream()
                 .filter(p -> p.getUnitPriceChf() != null && p.getUnitsConsumed() != null)
                 .map(p -> p.getUnitPriceChf().multiply(p.getUnitsConsumed()))
@@ -106,7 +107,18 @@ public class MobileController {
         model.addAttribute("fullDays",  fullDays);
         model.addAttribute("halfDays",  halfDays);
         model.addAttribute("totalChf",  totalChf);
-        return "mobile/history";
+        return "mobile/pack";
+    }
+
+    @GetMapping("/history")
+    public String history() {
+        return "redirect:/mobile/pack";
+    }
+
+    @GetMapping("/security")
+    public String security(Authentication auth, Model model) {
+        model.addAttribute("member", memberRepo.findByEmail(auth.getName()).orElseThrow());
+        return "mobile/security";
     }
 
     @GetMapping("/profile")
@@ -124,6 +136,8 @@ public class MobileController {
                                 @RequestParam(required = false) String city,
                                 @RequestParam(required = false) String postalCode,
                                 @RequestParam(required = false) String country,
+                                @RequestParam(required = false) String website,
+                                @RequestParam(required = false) String linkedinUrl,
                                 RedirectAttributes ra) {
         Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
         m.setPhone(phone);
@@ -133,9 +147,47 @@ public class MobileController {
         m.setCity(city);
         m.setPostalCode(postalCode);
         m.setCountry(country != null && !country.isBlank() ? country : "Suisse");
+        m.setWebsite(website != null && !website.isBlank() ? website : null);
+        m.setLinkedinUrl(linkedinUrl != null && !linkedinUrl.isBlank() ? linkedinUrl : null);
         m.setUpdatedAt(LocalDateTime.now());
         memberRepo.save(m);
         ra.addFlashAttribute("success", "Profil mis à jour.");
+        return "redirect:/mobile/profile";
+    }
+
+    @GetMapping(value = "/profile/photo", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    @ResponseBody
+    public ResponseEntity<byte[]> getPhoto(Authentication auth) {
+        return memberRepo.findByEmail(auth.getName())
+                .filter(m -> m.getPhoto() != null)
+                .map(m -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(
+                                m.getPhotoType() != null ? m.getPhotoType() : "image/jpeg"))
+                        .body(m.getPhoto()))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/profile/photo")
+    public String uploadPhoto(Authentication auth,
+                              @RequestParam MultipartFile file,
+                              RedirectAttributes ra) {
+        if (file.isEmpty()) {
+            ra.addFlashAttribute("error", "Aucun fichier sélectionné.");
+            return "redirect:/mobile/profile";
+        }
+        if (!file.getContentType().startsWith("image/")) {
+            ra.addFlashAttribute("error", "Seules les images sont acceptées.");
+            return "redirect:/mobile/profile";
+        }
+        try {
+            Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
+            m.setPhoto(file.getBytes());
+            m.setPhotoType(file.getContentType());
+            memberRepo.save(m);
+            ra.addFlashAttribute("success", "Photo mise à jour.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Erreur lors de l'upload.");
+        }
         return "redirect:/mobile/profile";
     }
 
@@ -166,7 +218,7 @@ public class MobileController {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepo.save(user);
         ra.addFlashAttribute("success", "Mot de passe modifié avec succès.");
-        return "redirect:/mobile/profile";
+        return "redirect:/mobile/security";
     }
 
     /** Page ouverte après scan du QR code du coworking. */

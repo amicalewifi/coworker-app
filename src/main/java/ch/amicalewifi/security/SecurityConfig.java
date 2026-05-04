@@ -30,7 +30,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/logout"))
             .authorizeHttpRequests(auth -> auth
                 // Ressources publiques
-                .requestMatchers("/login", "/register", "/css/**", "/js/**", "/icons/**",
+                .requestMatchers("/login", "/register", "/forgot-password", "/reset-password",
+                                 "/css/**", "/js/**", "/icons/**",
                                  "/images/**", "/manifest.json", "/sw.js", "/error").permitAll()
                 // Admin uniquement
                 .requestMatchers("/admin/**").hasRole("ADMIN")

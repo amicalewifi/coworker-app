@@ -44,27 +44,30 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
     <span th:text="${error}"></span>
   </div>
-  <div th:if="${pwError}" class="flash flash-err" style="margin-bottom:12px;">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
-    <span th:text="${pwError}"></span>
-  </div>
-
   <!-- Entête profil -->
   <div class="profile-header">
-    <div class="ph-avatar" th:text="${member.initials}">CB</div>
+    <form th:action="@{/mobile/profile/photo}" method="post" enctype="multipart/form-data" style="position:relative;z-index:1;margin-bottom:12px;">
+      <label style="cursor:pointer;display:inline-block;position:relative;">
+        <div class="ph-avatar" style="margin-bottom:0;overflow:hidden;">
+          <img th:if="${member.photo != null}" th:src="@{/mobile/profile/photo}"
+               style="width:100%;height:100%;object-fit:cover;border-radius:50%;" alt="photo">
+          <span th:unless="${member.photo != null}" th:text="${member.initials}">CB</span>
+        </div>
+        <div style="position:absolute;bottom:-2px;right:-2px;background:rgba(255,255,255,.2);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2"><path d="M1 12V14h2l9-9-2-2L1 12z"/><path d="M12 2l2 2"/></svg>
+        </div>
+        <input type="file" name="file" accept="image/*" style="display:none;" onchange="this.form.submit()">
+      </label>
+    </form>
     <div class="ph-name" th:text="${member.displayName}">Camille Berrut</div>
-    <div class="ph-formula" th:text="${member.membership.label}">Pack 10 jours</div>
+    <div th:unless="${member.membership.name() == 'JOURNEE_ESSAI'}"
+         class="ph-formula" th:text="${member.membership.label}">Pack 10 jours</div>
+    <div th:if="${member.membership.name() == 'JOURNEE_ESSAI'}"
+         class="ph-formula">Aucun pack actif</div>
     <div th:if="${member.isPermanent() and member.packExpires != null}" class="ph-formula"
          th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}"></div>
     <div class="ph-email" th:text="${member.email}">camille@exemple.ch</div>
   </div>
-  <div style="margin:-10px 0 16px;text-align:center;">
-    <a th:href="@{/mobile/renew}"
-       style="font-size:12px;font-weight:700;color:var(--gd);text-decoration:none;background:var(--gl);padding:6px 16px;border-radius:20px;border:1px solid var(--prim);">
-      Renouveler / changer de pack
-    </a>
-  </div>
-
   <!-- Coordonnées -->
   <form th:action="@{/mobile/profile}" method="post">
     <div class="form-card">
@@ -85,6 +88,14 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="field-row">
         <label class="field-lbl">N° TVA CHE (si entreprise)</label>
         <input type="text" name="tvaNumber" class="field-in" th:value="${member.tvaNumber}" placeholder="CHE-123.456.789 TVA">
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">Site web</label>
+        <input type="url" name="website" class="field-in" th:value="${member.website}" placeholder="https://example.com">
+      </div>
+      <div class="field-row">
+        <label class="field-lbl">LinkedIn</label>
+        <input type="url" name="linkedinUrl" class="field-in" th:value="${member.linkedinUrl}" placeholder="https://linkedin.com/in/prenom-nom">
       </div>
     </div>
 
@@ -114,27 +125,20 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <button type="submit" class="save-btn">Enregistrer les modifications</button>
   </form>
 
-  <!-- Changer le mot de passe -->
-  <form th:action="@{/mobile/profile/password}" method="post">
-    <div class="form-card" style="margin-top:14px;">
-      <div class="form-card-title">Changer le mot de passe</div>
-
-      <div class="field-row">
-        <label class="field-lbl">Mot de passe actuel</label>
-        <input type="password" name="currentPassword" class="field-in" placeholder="••••••••" required>
+  <!-- Sécurité -->
+  <a th:href="@{/mobile/security}"
+     style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:var(--surf);border:1px solid var(--bdr);border-radius:16px;margin-top:14px;text-decoration:none;color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.04);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:36px;height:36px;border-radius:10px;background:var(--surf-2);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="var(--t2)" stroke-width="1.7"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/><circle cx="8" cy="11" r="1" fill="var(--t2)" stroke="none"/></svg>
       </div>
-      <div class="field-row">
-        <label class="field-lbl">Nouveau mot de passe</label>
-        <input type="password" name="newPassword" class="field-in" placeholder="Min. 8 caractères" minlength="8" required>
-      </div>
-      <div class="field-row">
-        <label class="field-lbl">Confirmer le nouveau mot de passe</label>
-        <input type="password" name="confirmPassword" class="field-in" placeholder="••••••••" required>
+      <div>
+        <div style="font-size:14px;font-weight:700;">Sécurité</div>
+        <div style="font-size:11px;color:var(--t3);margin-top:1px;">Changer le mot de passe</div>
       </div>
     </div>
-
-    <button type="submit" class="save-btn" style="background:var(--t2);">Changer le mot de passe</button>
-  </form>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+  </a>
 
   <div style="height:8px;"></div>
 </div>
@@ -144,6 +148,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
     Accueil
   </a>
+  <a th:href="@{/mobile/pack}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M6 7V5a4 4 0 018 0v2"/><path d="M2 11h16"/></svg>
+    Pack
+  </a>
   <a th:href="@{/mobile/rooms}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
     Salles
@@ -151,10 +159,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <a th:href="@{/mobile/print}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
     Imprimer
-  </a>
-  <a th:href="@{/mobile/history}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-    Historique
   </a>
   <a th:href="@{/mobile/profile}" class="nav-btn active">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
