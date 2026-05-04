@@ -32,6 +32,11 @@ public class Member {
     @Column(name = "qr_token", unique = true)
     @Builder.Default private UUID qrToken = UUID.randomUUID();
 
+    // Token IPP dédié à l'imprimante virtuelle (claudine). Distinct de qrToken
+    // pour pouvoir révoquer l'accès impression sans casser le badge/QR.
+    @Column(name = "print_token", nullable = false, unique = true)
+    @Builder.Default private UUID printToken = UUID.randomUUID();
+
     // Adresse postale
     private String address;
     private String city;
