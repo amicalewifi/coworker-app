@@ -144,6 +144,9 @@ document.addEventListener('click', function(e) {
                 <span th:case="'low'"      class="b b-a">Faible</span>
                 <span th:case="*"          class="b b-g">Actif</span>
               </span>
+              <div th:if="${m.packExpires != null}" style="font-size:10px;color:var(--t3);margin-top:3px;"
+                   th:text="'jusqu\'au ' + ${#temporals.format(m.packExpires,'d MMM yyyy')}"></div>
+              <div th:if="${m.packExpires == null and m.permanent}" style="font-size:10px;color:var(--purple);margin-top:3px;">Illimité</div>
             </span>
           </td>
           <td>

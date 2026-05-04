@@ -55,6 +55,7 @@
           <th>Membre</th>
           <th>Formule</th>
           <th>Type</th>
+          <th>Validité</th>
           <th style="text-align:right;">Montant</th>
         </tr>
       </thead>
@@ -71,6 +72,12 @@
             <span th:if="${tx.kind == 'create'}"  class="b b-g"  style="font-size:10px;">Nouveau</span>
             <span th:unless="${tx.kind == 'create'}" class="b b-o" style="font-size:10px;">Renouvellement</span>
           </td>
+          <td style="white-space:nowrap;font-size:12px;">
+            <span th:if="${tx.member.packExpires != null}"
+                  th:text="${#temporals.format(tx.member.packExpires,'d MMM yyyy')}"
+                  th:style="${tx.member.packExpires.isBefore(#temporals.createToday()) ? 'color:var(--red);font-weight:600;' : 'color:var(--t2);'}"></span>
+            <span th:if="${tx.member.packExpires == null}" style="color:var(--t3);">—</span>
+          </td>
           <td style="text-align:right;font-weight:800;font-size:15px;color:var(--prim);"
               th:text="'Fr. '+${#numbers.formatDecimal(tx.amountChf,1,2)}"></td>
         </tr>
@@ -80,7 +87,7 @@
       </tbody>
       <tfoot th:unless="${#lists.isEmpty(packTxs)}">
         <tr style="background:var(--surf-2);">
-          <td colspan="4" style="font-weight:700;padding:13px 18px;">Total packs membres</td>
+          <td colspan="5" style="font-weight:700;padding:13px 18px;">Total packs membres</td>
           <td style="text-align:right;font-size:16px;font-weight:900;color:var(--prim);padding:13px 18px;"
               th:text="'Fr. '+${#numbers.formatDecimal(packTotal,1,2)}"></td>
         </tr>

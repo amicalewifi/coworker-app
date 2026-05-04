@@ -2,6 +2,7 @@ package ch.amicalewifi.controller;
 
 import ch.amicalewifi.model.*;
 import ch.amicalewifi.repository.*;
+import ch.amicalewifi.service.EmailService;
 import ch.amicalewifi.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ public class RegisterController {
     private final UserRepository   userRepo;
     private final MemberRepository memberRepo;
     private final MemberService    memberService;
+    private final EmailService     emailService;
     private final PasswordEncoder  passwordEncoder;
 
     @GetMapping
@@ -66,6 +68,7 @@ public class RegisterController {
                     .build());
 
             log.info("Nouvelle inscription: {} {} ({})", firstName, lastName, email);
+            emailService.sendWelcome(email, firstName);
             ra.addFlashAttribute("success",
                     "Bienvenue " + firstName + " ! Votre compte a été créé. Connectez-vous pour accéder à votre espace.");
             return "redirect:/login?registered";

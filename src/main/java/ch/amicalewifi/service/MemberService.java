@@ -59,13 +59,20 @@ public class MemberService {
     }
 
     public Member renewPack(UUID id, MembershipType membership) {
+        return renewPack(id, membership, null);
+    }
+
+    public Member renewPack(UUID id, MembershipType membership, LocalDate validUntil) {
         Member m = getById(id);
         m.setMembership(membership);
         m.setPackUnitsTotal(membership.getPackUnits());
         m.setPackUnitsUsed(BigDecimal.ZERO);
-        m.setPackExpires(membership == MembershipType.PERMANENT
-                ? LocalDate.now().plusMonths(1)
-                : (membership.hasPack() ? LocalDate.now().plusMonths(3) : null));
+        boolean singleSession = membership == MembershipType.PACK_MATIN
+                            || membership == MembershipType.PACK_APMIDI;
+        m.setPackExpires(validUntil != null ? validUntil :
+                membership == MembershipType.PERMANENT ? LocalDate.now().plusMonths(1) :
+                singleSession ? null :
+                membership.hasPack() ? LocalDate.now().plusMonths(3) : null);
         m.setConfCreditsTotalH(membership.getConfCredits());
         m.setConfCreditsUsedH(BigDecimal.ZERO);
         m.setUpdatedAt(LocalDateTime.now());

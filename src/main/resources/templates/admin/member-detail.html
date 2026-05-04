@@ -86,6 +86,10 @@
 </div>
 
 <script>
+function toggleValidUntil(val) {
+  const noExpiry = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
+  document.getElementById('renewValidUntilRow').style.display = noExpiry ? 'none' : '';
+}
 function toggleActMenu() {
   document.getElementById('act-menu').classList.toggle('open');
 }
@@ -117,6 +121,21 @@ document.addEventListener('click', function(e) {
     <div class="card">
       <div class="card-hdr"><span class="card-ttl">Informations</span></div>
       <div class="card-body">
+        <div style="text-align:center;margin-bottom:16px;">
+          <form th:action="@{/admin/members/{id}/photo(id=${member.id})}" method="post" enctype="multipart/form-data">
+            <label style="cursor:pointer;display:inline-block;position:relative;">
+              <div style="width:72px;height:72px;border-radius:50%;background:var(--surf-2);border:2px solid var(--bdr);display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;overflow:hidden;color:var(--t2);">
+                <img th:if="${member.photo != null}" th:src="@{/admin/members/{id}/photo(id=${member.id})}"
+                     style="width:100%;height:100%;object-fit:cover;" alt="photo">
+                <span th:unless="${member.photo != null}" th:text="${member.initials}">CB</span>
+              </div>
+              <div style="position:absolute;bottom:-2px;right:-2px;background:var(--prim);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2.2"><path d="M1 12V14h2l9-9-2-2L1 12z"/><path d="M12 2l2 2"/></svg>
+              </div>
+              <input type="file" name="file" accept="image/*" style="display:none;" onchange="this.form.submit()">
+            </label>
+          </form>
+        </div>
         <table style="width:100%;font-size:13px;">
           <tr>
             <td style="color:var(--t3);width:140px;padding:5px 0;">Compte login</td>
@@ -133,6 +152,14 @@ document.addEventListener('click', function(e) {
           <tr><td style="color:var(--t3);padding:5px 0;">Ville</td><td th:text="${(member.postalCode?:'')+' '+(member.city?:'—')}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Pays</td><td th:text="${member.country}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Membre depuis</td><td th:text="${#temporals.format(member.createdAt,'d MMMM yyyy')}"></td></tr>
+          <tr th:if="${member.website}">
+            <td style="color:var(--t3);padding:5px 0;">Site web</td>
+            <td><a th:href="${member.website}" target="_blank" th:text="${member.website}" style="color:var(--prim);text-decoration:none;font-size:13px;"></a></td>
+          </tr>
+          <tr th:if="${member.linkedinUrl}">
+            <td style="color:var(--t3);padding:5px 0;">LinkedIn</td>
+            <td><a th:href="${member.linkedinUrl}" target="_blank" style="color:var(--prim);text-decoration:none;font-size:13px;">Voir le profil ↗</a></td>
+          </tr>
         </table>
       </div>
     </div>
@@ -286,6 +313,14 @@ document.addEventListener('click', function(e) {
         <input name="country" class="form-in" th:value="${member.country}" placeholder="Suisse">
       </div>
       <div class="form-row">
+        <label class="form-lbl">Site web</label>
+        <input name="website" class="form-in" th:value="${member.website}" placeholder="https://example.com">
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">LinkedIn</label>
+        <input name="linkedinUrl" class="form-in" th:value="${member.linkedinUrl}" placeholder="https://linkedin.com/in/prenom-nom">
+      </div>
+      <div class="form-row">
         <label class="form-lbl">Notes internes</label>
         <input name="notes" class="form-in" th:value="${member.notes}" placeholder="Observations...">
       </div>
@@ -359,15 +394,21 @@ document.addEventListener('click', function(e) {
     <form th:action="@{/admin/members/{id}/renew(id=${member.id})}" method="post">
       <div class="form-row">
         <label class="form-lbl">Nouvelle formule</label>
-        <select name="membership" class="form-sel">
-          <option value="PACK_MATIN">Pack matin — Fr. 15.-</option>
-          <option value="PACK_APMIDI">Pack après-midi — Fr. 15.-</option>
-          <option value="PACK_1J">Pack 1 jour — Fr. 29.-</option>
-          <option value="PACK_5J">Pack 5 jours — Fr. 109.-</option>
-          <option value="PACK_10J">Pack 10 jours — Fr. 199.-</option>
-          <option value="PACK_15J">Pack 15 jours — Fr. 279.-</option>
-          <option value="PERMANENT">Permanent — Fr. 329.-/mois</option>
+        <select name="membership" class="form-sel" id="renewMembership" onchange="toggleValidUntil(this.value)">
+          <option value="PACK_MATIN"  th:selected="${member.membership.name()=='PACK_MATIN'}">Pack matin — Fr. 15.-</option>
+          <option value="PACK_APMIDI" th:selected="${member.membership.name()=='PACK_APMIDI'}">Pack après-midi — Fr. 15.-</option>
+          <option value="PACK_1J"     th:selected="${member.membership.name()=='PACK_1J'}">Pack 1 jour — Fr. 29.-</option>
+          <option value="PACK_5J"     th:selected="${member.membership.name()=='PACK_5J'}">Pack 5 jours — Fr. 109.-</option>
+          <option value="PACK_10J"    th:selected="${member.membership.name()=='PACK_10J'}">Pack 10 jours — Fr. 199.-</option>
+          <option value="PACK_15J"    th:selected="${member.membership.name()=='PACK_15J'}">Pack 15 jours — Fr. 279.-</option>
+          <option value="PERMANENT"   th:selected="${member.membership.name()=='PERMANENT'}">Permanent — Fr. 329.-/mois</option>
         </select>
+      </div>
+      <div class="form-row" id="renewValidUntilRow"
+           th:style="${member.membership.name()=='PACK_MATIN' or member.membership.name()=='PACK_APMIDI' ? 'display:none' : ''}">
+        <label class="form-lbl">Valide jusqu'au <span style="font-weight:400;color:var(--t3);">(facultatif — auto si vide)</span></label>
+        <input type="date" name="validUntil" class="form-in"
+               th:value="${member.packExpires != null and member.packExpires.isAfter(#temporals.createToday()) ? #temporals.format(member.packExpires,'yyyy-MM-dd') : ''}">
       </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-renew')">Annuler</button>

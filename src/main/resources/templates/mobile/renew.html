@@ -41,16 +41,22 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <!-- Pack actuel -->
   <div class="current-pack">
     <div class="cp-lbl">Formule actuelle</div>
-    <div class="cp-name" th:text="${member.membership.label}">Pack 5 jours</div>
-    <div th:if="${member.isPermanent()}">
-      <div class="cp-remaining" th:if="${member.packExpires != null}"
-           th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMMM yyyy', #locale)}"></div>
-      <div class="cp-remaining" th:unless="${member.packExpires != null}">Accès illimité</div>
+    <div th:if="${member.membership.name() == 'JOURNEE_ESSAI'}">
+      <div class="cp-name">Aucun pack actif</div>
+      <div class="cp-remaining">Choisissez votre première formule ci-dessous</div>
     </div>
-    <div th:unless="${member.isPermanent()}">
-      <div class="cp-remaining" th:if="${member.packUnitsRemaining != null}"
-           th:text="${member.packUnitsRemaining} + ' j restantes · ' + ${member.halfDaysRemaining} + ' demi-journées'"></div>
-      <div class="cp-remaining" th:unless="${member.packUnitsRemaining != null}">Pas de pack en cours</div>
+    <div th:unless="${member.membership.name() == 'JOURNEE_ESSAI'}">
+      <div class="cp-name" th:text="${member.membership.label}">Pack 5 jours</div>
+      <div th:if="${member.isPermanent()}">
+        <div class="cp-remaining" th:if="${member.packExpires != null}"
+             th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMMM yyyy', #locale)}"></div>
+        <div class="cp-remaining" th:unless="${member.packExpires != null}">Accès illimité</div>
+      </div>
+      <div th:unless="${member.isPermanent()}">
+        <div class="cp-remaining" th:if="${member.packUnitsRemaining != null}"
+             th:text="${member.packUnitsRemaining} + ' j restantes · ' + ${member.halfDaysRemaining} + ' demi-journées'"></div>
+        <div class="cp-remaining" th:unless="${member.packUnitsRemaining != null}">Pas de pack en cours</div>
+      </div>
     </div>
   </div>
 
@@ -138,6 +144,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
     Accueil
   </a>
+  <a th:href="@{/mobile/pack}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M6 7V5a4 4 0 018 0v2"/><path d="M2 11h16"/></svg>
+    Pack
+  </a>
   <a th:href="@{/mobile/rooms}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
     Salles
@@ -145,10 +155,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <a th:href="@{/mobile/print}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
     Imprimer
-  </a>
-  <a th:href="@{/mobile/history}" class="nav-btn">
-    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-    Historique
   </a>
   <a th:href="@{/mobile/profile}" class="nav-btn">
     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>

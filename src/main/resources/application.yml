@@ -5,6 +5,14 @@ spring:
   config:
     import: optional:application-local.yml
 
+  mail:
+    host: mail.infomaniak.com
+    port: 587
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.starttls.required: true
+
   datasource:
     url:               jdbc:postgresql://localhost:5432/amicale_wifi
     username:          amicale
@@ -101,6 +109,10 @@ server:
 
 # Règles métier Amicale du WiFi
 amicale:
+  mail:
+    from:     "l'Amicale du WiFi <noreply@amicalewifi.ch>"
+    base-url: https://app.amicalewifi.ch
+
   business:
     opening-hour:   7      # coworking ouvre à 07:00
     closing-hour:   19     # coworking ferme à 19:00

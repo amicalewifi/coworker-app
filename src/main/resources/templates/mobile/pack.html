@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c1222">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Mon pack — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
+.pack-hero{background:linear-gradient(135deg,#0c1222 0%,#1a2a50 100%);border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.25);}
+.pack-hero::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06);}
+.ph-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1;margin-bottom:16px;}
+.ph-name{font-size:18px;font-weight:800;letter-spacing:-.3px;}
+.ph-formula{font-size:11px;opacity:.65;margin-top:2px;font-weight:500;}
+.ph-renew{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:12px;font-weight:700;padding:7px 14px;border-radius:10px;text-decoration:none;white-space:nowrap;cursor:pointer;}
+.ph-bar-lbl{font-size:11px;opacity:.6;margin-bottom:6px;display:flex;justify-content:space-between;font-weight:600;position:relative;z-index:1;}
+.ph-bar{height:8px;background:rgba(255,255,255,.12);border-radius:4px;overflow:hidden;position:relative;z-index:1;}
+.ph-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+.ph-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;position:relative;z-index:1;}
+.ph-stat{background:rgba(255,255,255,.1);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.1);}
+.ph-stat-val{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;}
+.ph-stat-lbl{font-size:10px;opacity:.6;margin-top:2px;font-weight:500;}
+.cons-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 1px 8px rgba(0,0,0,.05);}
+.cons-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:14px;}
+.cons-row{margin-bottom:14px;}
+.cons-row:last-child{margin-bottom:0;}
+.cons-row-header{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--t2);margin-bottom:6px;}
+.cons-row-header span:last-child{font-weight:500;color:var(--t3);}
+.cons-bar-wrap{height:7px;background:var(--bg);border-radius:4px;overflow:hidden;border:1px solid var(--bdr);}
+.cons-bar{height:100%;border-radius:4px;transition:width .6s ease;}
+.cons-bar-green{background:var(--green);}
+.cons-bar-blue{background:var(--blue);}
+.cons-bar-orange{background:var(--orange);}
+.pills-row{display:flex;gap:8px;margin-bottom:16px;}
+.pill{flex:1;background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:12px 8px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.pill-val{font-size:20px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;}
+.pill-lbl{font-size:10px;color:var(--t3);font-weight:600;margin-top:2px;}
+.hi{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surf);border-radius:16px;border:1px solid var(--bdr);margin-bottom:7px;border-left-width:4px;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.hi.full{border-left-color:var(--green);}
+.hi.half{border-left-color:var(--orange);}
+.hi.unit{border-left-color:var(--t4);}
+.hi-left .date{font-size:11px;color:var(--t3);font-weight:600;}
+.hi-left .type{font-size:14px;font-weight:700;margin-top:3px;color:var(--text);}
+.hi-left .hours{font-size:11px;color:var(--t3);margin-top:2px;}
+.total-footer{text-align:center;padding:16px;color:var(--t3);font-size:12px;font-weight:600;}
+.total-footer span{color:var(--prim);font-weight:800;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="app-topbar">
+  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
+  <div class="app-title">Mon pack</div>
+</div>
+<div class="app-content">
+
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+
+  <!-- Hero pack -->
+  <div class="pack-hero">
+    <div class="ph-top">
+      <div>
+        <div class="ph-name" th:text="${member.displayName}">Camille Berrut</div>
+        <div class="ph-formula"
+             th:text="${member.membership.name() == 'JOURNEE_ESSAI' ? 'Aucun pack actif' : member.membership.label}">Pack 10 jours</div>
+        <div th:if="${member.isPermanent() and member.packExpires != null}" class="ph-formula"
+             th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}"></div>
+      </div>
+      <a th:href="@{/mobile/renew}" class="ph-renew">Renouveler</a>
+    </div>
+
+    <div th:if="${member.packUnitsTotal != null}">
+      <div class="ph-bar-lbl">
+        <span>Unités restantes</span>
+        <strong th:text="${member.packUnitsRemaining}+' j / '+${member.packUnitsTotal}+' j'"></strong>
+      </div>
+      <div class="ph-bar">
+        <div class="ph-bar-fill"
+             th:style="${'width:' + (member.packUnitsTotal.doubleValue()>0 and member.packUnitsRemaining!=null ? (member.packUnitsRemaining.doubleValue()/member.packUnitsTotal.doubleValue()*100) : 0) + '%;background:' + (member.packAlert=='empty' ? '#e05050' : (member.packAlert=='low' ? '#e07b39' : 'rgba(255,255,255,.75)'))}"></div>
+      </div>
+    </div>
+
+    <div class="ph-stats">
+      <div class="ph-stat">
+        <div class="ph-stat-val" th:text="${member.halfDaysRemaining!=null?member.halfDaysRemaining:'∞'}">7</div>
+        <div class="ph-stat-lbl">demi-journées</div>
+      </div>
+      <div class="ph-stat">
+        <div class="ph-stat-val"
+             th:text="${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsRemaining,1,1) : '—'}+'h'">—h</div>
+        <div class="ph-stat-lbl">salle conf.</div>
+      </div>
+      <div class="ph-stat">
+        <div class="ph-stat-val" th:text="${member.printQuota - member.printUsed}">0</div>
+        <div class="ph-stat-lbl">crédits print</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Consommation détaillée -->
+  <div class="cons-card" th:if="${member.packUnitsTotal != null}">
+    <div class="cons-title">Consommation du pack</div>
+    <div class="cons-row">
+      <div class="cons-row-header">
+        <span>Jours de coworking</span>
+        <span th:text="${member.packUnitsRemaining}+' j restants / '+${member.packUnitsTotal}+' j'"></span>
+      </div>
+      <div class="cons-bar-wrap">
+        <div class="cons-bar cons-bar-green"
+             th:style="${'width:' + (member.packUnitsTotal.doubleValue()>0 ? (member.packUnitsUsed.doubleValue()/member.packUnitsTotal.doubleValue()*100) : 0) + '%'}"></div>
+      </div>
+    </div>
+    <div class="cons-row" th:if="${member.confCreditsTotalH.doubleValue() > 0}">
+      <div class="cons-row-header">
+        <span>Crédits salle de réunion</span>
+        <span th:text="${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsRemaining,1,1) : '0.0'}+'h restantes / '+${member.confCreditsTotalH != null ? #numbers.formatDecimal(member.confCreditsTotalH,1,1) : '0.0'}+'h'"></span>
+      </div>
+      <div class="cons-bar-wrap">
+        <div class="cons-bar cons-bar-blue"
+             th:style="${'width:' + (member.confCreditsTotalH.doubleValue()>0 ? (member.confCreditsUsedH.doubleValue()/member.confCreditsTotalH.doubleValue()*100) : 0) + '%'}"></div>
+      </div>
+    </div>
+    <div class="cons-row">
+      <div class="cons-row-header">
+        <span>Quota impression</span>
+        <span th:text="${member.printUsed}+' / '+${member.printQuota}+' pages'"></span>
+      </div>
+      <div class="cons-bar-wrap">
+        <div class="cons-bar cons-bar-orange"
+             th:style="${'width:' + (member.printQuota>0 ? (member.printUsed*1.0/member.printQuota*100) : 0) + '%'}"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Répartition -->
+  <div class="section-title">Répartition des présences</div>
+  <div class="pills-row">
+    <div class="pill">
+      <div class="pill-val" th:text="${fullDays}">0</div>
+      <div class="pill-lbl">Journées</div>
+    </div>
+    <div class="pill">
+      <div class="pill-val" th:text="${halfDays}">0</div>
+      <div class="pill-lbl">Demi-journées</div>
+    </div>
+    <div class="pill">
+      <div class="pill-val" th:text="${#lists.size(presences) - fullDays - halfDays}">0</div>
+      <div class="pill-lbl">Autres</div>
+    </div>
+  </div>
+
+  <!-- Historique -->
+  <div class="section-title">Toutes mes présences</div>
+  <div th:each="p : ${presences}"
+       th:classappend="${p.unitaire ? 'unit' : (p.presenceType.name()=='FULL_DAY' ? 'full' : 'half')}"
+       class="hi">
+    <div class="hi-left">
+      <div class="date" th:text="${#temporals.format(p.date,'EEEE d MMMM yyyy')}"></div>
+      <div class="type" th:text="${p.presenceType.label}"></div>
+      <div class="hours" th:text="${p.presenceType.hours}+' · Arrivée '+${#temporals.format(p.checkedInAt,'HH:mm')}"></div>
+    </div>
+    <div style="text-align:right;">
+      <span th:if="${p.unitaire}" class="b b-gr">Unitaire</span>
+      <span th:unless="${p.unitaire}">
+        <span th:if="${p.presenceType.name()=='FULL_DAY'}"     class="b b-g">−1.0j</span>
+        <span th:unless="${p.presenceType.name()=='FULL_DAY'}" class="b b-o">−0.5j</span>
+      </span>
+      <div style="font-size:10px;color:var(--t4);margin-top:4px;" th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></div>
+    </div>
+  </div>
+  <div th:if="${#lists.isEmpty(presences)}" style="color:var(--t3);text-align:center;padding:40px;font-size:13px;">
+    Aucune présence enregistrée
+  </div>
+
+  <div class="total-footer" th:if="${totalChf != null and totalChf.doubleValue() > 0}">
+    Facturation unitaire totale : <span th:text="'Fr. '+${#numbers.formatDecimal(totalChf,1,2)}+'.-'"></span>
+  </div>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/pack}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M6 7V5a4 4 0 018 0v2"/><path d="M2 11h16"/></svg>
+    Pack
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
+  </a>
+  <a th:href="@{/mobile/print}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
+    Imprimer
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+</div>
+</body>
+</html>

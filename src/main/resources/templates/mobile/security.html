@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c1222">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Sécurité — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
+.form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+.form-card-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:16px;}
+.field-row{margin-bottom:14px;}
+.field-row:last-child{margin-bottom:0;}
+.field-lbl{font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px;display:block;}
+.field-in{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
+.field-in:focus{border-color:var(--prim);box-shadow:0 0 0 3px rgba(0,122,245,.1);}
+.save-btn{display:block;width:100%;padding:14px;background:var(--prim);color:#fff;border-radius:12px;text-align:center;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:var(--font);box-shadow:0 4px 14px rgba(0,122,245,.30);transition:all .2s;margin-top:4px;}
+.save-btn:hover{background:var(--prim-d);transform:translateY(-1px);}
+.strength-bar{height:4px;border-radius:4px;background:var(--bdr);overflow:hidden;margin-top:6px;}
+.strength-fill{height:100%;border-radius:4px;width:0;transition:width .3s,background .3s;}
+.strength-lbl{font-size:10px;font-weight:700;margin-top:4px;min-height:14px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
+  <div class="app-title">Sécurité</div>
+</div>
+
+<div class="app-content">
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${pwError}" class="flash flash-err" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${pwError}"></span>
+  </div>
+
+  <form th:action="@{/mobile/profile/password}" method="post">
+    <div class="form-card">
+      <div class="form-card-title">Changer le mot de passe</div>
+
+      <div class="field-row">
+        <label class="field-lbl">Mot de passe actuel</label>
+        <input type="password" name="currentPassword" class="field-in" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <div class="field-row">
+        <label class="field-lbl">Nouveau mot de passe</label>
+        <input type="password" name="newPassword" id="newPw" class="field-in"
+               placeholder="Min. 8 caractères" minlength="8" required autocomplete="new-password"
+               oninput="checkStrength(this.value)">
+        <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+        <div class="strength-lbl" id="strengthLbl"></div>
+      </div>
+
+      <div class="field-row">
+        <label class="field-lbl">Confirmer le nouveau mot de passe</label>
+        <input type="password" name="confirmPassword" id="confirmPw" class="field-in"
+               placeholder="••••••••" required autocomplete="new-password"
+               oninput="checkMatch()">
+        <div id="matchMsg" style="font-size:10px;font-weight:700;margin-top:4px;min-height:14px;"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="save-btn">Changer le mot de passe</button>
+  </form>
+
+  <div style="height:8px;"></div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/pack}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M6 7V5a4 4 0 018 0v2"/><path d="M2 11h16"/></svg>
+    Pack
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
+  </a>
+  <a th:href="@{/mobile/print}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
+    Imprimer
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+</div>
+
+<script>
+function checkStrength(pw) {
+  const fill = document.getElementById('strengthFill');
+  const lbl  = document.getElementById('strengthLbl');
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const levels = [
+    {w:'20%', bg:'var(--red)',    txt:'Très faible', c:'var(--red)'},
+    {w:'40%', bg:'var(--orange)', txt:'Faible',      c:'var(--orange)'},
+    {w:'60%', bg:'var(--orange)', txt:'Moyen',       c:'var(--orange)'},
+    {w:'80%', bg:'var(--green)',  txt:'Fort',        c:'var(--green)'},
+    {w:'100%',bg:'var(--green)',  txt:'Très fort',   c:'var(--green)'},
+  ];
+  const lvl = levels[Math.max(0, score - 1)] || levels[0];
+  fill.style.width = pw.length ? lvl.w : '0';
+  fill.style.background = lvl.bg;
+  lbl.textContent  = pw.length ? lvl.txt : '';
+  lbl.style.color  = lvl.c;
+}
+function checkMatch() {
+  const pw  = document.getElementById('newPw').value;
+  const pw2 = document.getElementById('confirmPw').value;
+  const msg = document.getElementById('matchMsg');
+  if (!pw2) { msg.textContent = ''; return; }
+  if (pw === pw2) {
+    msg.textContent = 'Les mots de passe correspondent';
+    msg.style.color = 'var(--green)';
+  } else {
+    msg.textContent = 'Les mots de passe ne correspondent pas';
+    msg.style.color = 'var(--red)';
+  }
+}
+</script>
+</body>
+</html>

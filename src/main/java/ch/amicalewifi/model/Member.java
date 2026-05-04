@@ -60,7 +60,17 @@ public class Member {
     @Column(name = "print_quota")  @Builder.Default private int printQuota = 50;
     @Column(name = "print_used")   @Builder.Default private int printUsed  = 0;
 
+    @Basic(fetch = FetchType.LAZY)
+    @Column(columnDefinition = "bytea")
+    private byte[] photo;
+
+    @Column(name = "photo_type")
+    private String photoType;
+
     @ManyToOne(fetch = FetchType.EAGER) @JoinColumn(name = "user_id") private User user;
+
+    private String website;
+    @Column(name = "linkedin_url") private String linkedinUrl;
 
     @Column(name = "is_active") @Builder.Default private boolean active = true;
     private String notes;
