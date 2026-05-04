@@ -68,7 +68,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <div class="cred-row">
       <div class="cred-lbl">Adresse de l'imprimante (URL)</div>
       <div class="cred-val">
-        <span class="v" id="ippUrl" th:text="'ipps://' + ${publicHost} + '/printers/' + ${queueName}"></span>
+        <span class="v" id="ippUrl" th:text="'ipps://' + ${publicHost} + ':443/printers/' + ${queueName}"></span>
         <button type="button" class="copy-btn" onclick="copyTo('ippUrl', this)">Copier</button>
       </div>
     </div>
@@ -105,34 +105,34 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div id="tab-macos" class="tab-content active">
     <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Réglages Système → Imprimantes & scanners</strong>.</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter une imprimante</strong>, puis l'onglet <strong>IP</strong>.</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Protocole : <strong>Internet Printing Protocol — IPPS</strong>. Adresse : <code th:text="${publicHost}"></code>. File : <code th:text="'printers/' + ${queueName}"></code>. Pilote : <strong>Imprimante PostScript générique</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Protocole : <strong>Internet Printing Protocol — IPPS</strong>. Adresse : <code th:text="${publicHost} + ':443'"></code> (port 443 explicite, important !). File : <code th:text="'printers/' + ${queueName}"></code>. Pilote : <strong>Imprimante PostScript générique</strong>.</div></div>
     <div class="step"><div class="step-num">4</div><div class="step-text">À la première impression, macOS demande un user/password. Entre ton email et ton token (cocher « Mémoriser dans le trousseau »).</div></div>
   </div>
 
   <div id="tab-windows" class="tab-content">
     <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Paramètres → Bluetooth et appareils → Imprimantes & scanners</strong>.</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter un appareil</strong>, puis <strong>Ajouter manuellement</strong>.</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Choisis <strong>Sélectionner une imprimante partagée par son nom</strong> et entre l'URL <code id="winUrl" th:text="'https://' + ${publicHost} + '/printers/' + ${queueName}"></code>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Choisis <strong>Sélectionner une imprimante partagée par son nom</strong> et entre l'URL <code id="winUrl" th:text="'https://' + ${publicHost} + ':443/printers/' + ${queueName}"></code>.</div></div>
     <div class="step"><div class="step-num">4</div><div class="step-text">Pilote : <strong>Microsoft IPP Class Driver</strong> (par défaut). Au premier print, donne ton email et ton token.</div></div>
   </div>
 
   <div id="tab-linux" class="tab-content">
     <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre les paramètres d'imprimantes de ton DE, ou <code>system-config-printer</code>, ou <code>http://localhost:631</code> (CUPS local).</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-text">Ajouter une imprimante → choisir <strong>Internet Printing Protocol (https)</strong>.</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">URL : <code id="linuxUrl" th:text="'ipps://' + ${publicHost} + '/printers/' + ${queueName}"></code>. Driver : <strong>Generic PostScript Printer</strong> ou <strong>IPP Everywhere</strong>.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">URL : <code id="linuxUrl" th:text="'ipps://' + ${publicHost} + ':443/printers/' + ${queueName}"></code>. Driver : <strong>Generic PostScript Printer</strong> ou <strong>IPP Everywhere</strong>.</div></div>
     <div class="step"><div class="step-num">4</div><div class="step-text">Au premier job, CUPS demande un user/password : ton email + ton token.</div></div>
   </div>
 
   <div id="tab-ios" class="tab-content">
     <div class="step"><div class="step-num">1</div><div class="step-text"><strong>iOS ne découvre pas Claudine en AirPrint à distance</strong> (pas de Bonjour sur Internet). Il faut une app IPP tierce — par ex. <strong>Print Utility</strong> ou <strong>Printer Pro</strong> (Readdle).</div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Dans l'app, ajouter une imprimante <strong>IPPS</strong>. Hôte : <code th:text="${publicHost}"></code>. Chemin : <code th:text="'/printers/' + ${queueName}"></code>.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Dans l'app, ajouter une imprimante <strong>IPPS</strong>. Hôte : <code th:text="${publicHost}"></code>. <strong>Port : 443</strong> (sinon iOS tente 631 par défaut, qui n'est pas exposé). Chemin : <code th:text="'/printers/' + ${queueName}"></code>.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-text">Auth : ton email + ton token. Tu pourras ensuite « partager » un PDF vers l'app et imprimer.</div></div>
     <div class="warn-box">L'AirPrint natif d'iOS exige du Bonjour local — pas faisable depuis Internet. Pour un setup AirPrint pur, on aurait besoin d'un relais Bonjour sur le LAN de l'Amicale.</div>
   </div>
 
   <div id="tab-android" class="tab-content">
     <div class="step"><div class="step-num">1</div><div class="step-text">Installe le <strong>Mopria Print Service</strong> (Play Store) s'il n'est pas déjà actif.</div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Mopria → <strong>Ajouter une imprimante</strong> → entrer manuellement. Adresse : <code id="androidUrl" th:text="'ipps://' + ${publicHost} + '/printers/' + ${queueName}"></code>.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Mopria → <strong>Ajouter une imprimante</strong> → entrer manuellement. Adresse : <code id="androidUrl" th:text="'ipps://' + ${publicHost} + ':443/printers/' + ${queueName}"></code>.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-text">Auth : ton email + ton token. Imprime depuis n'importe quelle app via le menu Partager.</div></div>
   </div>
 
