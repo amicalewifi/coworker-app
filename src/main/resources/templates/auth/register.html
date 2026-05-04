@@ -37,14 +37,6 @@
       color: var(--t3);
       margin: 22px 0 12px;
     }
-    .pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
-    .pack-opt  { border: 1.5px solid var(--bdr); border-radius: var(--r); padding: 14px; cursor: pointer; transition: all .18s ease; }
-    .pack-opt:hover { border-color: var(--prim-t); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-    .pack-opt.sel   { border-color: var(--prim-m); background: var(--prim-l); box-shadow: 0 0 0 3px rgba(0,122,245,.12); }
-    .pack-opt input { display: none; }
-    .pack-opt-name  { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
-    .pack-opt-price { font-size: 13px; color: var(--prim); font-weight: 800; }
-    .pack-opt-desc  { font-size: 12px; color: var(--t3); margin-top: 4px; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -56,7 +48,7 @@
 
   <div style="font-size:26px;font-weight:900;letter-spacing:-.7px;margin-bottom:6px;">Inscription</div>
   <div style="font-size:14px;color:var(--t2);margin-bottom:24px;">
-    Créez votre compte membre et choisissez votre formule.
+    Créez votre compte, puis achetez votre pack dans votre espace membre.
   </div>
 
   <div th:if="${error}" class="flash flash-err" style="margin-bottom:16px;">
@@ -108,40 +100,7 @@
       <input name="password" type="password" class="form-in" placeholder="••••••••" minlength="8" required>
     </div>
 
-    <div class="section">Choisissez votre formule</div>
-    <div class="pack-grid" id="packGrid">
-      <label class="pack-opt sel" onclick="selPack(this)">
-        <input type="radio" name="membership" value="PACK_5J" checked>
-        <div class="pack-opt-name">Pack 5 jours</div>
-        <div class="pack-opt-price">Fr. 109.–</div>
-        <div class="pack-opt-desc">5j ou 10 demi-journées · valable 3 mois</div>
-      </label>
-      <label class="pack-opt" onclick="selPack(this)">
-        <input type="radio" name="membership" value="PACK_10J">
-        <div class="pack-opt-name">Pack 10 jours</div>
-        <div class="pack-opt-price">Fr. 199.–</div>
-        <div class="pack-opt-desc">10j ou 20 demi-journées · valable 3 mois</div>
-      </label>
-      <label class="pack-opt" onclick="selPack(this)">
-        <input type="radio" name="membership" value="PACK_15J">
-        <div class="pack-opt-name">Pack 15 jours</div>
-        <div class="pack-opt-price">Fr. 279.–</div>
-        <div class="pack-opt-desc">15j ou 30 demi-journées · valable 3 mois</div>
-      </label>
-      <label class="pack-opt" onclick="selPack(this)">
-        <input type="radio" name="membership" value="PERMANENT">
-        <div class="pack-opt-name">Abonnement mensuel</div>
-        <div class="pack-opt-price">Fr. 329.–/mois</div>
-        <div class="pack-opt-desc">Accès illimité · 24h/7j</div>
-      </label>
-    </div>
-
-    <div class="notice notice-g" style="margin-top:12px;margin-bottom:20px;">
-      <span>ℹ</span>
-      <span>Votre accès sera activé après confirmation de votre paiement par l'équipe Amicale du WiFi.</span>
-    </div>
-
-    <button type="submit" class="btn btn-g btn-full">Créer mon compte</button>
+    <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Créer mon compte</button>
   </form>
 
   <div style="text-align:center;margin-top:16px;font-size:13px;color:var(--t2);">
@@ -151,12 +110,5 @@
 
 </div>
 
-<script>
-function selPack(el) {
-  document.querySelectorAll('.pack-opt').forEach(o => o.classList.remove('sel'));
-  el.classList.add('sel');
-  el.querySelector('input[type=radio]').checked = true;
-}
-</script>
 </body>
 </html>

@@ -24,7 +24,7 @@ public class User {
     @Column(columnDefinition = "user_role")
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Builder.Default
-    private UserRole role = UserRole.MEMBER;
+    private UserRole role = UserRole.COWORKER;
 
     @Column(name = "is_active")
     @Builder.Default
