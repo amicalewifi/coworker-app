@@ -56,7 +56,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   </div>
 
   <div class="intro-card">
-    <div class="intro-title">Imprime depuis ton ordi 🖨️</div>
+    <div class="intro-title">Imprime depuis ton ordinateur 🖨️</div>
     <div class="intro-text">
       Claudine, l'imprimante de l'Amicale, est dispo comme imprimante réseau.
       Ajoute-la à ton OS avec les infos ci-dessous, puis imprime depuis n'importe
@@ -107,18 +107,19 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div id="tab-macos" class="tab-content active">
     <div class="step"><div class="step-num">1</div><div class="step-text">
       Ouvre <strong>Réglages Système → Imprimantes & scanners → Ajouter une imprimante</strong>.
-      La barre d'icônes par défaut ne propose pas l'option dont on a besoin (Avancé) — clique
-      <strong>« Customise Toolbar… »</strong> en haut à droite pour l'ajouter.
+      La barre d'icônes par défaut ne propose pas l'option dont on a besoin (Avancé).
+      <strong>Ctrl-clic (ou clic-droit) sur la barre d'icônes</strong> en haut de la fenêtre,
+      puis choisis <strong>« Personnaliser la barre d'outils… »</strong> dans le menu qui apparaît.
     </div></div>
     <img class="step-img" th:src="@{/images/claudine/01-add-printer-default.png}" alt="Add Printer dialog avec barre par défaut">
-    <p class="step-img-cap">La barre par défaut ne montre que les sources locales — il faut ajouter Avancé.</p>
+    <p class="step-img-cap">La barre par défaut ne montre que les sources locales — il faut ajouter Avancé via Ctrl-clic.</p>
 
     <div class="step"><div class="step-num">2</div><div class="step-text">
-      <strong>Glisse l'icône « Advanced » (engrenage)</strong> de la zone du haut vers la barre d'outils
-      en haut de la fenêtre Add Printer. Clique <strong>Done</strong>.
+      Dans la palette qui s'ouvre, <strong>glisse l'icône « Advanced » (engrenage)</strong>
+      vers la barre d'outils en haut de la fenêtre Add Printer. Clique <strong>Terminé</strong>.
     </div></div>
-    <img class="step-img" th:src="@{/images/claudine/02-customise-toolbar.png}" alt="Customise Toolbar — drag de l'icône Advanced">
-    <p class="step-img-cap">Drag « Advanced » vers la barre d'outils, puis Done.</p>
+    <img class="step-img" th:src="@{/images/claudine/02-customise-toolbar.png}" alt="Personnaliser la barre d'outils — drag de l'icône Advanced">
+    <p class="step-img-cap">Drag « Advanced » vers la barre d'outils, puis Terminé.</p>
 
     <div class="step"><div class="step-num">3</div><div class="step-text">
       Clique sur la nouvelle icône <strong>Advanced</strong> (engrenage bleu) puis remplis :
