@@ -46,6 +46,8 @@ public class MobileController {
     private final PasswordEncoder          passwordEncoder;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
+    @Value("${amicale.print.public-host}") private String printPublicHost;
+    @Value("${amicale.print.queue-name}")  private String printQueueName;
 
     @GetMapping({"", "/"})
     public String home(Authentication auth,
@@ -380,6 +382,24 @@ public class MobileController {
             ra.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/mobile/print";
+    }
+
+    @GetMapping("/printer-setup")
+    public String printerSetup(Authentication auth, Model model) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        model.addAttribute("member",     member);
+        model.addAttribute("publicHost", printPublicHost);
+        model.addAttribute("queueName",  printQueueName);
+        return "mobile/printer-setup";
+    }
+
+    @PostMapping("/print/rotate-token")
+    public String rotatePrintToken(Authentication auth, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        memberService.rotatePrintToken(member.getId());
+        ra.addFlashAttribute("success",
+                "Token régénéré. Réinstalle Claudine sur tes machines avec ce nouveau token.");
+        return "redirect:/mobile/printer-setup";
     }
 
     @PostMapping("/print/buy")

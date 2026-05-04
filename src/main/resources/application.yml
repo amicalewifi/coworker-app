@@ -114,17 +114,27 @@ amicale:
     base-url: https://app.amicalewifi.ch
 
   business:
-    opening-hour:   7      # coworking ouvre à 07:00
-    closing-hour:   19     # coworking ferme à 19:00
-    full-day-units: 1.0    # 1 journée = 1.0 unité de pack
-    half-day-units: 0.5    # 1 demi-journée = 0.5 unité de pack
-    conf-rate-chf:  19.00  # Fr. 19.-/h salle conférence
-    print-cost-chf: 0.05   # Fr. 0.05/page imprimante
+    opening-hour:       7      # coworking ouvre à 07:00
+    closing-hour:       19     # coworking ferme à 19:00
+    full-day-units:     1.0    # 1 journée = 1.0 unité de pack
+    half-day-units:     0.5    # 1 demi-journée = 0.5 unité de pack
+    conf-rate-chf:      19.00  # Fr. 19.-/h salle conférence
+    print-cost-chf:     0.05   # Fr. 0.05/page imprimante (legacy, flux app)
+    print-color-factor: 2      # 1 page couleur = 2 crédits (flux IPP claudine)
+    print-bw-factor:    1      # 1 page N&B    = 1 crédit  (flux IPP claudine)
 
   printer:
-    host:       192.168.1.10  # Kyocera TASKalfa 352ci · 00:17:c8:ea:dc:84
+    host:       192.168.1.10  # Kyocera TASKalfa 352ci · 00:17:c8:ea:dc:84 — alias: claudine
     port:       9100          # port RAW Kyocera
     timeout-ms: 2000
+
+  print:
+    # Secret partagé entre coworker-app et le container CUPS broker (claudine).
+    # Le broker l'envoie en header X-Print-Broker-Key sur tout appel /api/v1/print/**.
+    # Auto-généré par bootstrap.sh si vide dans .env.
+    broker-key:   ${AMICALE_PRINT_BROKER_KEY:CHANGE_ME}
+    public-host:  print.amicalewifi.ch
+    queue-name:   claudine
 
   venue:
     qr-token: amicale-fully-2024  # Token du QR code affiché dans le coworking

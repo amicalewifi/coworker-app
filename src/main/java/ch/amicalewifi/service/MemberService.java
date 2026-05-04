@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -197,6 +198,19 @@ public class MemberService {
                 .amountChf(pack.getPriceChf())
                 .build());
         log.info("Crédits conf ajoutés: +{}h pour {}", pack.getHours(), m.getDisplayName());
+    }
+
+    public Optional<Member> findByPrintToken(UUID token) {
+        return memberRepo.findByPrintToken(token);
+    }
+
+    public Member rotatePrintToken(UUID memberId) {
+        Member m = getById(memberId);
+        m.setPrintToken(UUID.randomUUID());
+        m.setUpdatedAt(LocalDateTime.now());
+        Member saved = memberRepo.save(m);
+        log.info("Rotation print token: {}", m.getDisplayName());
+        return saved;
     }
 
     public List<PrintDeclaration>       getPrintDeclarations(UUID memberId) {

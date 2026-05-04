@@ -41,6 +41,8 @@ public class SecurityConfig {
                 .requestMatchers("/cafeteria/**").hasAnyRole("ADMIN","COWORKER")
                 // Borne Akuvox A05S — auth par clé API, pas de session
                 .requestMatchers("/api/v1/akuvox/**").permitAll()
+                // CUPS broker (imprimante virtuelle Claudine) — auth par clé partagée, pas de session
+                .requestMatchers("/api/v1/print/**").permitAll()
                 // Polling dashboard entrées du jour — lecture seule, page déjà protégée
                 .requestMatchers("/api/v1/admin/entries-today").permitAll()
                 // Webhook zahls.ch — appelé par les serveurs Payrexx, pas de session

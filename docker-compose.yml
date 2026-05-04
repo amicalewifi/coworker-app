@@ -19,6 +19,11 @@ services:
       SPRING_DATASOURCE_URL:                       jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME:                  ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD:                  ${POSTGRES_PASSWORD}
+    # Publié sur la loopback du host pour que le container `cups`
+    # (en network_mode: host pour atteindre wg0) puisse joindre l'app via
+    # 127.0.0.1:8081. Pas exposé publiquement — Caddy reste le seul ingress.
+    ports:
+      - "127.0.0.1:8081:8081"
     expose:
       - "8081"
     depends_on:
@@ -67,10 +72,35 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # Le container `cups` tourne en network_mode: host. Caddy l'atteint via
+    # le gateway Docker — host.docker.internal résolu vers host-gateway.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    depends_on:
+      - app
+
+  # CUPS broker pour Claudine (imprimante virtuelle IPP).
+  # network_mode: host est requis pour atteindre 192.168.1.10 via wg0
+  # (l'interface WireGuard vit dans le namespace réseau du host).
+  cups:
+    build:
+      context: ./docker/cups-broker
+    image: amicale/cups-broker:local
+    container_name: amicale_cups
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      AMICALE_APP_URL:           http://127.0.0.1:8081
+      AMICALE_PRINT_BROKER_KEY:  ${AMICALE_PRINT_BROKER_KEY}
+      AMICALE_PRINTER_HOST:      192.168.1.10
+      AMICALE_PRINTER_PORT:      9100
+      AMICALE_QUEUE_NAME:        claudine
+    volumes:
+      - cups_spool:/var/spool/cups
     depends_on:
       - app
 
@@ -79,7 +109,10 @@ volumes:
   pgadmin_data:
   caddy_data:
   caddy_config:
+  cups_spool:
 
-# Public:    https://coworker.amicalewifi.ch  → Caddy → app:8081
+# Public:    https://coworker.amicalewifi.ch                   → Caddy → app:8081
+#            https://print.amicalewifi.ch/printers/claudine    → Caddy → CUPS:631 (IPPS)
 # pgAdmin:   http://127.0.0.1:5050           (SSH-tunnel from your laptop)
 # Postgres:  127.0.0.1:5432                  (SSH-tunnel from your laptop)
+# App:       127.0.0.1:8081                  (loopback only, used by CUPS broker)
