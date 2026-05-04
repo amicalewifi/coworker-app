@@ -37,6 +37,10 @@ RUN chmod 0700 /usr/lib/cups/backend/amicale-broker \
  && chown root:root /usr/lib/cups/backend/amicale-broker
 
 COPY cupsd.conf /etc/cups/cupsd.conf
+# PAM permissif — CUPS doit valider HTTP basic-auth pour exposer les creds
+# au backend, mais on ne veut pas qu'il valide contre /etc/passwd. Le backend
+# fait la vraie auth contre coworker-app via le print_token.
+COPY pam-cups /etc/pam.d/cups
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 0755 /usr/local/bin/entrypoint.sh
 

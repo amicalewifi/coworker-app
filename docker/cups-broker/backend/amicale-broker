@@ -75,7 +75,18 @@ copies      = max(1, int(sys.argv[4] or "1"))
 options_str = sys.argv[5] if len(sys.argv) > 5 else ""
 spool_path  = sys.argv[6] if len(sys.argv) > 6 else None  # absent ⇒ stdin
 
-print_token = os.environ.get("AUTH_INFO_PASSWORD", "").strip()
+# CUPS expose le password à plusieurs endroits selon comment le client l'a envoyé :
+#   - AUTH_INFO_PASSWORD : depuis l'attribut IPP `auth-info` (envoyé par les
+#     clients qui prompt user/password en GUI quand auth-info-required est posé)
+#   - AUTH_PASSWORD : depuis le HTTP basic-auth header validé par CUPS+PAM
+#     (envoyé par les clients avec creds dans l'URI ipps://USER:PWD@.../, et
+#     aussi par certains clients GUI qui transmettent comme basic-auth)
+# On accepte les deux pour couvrir tous les cas.
+print_token = (
+    os.environ.get("AUTH_INFO_PASSWORD", "").strip()
+    or os.environ.get("AUTH_PASSWORD", "").strip()
+)
+ipp_user_from_basic_auth = os.environ.get("AUTH_USERNAME", "").strip()
 app_url     = os.environ.get("AMICALE_APP_URL",    "http://127.0.0.1:8081").rstrip("/")
 broker_key  = os.environ.get("AMICALE_PRINT_BROKER_KEY", "").strip()
 printer_host = os.environ.get("AMICALE_PRINTER_HOST", "192.168.1.10")
@@ -231,7 +242,7 @@ status, body = post_json("/api/v1/print/submit", {
     "copies":            copies,
     "color":             is_color,
     "duplex":            is_duplex,
-    "submittedUsername": ipp_user,
+    "submittedUsername": ipp_user_from_basic_auth or ipp_user,
 })
 
 if status == 401:
