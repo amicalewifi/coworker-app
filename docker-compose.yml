@@ -86,10 +86,12 @@ services:
   # CUPS broker pour Claudine (imprimante virtuelle IPP).
   # network_mode: host est requis pour atteindre 192.168.1.10 via wg0
   # (l'interface WireGuard vit dans le namespace réseau du host).
+  # Pas d'`image:` — l'image n'est pas publiée sur GHCR (build-only local).
+  # Compose génère un tag automatique du type repo-cups au build, et skippe
+  # le service à `docker compose pull` car il n'y a que `build:`.
   cups:
     build:
       context: ./docker/cups-broker
-    image: amicale/cups-broker:local
     container_name: amicale_cups
     restart: unless-stopped
     network_mode: host
