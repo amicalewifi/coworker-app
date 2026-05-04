@@ -1,0 +1,16 @@
+# PAM stack permissif pour CUPS — accepter tout user/password sans valider
+# contre /etc/passwd ou /etc/shadow. La VRAIE validation est faite dans
+# amicale-broker (Python backend) qui matche le password contre le print_token
+# du Member dans coworker-app.
+#
+# Pourquoi ce permissif :
+#   - CUPS exige que `Require valid-user` soit posé sur la location pour
+#     exposer les creds basic-auth au backend (env vars AUTH_USERNAME et
+#     AUTH_PASSWORD).
+#   - PAM par défaut authentifie contre les Unix users du container — on n'a
+#     pas nos members là-dedans, donc 401 à toute requête.
+#   - pam_permit.so dit "OK" à tout. CUPS valide, expose les creds, backend
+#     fait la vraie auth contre coworker-app.
+auth     required pam_permit.so
+account  required pam_permit.so
+session  required pam_permit.so
