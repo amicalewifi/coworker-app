@@ -87,6 +87,29 @@ print_token = (
     or os.environ.get("AUTH_PASSWORD", "").strip()
 )
 ipp_user_from_basic_auth = os.environ.get("AUTH_USERNAME", "").strip()
+
+# CUPS sanitise l'env avant de spawn les backends — `PassEnv` dans cupsd.conf
+# est documenté mais n'est pas honoré de manière fiable (au moins en cupsd 2.4
+# qu'on a en prod). On lit donc en plus depuis un fichier persisté par
+# l'entrypoint.sh au démarrage du container, qui contient les AMICALE_*.
+def _load_amicale_env_file(path: str = "/etc/cups/amicale.env") -> None:
+    if not os.path.isfile(path):
+        return
+    try:
+        with open(path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if not line or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k = k.strip()
+                if k.startswith("AMICALE_") and k not in os.environ:
+                    os.environ[k] = v.strip()
+    except OSError:
+        pass
+
+_load_amicale_env_file()
+
 app_url     = os.environ.get("AMICALE_APP_URL",    "http://127.0.0.1:8081").rstrip("/")
 broker_key  = os.environ.get("AMICALE_PRINT_BROKER_KEY", "").strip()
 printer_host = os.environ.get("AMICALE_PRINTER_HOST", "192.168.1.10")
