@@ -35,9 +35,9 @@ public class SecurityConfig {
                 // Admin uniquement
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Mobile: membres et admin
-                .requestMatchers("/mobile/**").hasAnyRole("ADMIN","MEMBER")
+                .requestMatchers("/mobile/**").hasAnyRole("ADMIN","COWORKER")
                 // Cafétéria: membres et admin
-                .requestMatchers("/cafeteria/**").hasAnyRole("ADMIN","MEMBER")
+                .requestMatchers("/cafeteria/**").hasAnyRole("ADMIN","COWORKER")
                 // Borne Akuvox A05S — auth par clé API, pas de session
                 .requestMatchers("/api/v1/akuvox/**").permitAll()
                 // Polling dashboard entrées du jour — lecture seule, page déjà protégée
@@ -45,10 +45,10 @@ public class SecurityConfig {
                 // Webhook zahls.ch — appelé par les serveurs Payrexx, pas de session
                 .requestMatchers("/api/v1/zahls/**").permitAll()
                 // API REST
-                .requestMatchers("/api/**").hasAnyRole("ADMIN","MEMBER")
+                .requestMatchers("/api/**").hasAnyRole("ADMIN","COWORKER")
                 // QR Code — venue public pour scan par les membres
-                .requestMatchers("/qr/venue").hasAnyRole("ADMIN","MEMBER")
-                .requestMatchers("/qr/**").hasAnyRole("ADMIN","MEMBER")
+                .requestMatchers("/qr/venue").hasAnyRole("ADMIN","COWORKER")
+                .requestMatchers("/qr/**").hasAnyRole("ADMIN","COWORKER")
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form

@@ -7,7 +7,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -258,7 +260,7 @@ public class AdminController {
         User user = userRepo.save(User.builder()
                 .email(m.getEmail())
                 .passwordHash(passwordEncoder.encode(tempPassword))
-                .role(UserRole.MEMBER)
+                .role(UserRole.COWORKER)
                 .build());
         m.setUser(user);
         memberRepo.save(m);
@@ -516,5 +518,64 @@ public class AdminController {
         model.addAttribute("qrUrl", "http://" + host + "/qr/venue");
         model.addAttribute("venueUrl", "http://" + host + "/mobile/presence?venue=" + venueQrToken);
         return "admin/qr-print";
+    }
+
+    // ── User management ──────────────────────────────────────────────────────
+
+    @GetMapping("/users")
+    public String users(Model model) {
+        List<User> users = userRepo.findAll(Sort.by(Sort.Direction.ASC, "createdAt"));
+        Map<UUID, Member> memberByUserId = memberRepo.findAll().stream()
+                .filter(m -> m.getUser() != null)
+                .collect(Collectors.toMap(m -> m.getUser().getId(), m -> m));
+        model.addAttribute("users", users);
+        model.addAttribute("memberByUserId", memberByUserId);
+        model.addAttribute("roles", new UserRole[]{UserRole.ADMIN, UserRole.COWORKER});
+        return "admin/users";
+    }
+
+    @PostMapping("/users/{id}/set-role")
+    public String setUserRole(@PathVariable UUID id,
+                              @RequestParam UserRole role,
+                              Authentication auth,
+                              RedirectAttributes ra) {
+        User u = userRepo.findById(id).orElseThrow();
+        if (u.getEmail().equals(auth.getName()) && role != UserRole.ADMIN) {
+            ra.addFlashAttribute("error", "Vous ne pouvez pas retirer votre propre rôle admin");
+            return "redirect:/admin/users";
+        }
+        u.setRole(role);
+        userRepo.save(u);
+        ra.addFlashAttribute("success", "Rôle mis à jour pour " + u.getEmail());
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/users/{id}/reset-password")
+    public String resetUserPassword(@PathVariable UUID id, RedirectAttributes ra) {
+        User u = userRepo.findById(id).orElseThrow();
+        StringBuilder tmp = new StringBuilder(12);
+        for (int i = 0; i < 12; i++) tmp.append(CHARS.charAt(RNG.nextInt(CHARS.length())));
+        String tempPassword = tmp.toString();
+        u.setPasswordHash(passwordEncoder.encode(tempPassword));
+        userRepo.save(u);
+        ra.addFlashAttribute("tempPassword", tempPassword);
+        ra.addFlashAttribute("success", "Mot de passe réinitialisé pour " + u.getEmail());
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
+        User u = userRepo.findById(id).orElseThrow();
+        if (u.getEmail().equals(auth.getName())) {
+            ra.addFlashAttribute("error", "Vous ne pouvez pas supprimer votre propre compte");
+            return "redirect:/admin/users";
+        }
+        memberRepo.findAll().stream()
+                .filter(m -> u.equals(m.getUser()))
+                .findFirst()
+                .ifPresent(m -> { m.setUser(null); memberRepo.save(m); });
+        userRepo.delete(u);
+        ra.addFlashAttribute("success", "Compte " + u.getEmail() + " supprimé");
+        return "redirect:/admin/users";
     }
 }

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Utilisateurs — l'Amicale du WiFi</title></head>
+<body>
+<th:block th:fragment="content">
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Utilisateurs</div>
+    <div class="topbar-sub">Comptes de connexion et rôles d'accès</div>
+  </div>
+</div>
+
+<div class="content">
+
+  <div th:if="${success}" class="flash flash-ok">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+  <div th:if="${error}" class="flash flash-err">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
+
+  <div th:if="${tempPassword}" class="flash" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;flex-direction:column;gap:4px;">
+    <div style="display:flex;align-items:center;gap:8px;font-weight:600;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+      Mot de passe temporaire
+    </div>
+    <code style="font-size:15px;letter-spacing:.05em;" th:text="${tempPassword}"></code>
+    <div style="font-size:12px;margin-top:2px;">Communiquez ce mot de passe à l'utilisateur. Il ne sera plus affiché.</div>
+  </div>
+
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Rôle</th>
+          <th>Membre lié</th>
+          <th>Créé le</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="u : ${users}">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av"
+                   th:style="${'background:' + (u.role.name() == 'ADMIN' ? 'var(--pl,#ede9fe);color:var(--pd,#6d28d9)' : 'var(--gl);color:var(--gd)')}"
+                   th:text="${u.email.substring(0,1).toUpperCase()}"></div>
+              <span style="font-weight:500;" th:text="${u.email}"></span>
+            </div>
+          </td>
+          <td>
+            <span th:if="${u.role.name() == 'ADMIN'}"    class="b b-p">Admin</span>
+            <span th:if="${u.role.name() == 'COWORKER'}" class="b b-g">Coworker</span>
+          </td>
+          <td>
+            <span th:if="${memberByUserId.containsKey(u.id)}">
+              <a th:href="@{/admin/members/{id}(id=${memberByUserId[u.id].id})}"
+                 th:text="${memberByUserId[u.id].displayName}"
+                 style="color:var(--blue);text-decoration:none;"></a>
+            </span>
+            <span th:unless="${memberByUserId.containsKey(u.id)}" style="color:var(--t3);">—</span>
+          </td>
+          <td style="color:var(--t3);font-size:12px;"
+              th:text="${#temporals.format(u.createdAt,'dd.MM.yyyy')}"></td>
+          <td>
+            <div style="display:flex;gap:6px;justify-content:flex-end;">
+              <form th:action="@{/admin/users/{id}/set-role(id=${u.id})}" method="post" style="display:flex;gap:4px;align-items:center;">
+                <select name="role" class="form-select" style="font-size:12px;padding:4px 8px;height:auto;">
+                  <option th:each="r : ${roles}" th:value="${r}" th:text="${r.name()}"
+                          th:selected="${r == u.role}"></option>
+                </select>
+                <button type="submit" class="btn btn-sm">Appliquer</button>
+              </form>
+              <form th:action="@{/admin/users/{id}/reset-password(id=${u.id})}" method="post">
+                <button type="submit" class="btn btn-sm"
+                        onclick="return confirm('Réinitialiser le mot de passe de cet utilisateur ?')">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5 7V5a3 3 0 016 0v2"/></svg>
+                  Reset mdp
+                </button>
+              </form>
+              <form th:action="@{/admin/users/{id}/delete(id=${u.id})}" method="post">
+                <button type="submit" class="btn btn-sm btn-danger"
+                        onclick="return confirm('Supprimer ce compte utilisateur ?')">
+                  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(users)}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:32px;">Aucun utilisateur</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</th:block>
+</body>
+</html>

@@ -1,3 +1,3 @@
 package ch.amicalewifi.model;
 
-public enum UserRole { ADMIN, MEMBER }
+public enum UserRole { ADMIN, COWORKER }

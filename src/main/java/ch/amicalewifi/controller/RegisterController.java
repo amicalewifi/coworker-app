@@ -23,8 +23,7 @@ public class RegisterController {
     private final PasswordEncoder  passwordEncoder;
 
     @GetMapping
-    public String form(Model model) {
-        model.addAttribute("memberships", MembershipType.values());
+    public String form() {
         return "auth/register";
     }
 
@@ -39,13 +38,11 @@ public class RegisterController {
                          @RequestParam(required = false) String city,
                          @RequestParam(required = false) String postalCode,
                          @RequestParam(required = false) String country,
-                         @RequestParam MembershipType membership,
                          Model model,
                          RedirectAttributes ra) {
 
         if (userRepo.existsByEmail(email) || memberRepo.existsByEmail(email)) {
             model.addAttribute("error", "Un compte existe déjà avec cet email.");
-            model.addAttribute("memberships", MembershipType.values());
             return "auth/register";
         }
 
@@ -54,7 +51,7 @@ public class RegisterController {
             user = userRepo.save(User.builder()
                     .email(email)
                     .passwordHash(passwordEncoder.encode(password))
-                    .role(UserRole.MEMBER)
+                    .role(UserRole.COWORKER)
                     .build());
 
             memberService.create(Member.builder()
@@ -63,7 +60,7 @@ public class RegisterController {
                     .address(address).city(city)
                     .postalCode(postalCode)
                     .country(country != null && !country.isBlank() ? country : "Suisse")
-                    .membership(membership)
+                    .membership(MembershipType.JOURNEE_ESSAI)
                     .user(user)
                     .active(true)
                     .build());
@@ -80,7 +77,6 @@ public class RegisterController {
                 try { userRepo.delete(user); } catch (Exception ignored) {}
             }
             model.addAttribute("error", "Une erreur est survenue lors de la création du compte : " + e.getMessage());
-            model.addAttribute("memberships", MembershipType.values());
             return "auth/register";
         }
     }
