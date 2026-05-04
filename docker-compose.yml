@@ -72,10 +72,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    # Le container `cups` tourne en network_mode: host. Caddy l'atteint via
-    # le gateway Docker — host.docker.internal résolu vers host-gateway.
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      # Port standard IPPS (RFC 8011) — clients OS tapent
+      # `ipps://print.amicalewifi.ch/printers/claudine` sans port explicite.
+      # UFW ouvre 631/tcp public via bootstrap.sh étape 4.
+      - "631:631"
     volumes:
       - ./ops/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -112,6 +112,17 @@ volumes:
   caddy_data:
   caddy_config:
   cups_spool:
+
+# Pin du subnet du bridge `default` pour que l'IP du gateway (172.18.0.1)
+# soit stable. Caddy reverse-proxy vers cette IP pour atteindre le CUPS
+# broker en network_mode: host (le gateway du bridge depuis l'intérieur du
+# bridge = le host lui-même). Une règle UFW dans bootstrap.sh autorise ce
+# subnet → host:631.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
 
 # Public:    https://coworker.amicalewifi.ch                   → Caddy → app:8081
 #            https://print.amicalewifi.ch/printers/claudine    → Caddy → CUPS:631 (IPPS)

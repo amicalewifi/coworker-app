@@ -14,11 +14,20 @@ coworker.amicalewifi.ch {
     }
 }
 
-# Imprimante virtuelle Claudine — CUPS server tourne sur le host (network_mode:
-# host) pour atteindre wg0. Caddy termine TLS et reverse-proxy vers le port 631
-# du host via host-gateway. Les members ajoutent la queue avec :
-#     ipps://print.amicalewifi.ch/printers/claudine
-print.amicalewifi.ch {
+# Imprimante virtuelle Claudine — CUPS broker tourne sur le host (network_mode:
+# host) pour atteindre wg0 → Kyocera. Caddy termine TLS et reverse-proxy vers
+# le port 631 du host via le gateway du bridge du projet (172.18.0.1, pin du
+# subnet en bas de docker-compose.yml).
+#
+# Le scheme IPPS a son port standard à 631 (RFC 8011), pas 443. On écoute donc
+# sur les DEUX :
+#   - https://print.amicalewifi.ch:631  → IPPS standard (members tapent juste
+#     `ipps://print.amicalewifi.ch/printers/claudine` dans leur OS, sans port)
+#   - https://print.amicalewifi.ch:443  → fallback web (gestion, debug, curl)
+#
+# Caddy obtient un seul cert Let's Encrypt pour le hostname (challenge sur 80)
+# et l'utilise pour les deux ports.
+print.amicalewifi.ch:443, https://print.amicalewifi.ch:631 {
     encode gzip
 
     # Les PDF d'impression peuvent être gros (rapports, présentations, photos).
@@ -26,7 +35,7 @@ print.amicalewifi.ch {
         max_size 500MB
     }
 
-    reverse_proxy host.docker.internal:631 {
+    reverse_proxy 172.18.0.1:6310 {
         # CUPS attend HTTP/1.1 chunked pour IPP — pas de fallback HTTP/2.
         transport http {
             versions 1.1

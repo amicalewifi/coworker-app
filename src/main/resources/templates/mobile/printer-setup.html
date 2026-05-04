@@ -103,10 +103,12 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   </div>
 
   <div id="tab-macos" class="tab-content active">
-    <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Réglages Système → Imprimantes & scanners</strong>.</div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter une imprimante</strong>, puis l'onglet <strong>IP</strong>.</div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-text">Plus simple — en terminal :
+      <code th:text="'sudo lpadmin -p Claudine -E -v ipps://' + ${publicHost} + '/printers/' + ${queueName} + ' -m drv:///sample.drv/generic.ppd -o auth-info-required=username,password -L &quot;Claudine&quot;'"></code>
+    </div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Sinon, GUI : <strong>Réglages Système → Imprimantes & scanners → Ajouter une imprimante → onglet IP</strong>.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-text">Protocole : <strong>Internet Printing Protocol — IPPS</strong>. Adresse : <code th:text="${publicHost}"></code>. File : <code th:text="'printers/' + ${queueName}"></code>. Pilote : <strong>Imprimante PostScript générique</strong>.</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">À la première impression, macOS demande un user/password. Entre ton email et ton token (cocher « Mémoriser dans le trousseau »).</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Au premier print, macOS demande user/password. Entre ton email et ton token (cocher « Mémoriser dans le trousseau »).</div></div>
   </div>
 
   <div id="tab-windows" class="tab-content">
