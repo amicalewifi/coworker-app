@@ -8,6 +8,17 @@ set -euo pipefail
 
 QUEUE="${AMICALE_QUEUE_NAME:-claudine}"
 
+# Persiste les AMICALE_* dans un fichier que amicale-broker.py charge au
+# démarrage. Workaround pour un bug observé : `PassEnv` dans cupsd.conf est
+# correctement parsé par cupsd 2.4 mais les vars ne sont pas effectivement
+# transmises aux backends spawned par cupsd. Le fichier garantit que le
+# backend voit toujours les valeurs courantes du container.
+ENV_FILE=/etc/cups/amicale.env
+umask 077
+env | grep '^AMICALE_' > "${ENV_FILE}"
+chmod 0600 "${ENV_FILE}"
+echo "[claudine] persisted $(wc -l <"${ENV_FILE}") AMICALE_* vars to ${ENV_FILE}"
+
 # cupsd en foreground dans le subshell ; on capture son PID pour relayer
 # proprement les signaux (SIGTERM du `docker stop` arrête CUPS proprement).
 /usr/sbin/cupsd -f &
