@@ -13,3 +13,23 @@ coworker.amicalewifi.ch {
         lb_try_interval 500ms
     }
 }
+
+# Imprimante virtuelle Claudine — CUPS server tourne sur le host (network_mode:
+# host) pour atteindre wg0. Caddy termine TLS et reverse-proxy vers le port 631
+# du host via host-gateway. Les members ajoutent la queue avec :
+#     ipps://print.amicalewifi.ch/printers/claudine
+print.amicalewifi.ch {
+    encode gzip
+
+    # Les PDF d'impression peuvent être gros (rapports, présentations, photos).
+    request_body {
+        max_size 500MB
+    }
+
+    reverse_proxy host.docker.internal:631 {
+        # CUPS attend HTTP/1.1 chunked pour IPP — pas de fallback HTTP/2.
+        transport http {
+            versions 1.1
+        }
+    }
+}
