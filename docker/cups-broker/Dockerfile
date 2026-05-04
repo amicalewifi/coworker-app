@@ -20,10 +20,15 @@ RUN apt-get update \
         cups-filters \
         cups-bsd \
         poppler-utils \
+        ghostscript \
         python3 \
         python3-requests \
         ca-certificates \
  && rm -rf /var/lib/apt/lists/*
+# ghostscript : convertir PostScript → PDF dans le backend. Quand la queue
+# CUPS du broker est en mode raw (cas par défaut, IPP Everywhere ne peut pas
+# self-probe notre backend custom), macOS envoie du PostScript directement.
+# La Kyocera attend du PDF (PJL ENTER LANGUAGE=PDF), donc le backend convertit.
 
 # Notre backend Python custom — invoqué par cupsd quand un job arrive sur la
 # queue claudine. Doit être exécutable et appartenir à root (CUPS le refuse sinon).

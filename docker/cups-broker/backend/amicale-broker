@@ -125,6 +125,51 @@ is_duplex = sides.startswith("two-sided")
 log("DEBUG", f"job_id={job_id} user={ipp_user} title={job_title!r} "
               f"copies={copies} color={is_color} duplex={is_duplex} spool={pdf_path}")
 
+# ─── Détection format + conversion PostScript → PDF si besoin ─────────────
+# CUPS du broker est en queue raw (IPP Everywhere ne peut pas self-probe
+# notre backend custom), donc le client envoie son format natif (souvent
+# PostScript depuis macOS, parfois du PDF). On normalise tout en PDF.
+def detect_format(path: str) -> str:
+    """Renvoie 'pdf', 'ps', ou 'unknown' selon les magic bytes."""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(8)
+    except OSError:
+        return "unknown"
+    if head.startswith(b"%PDF-"):           return "pdf"
+    if head.startswith(b"%!PS") or head.startswith(b"\x04%!"): return "ps"
+    return "unknown"
+
+fmt = detect_format(pdf_path)
+log("DEBUG", f"format détecté : {fmt}")
+
+if fmt == "ps":
+    # Convertir en PDF avec Ghostscript. -dSAFER désactive les opérateurs
+    # dangereux (lecture/écriture arbitraire). -dNOPAUSE / -dBATCH / -dQUIET
+    # = mode non-interactif silencieux.
+    converted = pdf_path + ".converted.pdf"
+    try:
+        subprocess.run(
+            ["gs", "-sDEVICE=pdfwrite", "-dSAFER", "-dNOPAUSE", "-dBATCH",
+             "-dQUIET", f"-sOutputFile={converted}", pdf_path],
+            check=True, capture_output=True, text=True, timeout=120,
+        )
+    except subprocess.CalledProcessError as e:
+        log("ERROR", f"gs PostScript→PDF a échoué (rc={e.returncode}): {e.stderr.strip()[:300]}")
+        cleanup(); sys.exit(CUPS_BACKEND_FAILED)
+    except subprocess.TimeoutExpired:
+        log("ERROR", "gs PostScript→PDF timeout")
+        cleanup(); sys.exit(CUPS_BACKEND_FAILED)
+    if cleanup_pdf:
+        try: os.unlink(pdf_path)
+        except OSError: pass
+    pdf_path = converted
+    cleanup_pdf = True
+    log("INFO", "PostScript converti en PDF")
+elif fmt == "unknown":
+    log("ERROR", "format spool non reconnu (ni PDF ni PostScript) — abort")
+    cleanup(); sys.exit(CUPS_BACKEND_FAILED)
+
 # ─── Comptage pages avec pdfinfo ──────────────────────────────────────────
 try:
     res = subprocess.run(
