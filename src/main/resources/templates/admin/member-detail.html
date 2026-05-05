@@ -208,10 +208,13 @@ document.addEventListener('click', function(e) {
         </div>
         <div style="border-top:1px solid var(--bdr);padding-top:10px;margin-top:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-            <div style="font-size:12px;color:var(--t3);">Quota impression (mois en cours)</div>
-            <form th:action="@{/admin/members/{id}/reset-print(id=${member.id})}" method="post" style="display:inline;">
-              <button type="submit" class="btn btn-sm" style="font-size:11px;">Réinitialiser</button>
-            </form>
+            <div style="font-size:12px;color:var(--t3);">Quota impression</div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm" style="font-size:11px;" onclick="openModal('m-print-quota')">Ajuster</button>
+              <form th:action="@{/admin/members/{id}/reset-print(id=${member.id})}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-sm" style="font-size:11px;">Réinitialiser</button>
+              </form>
+            </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:13px;font-weight:700;"
@@ -470,8 +473,35 @@ document.addEventListener('click', function(e) {
         <input type="date" name="packExpires" class="form-in"
                th:value="${member.packExpires != null ? #temporals.format(member.packExpires,'yyyy-MM-dd') : ''}">
       </div>
+      <div class="form-row">
+        <label class="form-lbl">Heures de salle (total)</label>
+        <input type="number" name="confHours" class="form-in" step="0.5" min="0"
+               th:value="${member.confCreditsTotalH}">
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-adjust')">Annuler</button>
+        <button type="submit" class="btn btn-g">Enregistrer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal quota impression -->
+<div id="m-print-quota" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Ajuster le quota d'impression</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <form th:action="@{/admin/members/{id}/set-print-quota(id=${member.id})}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Quota total (pages)</label>
+        <input type="number" name="printQuota" class="form-in" min="0" step="1"
+               th:value="${member.printQuota}">
+      </div>
+      <div style="font-size:12px;color:var(--t3);margin-top:2px;">
+        <span th:text="${member.printUsed}"></span> pages déjà utilisées
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-print-quota')">Annuler</button>
         <button type="submit" class="btn btn-g">Enregistrer</button>
       </div>
     </form>

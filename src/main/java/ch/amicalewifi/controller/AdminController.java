@@ -49,6 +49,7 @@ public class AdminController {
     private final PrinterJobRepository      printerRepo;
     private final PackTransactionRepository packTxRepo;
     private final PrinterService                   printerService;
+    private final IppPrintService                  ippPrintService;
     private final PrintCreditTransactionRepository printCreditTxRepo;
     private final PasswordEncoder                  passwordEncoder;
 
@@ -175,6 +176,19 @@ public class AdminController {
         return "redirect:/admin/members";
     }
 
+    @PostMapping("/members/{id}/set-print-quota")
+    public String setPrintQuota(@PathVariable UUID id,
+                                @RequestParam int printQuota,
+                                RedirectAttributes ra) {
+        Member m = memberRepo.findById(id).orElseThrow();
+        m.setPrintQuota(printQuota);
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        ra.addFlashAttribute("success", "Quota d'impression mis à jour: " + printQuota + " pages");
+        return "redirect:/admin/members/" + id;
+    }
+
+
     @PostMapping("/members/{id}/renew")
     public String renewPack(@PathVariable UUID id,
                             @RequestParam MembershipType membership,
@@ -191,9 +205,15 @@ public class AdminController {
                              @RequestParam MembershipType membership,
                              @RequestParam(required = false) BigDecimal unitsRemaining,
                              @RequestParam(required = false) String packExpires,
+                             @RequestParam(required = false) BigDecimal confHours,
                              RedirectAttributes ra) {
         LocalDate expiryDate = (packExpires != null && !packExpires.isBlank()) ? LocalDate.parse(packExpires) : null;
         Member m = memberService.adjustPack(id, membership, unitsRemaining, expiryDate);
+        if (confHours != null) {
+            m.setConfCreditsTotalH(confHours);
+            m.setUpdatedAt(LocalDateTime.now());
+            memberRepo.save(m);
+        }
         ra.addFlashAttribute("success", "Solde ajusté pour " + m.getDisplayName());
         return "redirect:/admin/members/" + id;
     }
@@ -390,8 +410,8 @@ public class AdminController {
 
     @PostMapping("/printer/jobs/{id}/delete")
     public String deletePrinterJob(@PathVariable UUID id, RedirectAttributes ra) {
-        printerRepo.deleteById(id);
-        ra.addFlashAttribute("success", "Job d'impression supprimé");
+        ippPrintService.deleteJob(id);
+        ra.addFlashAttribute("success", "Job d'impression supprimé et crédits remboursés si applicable");
         return "redirect:/admin/printer";
     }
 
