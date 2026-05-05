@@ -89,6 +89,25 @@ public class MemberService {
         return saved;
     }
 
+    public Member adjustPack(UUID id, MembershipType membership, BigDecimal unitsRemaining, LocalDate packExpires) {
+        Member m = getById(id);
+        m.setMembership(membership);
+        BigDecimal total = membership.getPackUnits();
+        if (total != null) {
+            BigDecimal remaining = unitsRemaining != null ? unitsRemaining : BigDecimal.ZERO;
+            if (remaining.compareTo(total) > 0) total = remaining;
+            m.setPackUnitsTotal(total);
+            m.setPackUnitsUsed(total.subtract(remaining));
+        } else {
+            m.setPackUnitsTotal(null);
+            m.setPackUnitsUsed(null);
+        }
+        m.setPackExpires(packExpires);
+        m.setUpdatedAt(LocalDateTime.now());
+        log.info("Ajustement pack admin: {} → {} · {}j restantes · expire {}", m.getDisplayName(), membership, unitsRemaining, packExpires);
+        return memberRepo.save(m);
+    }
+
     public Presence permanentCheckin(UUID memberId) {
         Member m = getById(memberId);
         LocalDate today = LocalDate.now();
