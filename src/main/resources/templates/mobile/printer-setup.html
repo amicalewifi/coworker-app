@@ -163,12 +163,27 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 
   <div id="tab-windows" class="tab-content">
     <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Paramètres → Bluetooth et appareils → Imprimantes &amp; scanners</strong>.</div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter un appareil</strong>, puis <strong>Ajouter manuellement</strong>.</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter un appareil</strong>, attends la fin du scan (rien ne sera trouvé, c'est normal — pas de Bonjour sur Internet), puis clique <strong>Ajouter manuellement</strong>.</div></div>
     <div class="step"><div class="step-num">3</div><div class="step-text">Choisis <strong>Sélectionner une imprimante partagée par son nom</strong> et entre l'URL <code id="winUrl" th:text="'https://' + ${publicHost} + ':631/printers/' + ${queueName}"></code>.
-      <div class="warn-box" style="margin-top:8px;">Le port <strong>:631</strong> est obligatoire sous Windows — sans lui, Windows tente le port 443 qui ne répond pas encore au trafic d'impression.</div>
+      <div class="warn-box" style="margin-top:8px;">Le port <strong>:631</strong> est obligatoire — sans lui, Windows tente le port 443 qui ne répond pas pour cette URL.</div>
     </div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">Pilote : <strong>Microsoft IPP Class Driver</strong> (par défaut). Clique <strong>Suivant</strong>.</div></div>
-    <div class="step"><div class="step-num">5</div><div class="step-text">Au premier print, Windows demande un nom d'utilisateur et un mot de passe : entre ton <strong>email</strong> et ton <strong>token</strong> (les deux sont en haut de cette page). Coche <strong>« Mémoriser mes informations d'identification »</strong>.</div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Pilote : choisis <strong>Microsoft → Microsoft PCL6 Class Driver</strong> (recommandé pour Claudine). Clique <strong>Suivant</strong> jusqu'à la fin de l'install.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">Windows nomme l'imprimante automatiquement avec un nom à rallonge type <code>KMEADC84</code>. Renomme-la en <strong>Claudine</strong> via <strong>clic-droit sur l'imprimante → Propriétés de l'imprimante → onglet Général → champ Nom</strong>.</div></div>
+    <div class="step"><div class="step-num">6</div><div class="step-text">
+      <strong>Configurer les credentials sur le port</strong> — étape obligatoire Windows (équivalent du trousseau macOS, mais stocké sur le port plutôt que par session). Sans ça, le premier print échoue avec « Votre imprimante a rencontré un problème de configuration inattendu » (0x80070709) ou demande de configurer le port en boucle.
+      <ul style="margin:6px 0 0 16px;padding:0;font-size:13px;line-height:1.6;">
+        <li>Clic-droit sur Claudine → <strong>Propriétés de l'imprimante</strong></li>
+        <li>Onglet <strong>Ports</strong> → bouton <strong>Configurer le port…</strong></li>
+        <li>Coche <strong>« Utiliser le compte d'utilisateur spécifié »</strong></li>
+        <li>Nom d'utilisateur : ton <strong>email Amicale</strong> (en haut de cette page)</li>
+        <li>Mot de passe : ton <strong>token d'impression</strong> (en haut de cette page)</li>
+        <li>Clique <strong>OK</strong>. Les credentials sont mémorisés sur le port — tu n'auras plus à les saisir.</li>
+      </ul>
+    </div></div>
+    <div class="step"><div class="step-num">7</div><div class="step-text">Imprime un PDF de test (Notepad, Edge, Word…) → choisis Claudine → la feuille sort à l'Amicale et tes crédits sont débités automatiquement (le compte est fait par la Kyocera selon les pages réellement imprimées).</div></div>
+    <div class="warn-box" style="margin-top:10px;">
+      <strong>Pourquoi cette UX différente de macOS</strong> — Windows stocke les credentials d'imprimante Internet au niveau du port (config persistante du driver), pas par session. C'est le comportement standard de l'Internet Print Provider Windows pour toutes les imprimantes IPP réseau (HP, Lexmark, etc.). Une fois configurés, ils restent permanents.
+    </div>
   </div>
 
   <div id="tab-linux" class="tab-content">
