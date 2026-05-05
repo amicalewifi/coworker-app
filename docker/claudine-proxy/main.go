@@ -39,12 +39,17 @@ var (
 // Transport partagé entre la ReverseProxy et le client de polling Kyocera.
 // Le cert TLS de la Kyocera est auto-signé, donc on skip la vérification
 // (le tunnel WG entre VPS et coworking est déjà protégé par WireGuard).
+//
+// DisableKeepAlives = true : le firmware Kyocera ferme parfois les
+// connexions HTTP keepalive de manière inattendue, ce qui provoque des
+// "EOF" en plein stream du proxy (observé en prod 2026-05-05 sur 4
+// requêtes Get-Printer-Attributes). En forçant une connexion fraîche par
+// requête, on paie un handshake TLS supplémentaire (~50ms) en échange
+// d'une fiabilité accrue. Acceptable vu notre throughput (1 print toutes
+// les minutes max).
 var insecureTransport = &http.Transport{
-	TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-	MaxIdleConns:        10,
-	MaxConnsPerHost:     10,
-	MaxIdleConnsPerHost: 10,
-	IdleConnTimeout:     90 * time.Second,
+	TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+	DisableKeepAlives: true,
 }
 
 // Client HTTP pour le polling de la Kyocera (Get-Job-Attributes).

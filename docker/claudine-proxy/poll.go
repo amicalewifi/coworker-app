@@ -120,10 +120,15 @@ func fetchJobState(ctx context.Context, jobURI string) (state, impressions int, 
 	return ExtractJobState(respBody)
 }
 
-// reportComplete + reportError utilisent leur propre context (le ctx du
-// polling peut être expired si on est sur la dernière itération).
+// reportComplete + reportError utilisent leur propre context. Timeout
+// généreux (45s) pour laisser le retry exponential backoff de spring.do()
+// faire son travail : 3 tentatives × ~10s chacune (timeout HTTP) +
+// ~3.5s de backoff cumulé (500ms+1s+2s). Sans cette marge, un Spring
+// momentanément lent (GC pause, redéploiement, etc.) provoquait un job
+// imprimé physiquement mais non débité côté coworker-app — observé en
+// prod le 2026-05-05 sur le job 01b3cb9c (free print accidentel).
 func reportComplete(jobID string, pages int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	if err := spring.Complete(ctx, jobID, pages, 1, false, false); err != nil {
 		log.Printf("[claudine-proxy] spring complete job=%s: %v", jobID, err)
@@ -131,7 +136,7 @@ func reportComplete(jobID string, pages int) {
 }
 
 func reportError(jobID, message string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
 	if err := spring.Error(ctx, jobID, message); err != nil {
 		log.Printf("[claudine-proxy] spring error job=%s: %v", jobID, err)

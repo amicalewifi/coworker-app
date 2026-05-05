@@ -92,8 +92,11 @@ func (s *SpringClient) Error(ctx context.Context, jobID, msg string) error {
 	return s.do(ctx, "POST", "/api/v1/print/"+jobID+"/error", body, nil)
 }
 
-// do exécute un POST avec retry exponential backoff sur 5xx (3 tentatives
-// max). 4xx sont retournés immédiatement (mappés vers les sentinel errors).
+// do exécute un POST avec retry exponential backoff (3 tentatives max). Les
+// erreurs réseau (EOF, context deadline, connection refused, etc.) et les
+// 5xx sont retentées. 4xx sont retournés immédiatement (mappés vers les
+// sentinel errors). Le backoff est ctx-aware : on bail proprement si le
+// parent context expire pendant le sleep.
 func (s *SpringClient) do(ctx context.Context, method, path string, body []byte, out any) error {
 	backoff := 500 * time.Millisecond
 	var lastErr error
@@ -107,8 +110,13 @@ func (s *SpringClient) do(ctx context.Context, method, path string, body []byte,
 
 		resp, err := s.http.Do(req)
 		if err != nil {
+			// Erreur transport (EOF, connection refused, context deadline, etc.)
+			// → retry. C'est le cas observé en prod où un Spring momentanément
+			// lent renvoyait EOF/timeout et le job restait orphelin sans débit.
 			lastErr = err
-			time.Sleep(backoff)
+			if waitErr := sleepCtx(ctx, backoff); waitErr != nil {
+				return waitErr
+			}
 			backoff *= 2
 			continue
 		}
@@ -134,7 +142,9 @@ func (s *SpringClient) do(ctx context.Context, method, path string, body []byte,
 			_, _ = io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 			lastErr = fmt.Errorf("%w: HTTP %d", ErrTransient, resp.StatusCode)
-			time.Sleep(backoff)
+			if waitErr := sleepCtx(ctx, backoff); waitErr != nil {
+				return waitErr
+			}
 			backoff *= 2
 			continue
 		default:
@@ -146,4 +156,18 @@ func (s *SpringClient) do(ctx context.Context, method, path string, body []byte,
 		lastErr = ErrTransient
 	}
 	return lastErr
+}
+
+// sleepCtx dort `d` sauf si le context expire avant — dans ce cas retourne
+// l'erreur du context. Évite de gaspiller le budget temps du parent en
+// time.Sleep aveugle quand le retry n'aboutira de toute façon plus.
+func sleepCtx(ctx context.Context, d time.Duration) error {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-t.C:
+		return nil
+	}
 }
