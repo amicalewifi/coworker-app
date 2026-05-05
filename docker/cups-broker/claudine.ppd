@@ -13,10 +13,25 @@
 *LanguageLevel: "3"
 *ColorDevice: True
 *DefaultColorSpace: RGB
-*cupsVersion: 2.0
+*cupsVersion: 2.4
 *cupsManualCopies: False
 *cupsFilter: "application/pdf 0 pdftopdf"
 *DefaultResolution: 300dpi
+*% IEEE 1284 Device ID — REQUIS pour que les Microsoft IPP Class Drivers sur
+*% Windows 11 (PWG Raster, PCL6, PS) skip l'opération propriétaire IPP
+*% « windows-ext » (op-id 0x4000) qu'ils envoient en l'absence de ce champ.
+*% Sans device-id, l'install Windows échoue avec 0x000003fa
+*% (ERROR_INVALID_PRINTER_STATE) parce que CUPS répond
+*% client-error-bad-request (no URI) à windows-ext, et Windows boucle.
+*% Avec device-id présent, Windows traite l'imprimante comme une IPP
+*% Everywhere standard et utilise son class driver bundled sans appeler
+*% l'extension Microsoft. CMD: liste les langages d'impression supportés —
+*% PWGRaster pour le Class Driver PWG Raster, POSTSCRIPT pour PS Class
+*% Driver, PDF pour les pilotes IPP Everywhere modernes.
+*1284DeviceID: "MFG:Amicale;MDL:Claudine;CMD:PWGRaster,PDF,POSTSCRIPT;CLS:PRINTER;DES:Claudine - l'Amicale du WiFi;"
+*% Marqueur IPP-aware pour CUPS — fait apparaître ipp-features-supported
+*% dans Get-Printer-Attributes (utile pour les clients IPP Everywhere).
+*cupsIPPSupplies: True
 *OpenUI *PageSize/Format papier: PickOne
 *OrderDependency: 10 AnySetup *PageSize
 *DefaultPageSize: A4

@@ -39,19 +39,21 @@ if ! [[ -S /var/run/cups/cups.sock ]]; then
     exit 1
 fi
 
+# lpadmin -p est create-or-update : si la queue existe déjà, ses propriétés
+# (notamment le PPD) sont remplacées. On applique systématiquement plutôt que
+# de skip si présente, sinon une mise à jour de claudine.ppd dans l'image
+# (ex: ajout du *1284DeviceID requis pour Windows 11) ne se propage pas tant
+# que le volume CUPS est conservé.
 if lpstat -p "${QUEUE}" >/dev/null 2>&1; then
-    echo "[claudine] queue ${QUEUE} déjà présente"
+    echo "[claudine] queue ${QUEUE} présente — réapplication du PPD"
 else
     echo "[claudine] création de la queue ${QUEUE}"
-    # `everywhere` génère un PPD à la volée via IPP — pratique pour notre
-    # backend custom qui ne veut pas de PPD vendor. Si ça échoue (réseau,
-    # backend pas encore probable), fallback sur le pilote raw.
-    lpadmin -p "${QUEUE}" \
-        -E \
-        -v "amicale-broker:///${QUEUE}" \
-        -P /usr/share/ppd/claudine.ppd \
-        -L "Imprimante virtuelle Claudine — l'Amicale du WiFi"
 fi
+lpadmin -p "${QUEUE}" \
+    -E \
+    -v "amicale-broker:///${QUEUE}" \
+    -P /usr/share/ppd/claudine.ppd \
+    -L "Imprimante virtuelle Claudine — l'Amicale du WiFi"
 
 echo "[claudine] cupsd ready, queue ${QUEUE} configured, waiting for jobs"
 wait ${CUPSD_PID}
