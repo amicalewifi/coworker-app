@@ -123,20 +123,22 @@ public class MemberService {
     }
 
     public Presence manualEntry(UUID memberId, PresenceType type, boolean unitaire) {
+        return manualEntryForDate(memberId, type, unitaire, LocalDate.now());
+    }
+
+    public Presence manualEntryForDate(UUID memberId, PresenceType type, boolean unitaire, LocalDate date) {
         Member m = getById(memberId);
         PresenceType effective = unitaire ? type.toUnitaire() : type;
-        boolean alreadyPresent = presenceRepo.findByMemberIdAndDateAndPresenceType(
-                m.getId(), LocalDate.now(), effective).isPresent();
-        if (alreadyPresent) {
-            return presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), LocalDate.now(), effective).orElseThrow();
+        if (presenceRepo.findByMemberIdAndDateAndPresenceType(m.getId(), date, effective).isPresent()) {
+            throw new IllegalStateException("Une présence " + effective.getLabel() + " existe déjà le " + date + " pour ce membre.");
         }
         BigDecimal units = m.isPermanent() ? BigDecimal.ZERO : effective.getUnits();
         Presence presence = presenceRepo.save(Presence.builder()
                 .member(m)
-                .date(LocalDate.now())
+                .date(date)
                 .presenceType(effective)
                 .status(PresenceStatus.ACTIVE)
-                .checkedInAt(LocalDateTime.now())
+                .checkedInAt(date.atTime(8, 0))
                 .unitsConsumed(units)
                 .unitaire(unitaire || effective.isUnitaire())
                 .build());
@@ -238,6 +240,22 @@ public class MemberService {
 
     public List<PrintCreditTransaction> getPrintPurchases(UUID memberId) {
         return printCreditTxRepo.findByMemberIdOrderByCreatedAtDesc(memberId);
+    }
+
+    public Member removePresence(UUID presenceId) {
+        Presence p = presenceRepo.findById(presenceId)
+                .orElseThrow(() -> new java.util.NoSuchElementException("Présence introuvable: " + presenceId));
+        Member m = p.getMember();
+        if (!m.isPermanent() && p.getUnitsConsumed() != null
+                && p.getUnitsConsumed().compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal refunded = m.getPackUnitsUsed().subtract(p.getUnitsConsumed());
+            m.setPackUnitsUsed(refunded.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : refunded);
+            m.setUpdatedAt(LocalDateTime.now());
+            memberRepo.save(m);
+        }
+        presenceRepo.delete(p);
+        log.info("Présence supprimée: {} le {} ({}j remboursés)", m.getDisplayName(), p.getDate(), p.getUnitsConsumed());
+        return m;
     }
 
     public Presence checkout(UUID presenceId) {
