@@ -17,7 +17,15 @@ type ctxKey int
 const (
 	ctxJobID ctxKey = iota
 	ctxEmail
+	ctxColor
+	ctxDuplex
 )
+
+// Cap du peek du request body pour parser les attributs IPP (op-id +
+// print-color-mode + sides). Les attributs Print-Job/Create-Job tiennent
+// largement dans 16 KB en pratique. Au-delà, on ne parse pas → fallback
+// billing N&B (conservateur).
+const requestPeekCap = 16 * 1024
 
 // IPP operation IDs (RFC 8011).
 // Notre proxy fait Submit + auth uniquement pour les ops qui soumettent un
@@ -42,18 +50,21 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			return
 		}
 
-		// Peek les 8 premiers octets du body pour lire l'op-id IPP. On
-		// reconstitue ensuite le body complet pour le forward (peek + reste
-		// via MultiReader). Cela ne touche pas au streaming des PDF lourds —
-		// on lit juste 8 octets, le reste reste en stream.
-		header := make([]byte, 8)
-		n, _ := io.ReadFull(r.Body, header)
-		header = header[:n]
-		r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(header), r.Body))
+		// Peek le début du body pour lire l'op-id IPP, et — si c'est un
+		// Print-Job/Create-Job — pour extraire les attributs print-color-mode
+		// et sides nécessaires au billing. On peek jusqu'à 16 KB (largement
+		// au-dessus de la taille typique des attributs Print-Job), puis on
+		// reconstitue le body complet via MultiReader (peek + reste streamé).
+		// Le PDF embarqué après les attributs n'est pas touché — il stream
+		// toujours via la ReverseProxy.
+		peek := make([]byte, requestPeekCap)
+		n, _ := io.ReadFull(r.Body, peek)
+		peek = peek[:n]
+		r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(peek), r.Body))
 
 		var opID uint16
 		if n >= 4 {
-			opID = binary.BigEndian.Uint16(header[2:4])
+			opID = binary.BigEndian.Uint16(peek[2:4])
 		}
 
 		// Ops de discovery/status : pass-through transparent. Pas d'auth, pas
@@ -63,6 +74,12 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			proxy.ServeHTTP(w, r)
 			return
 		}
+
+		// Print-Job/Create-Job : extraction du color/duplex depuis les
+		// attributs IPP du request body. Si le client n'envoie pas ces
+		// attributs (rare), valeurs par défaut = false (N&B, recto) →
+		// fallback conservateur côté billing.
+		color, duplex := ExtractPrintJobAttrs(peek)
 
 		// Ici : opID = Print-Job ou Create-Job. On exige l'auth Basic et on
 		// crée le PrinterJob côté Spring avant de forwarder.
@@ -93,8 +110,10 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 
 		ctx := context.WithValue(r.Context(), ctxJobID, jobID)
 		ctx = context.WithValue(ctx, ctxEmail, email)
-		log.Printf("[claudine-proxy] forwarding Print-Job spring-id=%s email=%s op=0x%04x",
-			jobID, email, opID)
+		ctx = context.WithValue(ctx, ctxColor, color)
+		ctx = context.WithValue(ctx, ctxDuplex, duplex)
+		log.Printf("[claudine-proxy] forwarding Print-Job spring-id=%s email=%s op=0x%04x color=%v duplex=%v",
+			jobID, email, opID, color, duplex)
 		proxy.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
@@ -127,9 +146,13 @@ func modifyResponseFn(resp *http.Response) error {
 		// vers le client sans intervenir.
 		return nil
 	}
+	color, _ := resp.Request.Context().Value(ctxColor).(bool)
+	duplex, _ := resp.Request.Context().Value(ctxDuplex).(bool)
 	resp.Body = &ippParseReader{
 		upstream: resp.Body,
 		jobID:    jobID,
+		color:    color,
+		duplex:   duplex,
 	}
 	return nil
 }
@@ -137,7 +160,8 @@ func modifyResponseFn(resp *http.Response) error {
 // ippParseReader wrap le body d'une réponse Print-Job pour extraire le
 // job-uri "au passage" : au fur et à mesure que les bytes circulent
 // upstream → client (via la ReverseProxy), on les accumule en RAM jusqu'à
-// trouver job-uri. Une fois trouvé, on free l'accum et on lance le polling.
+// trouver job-uri. Une fois trouvé, on free l'accum et on lance le polling
+// avec les attributs (color, duplex) capturés depuis la requête originale.
 //
 // Mémoire bornée : on cap l'accumulation à 64 KB (les réponses Print-Job IPP
 // font <1 KB en pratique, mais on garde une marge). Au-delà, on stoppe la
@@ -146,6 +170,8 @@ func modifyResponseFn(resp *http.Response) error {
 type ippParseReader struct {
 	upstream io.ReadCloser
 	jobID    string
+	color    bool
+	duplex   bool
 	accum    []byte
 	done     bool
 }
@@ -163,9 +189,9 @@ func (r *ippParseReader) Read(p []byte) (int, error) {
 				// pas encore été reçu, parseAttributes s'arrête sans erreur
 				// et on retentera au prochain Read.
 				if jobURI, kyoceraJobID, perr := ExtractJobURI(r.accum); perr == nil && jobURI != "" {
-					log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s",
-						r.jobID, kyoceraJobID, jobURI)
-					go pollAndComplete(r.jobID, jobURI)
+					log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s color=%v duplex=%v",
+						r.jobID, kyoceraJobID, jobURI, r.color, r.duplex)
+					go pollAndComplete(r.jobID, jobURI, r.color, r.duplex)
 					r.done = true
 					r.accum = nil // free
 				}

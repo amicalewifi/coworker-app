@@ -161,20 +161,49 @@ func ExtractJobURI(body []byte) (string, int, error) {
 }
 
 // ExtractJobState lit la réponse IPP d'un Get-Job-Attributes.
-func ExtractJobState(body []byte) (state int, impressionsCompleted int, err error) {
+// Retourne :
+//   - state : RFC 8011 §5.3.7 (3=pending, 5=processing, 9=completed, etc.)
+//   - impressions : job-impressions-completed (compte par côté de feuille,
+//     copies incluses → 10 pages × 3 copies recto = 30 impressions)
+//   - sheets : job-media-sheets-completed (compte par feuille physique,
+//     copies incluses → 10 pages × 3 copies duplex = 15 sheets). 0 si la
+//     Kyocera ne le supporte pas → on fallback à impressions côté billing.
+func ExtractJobState(body []byte) (state, impressions, sheets int, err error) {
 	_, _, _, attrs, err := ParseHeader(body)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	parsed := parseAttributes(attrs)
 	state, _ = attrInt(parsed, "job-state")
-	impressionsCompleted, _ = attrInt(parsed, "job-impressions-completed")
-	return state, impressionsCompleted, nil
+	impressions, _ = attrInt(parsed, "job-impressions-completed")
+	sheets, _ = attrInt(parsed, "job-media-sheets-completed")
+	return state, impressions, sheets, nil
+}
+
+// ExtractPrintJobAttrs parse le body d'une requête Print-Job ou Create-Job
+// pour extraire les options de format demandées par le client (utiles pour
+// le billing : couleur ou N&B, duplex ou non). Retourne false / false si
+// non trouvés (le client n'a pas envoyé l'attribut → défaut conservateur).
+func ExtractPrintJobAttrs(body []byte) (color, duplex bool) {
+	_, _, _, attrs, err := ParseHeader(body)
+	if err != nil {
+		return false, false
+	}
+	parsed := parseAttributes(attrs)
+	if mode, ok := attrString(parsed, "print-color-mode"); ok {
+		// "color" / "auto" facturent au tarif couleur ; "monochrome" /
+		// "process-monochrome" / "monochrome-color" → N&B.
+		color = mode == "color" || mode == "auto"
+	}
+	if sides, ok := attrString(parsed, "sides"); ok {
+		duplex = sides == "two-sided-long-edge" || sides == "two-sided-short-edge"
+	}
+	return color, duplex
 }
 
 // BuildGetJobAttributes construit une requête IPP Get-Job-Attributes pour
-// le job-uri donné, demandant explicitement job-state et
-// job-impressions-completed.
+// le job-uri donné, demandant explicitement job-state,
+// job-impressions-completed et job-media-sheets-completed.
 func BuildGetJobAttributes(jobURI string, reqID uint32) []byte {
 	var buf bytes.Buffer
 	// Header : version 2.0, op Get-Job-Attributes, request-id
@@ -189,6 +218,7 @@ func BuildGetJobAttributes(jobURI string, reqID uint32) []byte {
 	// requested-attributes (multi-valué, name vide pour continuation)
 	writeAttr(&buf, tagKeyword, "requested-attributes", []byte("job-state"))
 	writeAttr(&buf, tagKeyword, "", []byte("job-impressions-completed"))
+	writeAttr(&buf, tagKeyword, "", []byte("job-media-sheets-completed"))
 	// Fin
 	buf.WriteByte(tagEndOfAttrs)
 	return buf.Bytes()
