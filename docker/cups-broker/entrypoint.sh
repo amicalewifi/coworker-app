@@ -3,7 +3,8 @@
 #  1. Lance cupsd en arrière-plan.
 #  2. Attend que le socket soit prêt.
 #  3. Crée la queue claudine via lpadmin si elle n'existe pas (idempotent).
-#  4. Wait sur cupsd → le container vit aussi longtemps que CUPS.
+#  4. Lance ipp-shim (middleware HTTP/IPP qui absorbe l'op Microsoft 0x4000).
+#  5. Wait sur les deux process — le container vit tant que les deux tournent.
 set -euo pipefail
 
 QUEUE="${AMICALE_QUEUE_NAME:-claudine}"
@@ -24,8 +25,8 @@ echo "[claudine] persisted $(wc -l <"${ENV_FILE}") AMICALE_* vars to ${ENV_FILE}
 /usr/sbin/cupsd -f &
 CUPSD_PID=$!
 
-# Le container meurt si CUPS sort.
-trap 'echo "[claudine] received SIGTERM, stopping cupsd"; kill -TERM ${CUPSD_PID}; wait ${CUPSD_PID}; exit' TERM INT
+# Trap initial — on l'enrichira avec SHIM_PID après son démarrage.
+trap 'echo "[claudine] received SIGTERM, stopping cupsd"; kill -TERM ${CUPSD_PID} 2>/dev/null; wait ${CUPSD_PID} 2>/dev/null; exit' TERM INT
 
 # Attente courte que le socket soit dispo.
 for _ in 1 2 3 4 5 6 7 8 9 10; do
@@ -55,5 +56,17 @@ lpadmin -p "${QUEUE}" \
     -P /usr/share/ppd/claudine.ppd \
     -L "Imprimante virtuelle Claudine — l'Amicale du WiFi"
 
-echo "[claudine] cupsd ready, queue ${QUEUE} configured, waiting for jobs"
-wait ${CUPSD_PID}
+# ipp-shim : intercepte l'op Microsoft 0x4000 ("windows-ext") qui bloque
+# l'install Windows 11 et proxifie tout le reste vers cupsd. Caddy doit
+# reverse-proxy vers le port 6311 (et plus 6310). Voir ipp-shim en tête de
+# fichier pour le détail.
+/usr/local/bin/ipp-shim &
+SHIM_PID=$!
+trap 'echo "[claudine] received SIGTERM, stopping cupsd + ipp-shim"; kill -TERM ${CUPSD_PID} ${SHIM_PID} 2>/dev/null; wait 2>/dev/null; exit' TERM INT
+
+echo "[claudine] cupsd + ipp-shim ready, queue ${QUEUE} configured, waiting for jobs"
+# Sort dès qu'un des deux process meurt (Bash 4.3+, dispo sur bookworm).
+wait -n ${CUPSD_PID} ${SHIM_PID}
+echo "[claudine] one of cupsd/ipp-shim exited — terminating container"
+kill -TERM ${CUPSD_PID} ${SHIM_PID} 2>/dev/null || true
+wait 2>/dev/null || true
