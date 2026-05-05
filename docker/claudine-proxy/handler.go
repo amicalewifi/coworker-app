@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 )
 
 type ctxKey int
@@ -117,49 +116,75 @@ func directorFn(target *url.URL) func(*http.Request) {
 	}
 }
 
-// modifyResponseFn lit la réponse IPP de la Kyocera et, si c'est une réponse
-// Print-Job (présence de job-uri), lance le polling en goroutine. Les
-// réponses Get-Printer-Attributes peuvent peser plusieurs MB (capabilities
-// IPP Everywhere complètes) — d'où la limite haute à 4 MB. La réponse est
-// restituée intacte au client (Windows IPP Class Driver lit ces capabilities
-// pour s'auto-configurer).
+// modifyResponseFn : pour les Print-Job (jobID en context), wrap resp.Body
+// avec ippParseReader qui parse on-the-fly et lance le polling dès qu'il
+// croise `job-uri`. Pour toutes les autres ops (discovery, status, etc.),
+// pass-through total — zéro buffering, zéro touche.
 func modifyResponseFn(resp *http.Response) error {
-	const maxRead = 4 * 1024 * 1024
-	buf := &bytes.Buffer{}
-	_, err := io.Copy(buf, io.LimitReader(resp.Body, maxRead))
-	if err != nil {
-		return err
-	}
-	// Drain résiduel improbable (réponse > 4MB) — on logue pour audit.
-	if extra, _ := io.Copy(io.Discard, resp.Body); extra > 0 {
-		log.Printf("[claudine-proxy] response truncated: %d extra bytes discarded "
-			+ "(consider raising maxRead)", extra)
-	}
-	resp.Body.Close()
-
-	body := buf.Bytes()
-	resp.Body = io.NopCloser(bytes.NewReader(body))
-	resp.ContentLength = int64(len(body))
-	resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
-
-	// Pas de jobID dans le contexte = c'était une op autre que Print-Job
-	// (discovery, status, etc.) → rien à faire.
 	jobID, _ := resp.Request.Context().Value(ctxJobID).(string)
-	if jobID == "" || len(body) == 0 {
+	if jobID == "" {
+		// Pas un Print-Job → on laisse la ReverseProxy stream le body brut
+		// vers le client sans intervenir.
 		return nil
 	}
-
-	jobURI, kyoceraJobID, err := ExtractJobURI(body)
-	if err != nil || jobURI == "" {
-		log.Printf("[claudine-proxy] Print-Job response without job-uri (spring-id=%s): %v",
-			jobID, err)
-		// Le job côté Spring restera en PRINTING ; pas de complete, pas de
-		// débit. Optionnel : on pourrait reportError ici.
-		return nil
+	resp.Body = &ippParseReader{
+		upstream: resp.Body,
+		jobID:    jobID,
 	}
-
-	log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s",
-		jobID, kyoceraJobID, jobURI)
-	go pollAndComplete(jobID, jobURI)
 	return nil
+}
+
+// ippParseReader wrap le body d'une réponse Print-Job pour extraire le
+// job-uri "au passage" : au fur et à mesure que les bytes circulent
+// upstream → client (via la ReverseProxy), on les accumule en RAM jusqu'à
+// trouver job-uri. Une fois trouvé, on free l'accum et on lance le polling.
+//
+// Mémoire bornée : on cap l'accumulation à 64 KB (les réponses Print-Job IPP
+// font <1 KB en pratique, mais on garde une marge). Au-delà, on stoppe la
+// parse — le client reçoit toujours le body complet car on ne fait que
+// regarder les bytes en transit.
+type ippParseReader struct {
+	upstream io.ReadCloser
+	jobID    string
+	accum    []byte
+	done     bool
+}
+
+const ippParseAccumCap = 64 * 1024
+
+func (r *ippParseReader) Read(p []byte) (int, error) {
+	n, err := r.upstream.Read(p)
+	if n > 0 && !r.done {
+		// Accumulate (jusqu'à la cap) et tenter le parse.
+		if len(r.accum)+n <= ippParseAccumCap {
+			r.accum = append(r.accum, p[:n]...)
+			if len(r.accum) >= 8 {
+				// ExtractJobURI tolère un body partiel : si l'attribut n'a
+				// pas encore été reçu, parseAttributes s'arrête sans erreur
+				// et on retentera au prochain Read.
+				if jobURI, kyoceraJobID, perr := ExtractJobURI(r.accum); perr == nil && jobURI != "" {
+					log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s",
+						r.jobID, kyoceraJobID, jobURI)
+					go pollAndComplete(r.jobID, jobURI)
+					r.done = true
+					r.accum = nil // free
+				}
+			}
+		} else {
+			// Cap atteinte sans trouver job-uri — on abandonne la parse
+			// (le client continue de recevoir le body normalement).
+			log.Printf("[claudine-proxy] Print-Job response without job-uri after %dB (spring-id=%s)",
+				ippParseAccumCap, r.jobID)
+			r.done = true
+			r.accum = nil
+		}
+	}
+	return n, err
+}
+
+func (r *ippParseReader) Close() error {
+	if !r.done && r.jobID != "" {
+		log.Printf("[claudine-proxy] Print-Job response closed without job-uri (spring-id=%s)", r.jobID)
+	}
+	return r.upstream.Close()
 }
