@@ -81,6 +81,14 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 		// fallback conservateur côté billing.
 		color, duplex := ExtractPrintJobAttrs(peek)
 
+		// DEBUG TEMPORAIRE — dump des attributs IPP envoyés par le client.
+		// Permet de voir si macOS AirPrint (op 0x0005 Create-Job) envoie
+		// quelque chose d'utile dans le Create-Job, vs si tout est dans le
+		// Send-Document (op 0x0006 qu'on n'intercepte pas). À retirer une
+		// fois le diagnostic fait.
+		log.Printf("[claudine-proxy] DEBUG request op=0x%04x (%d bytes peek):\n%s",
+			opID, len(peek), DumpAttrs(peek))
+
 		// Ici : opID = Print-Job ou Create-Job. On exige l'auth Basic et on
 		// crée le PrinterJob côté Spring avant de forwarder.
 		email, token, ok := r.BasicAuth()

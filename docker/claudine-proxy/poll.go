@@ -148,6 +148,14 @@ func fetchJobState(ctx context.Context, jobURI string) (state, impressions, shee
 	if err != nil {
 		return 0, 0, 0, false, false, err
 	}
+
+	// DEBUG TEMPORAIRE — dump des attributs IPP retournés par la Kyocera
+	// pour comprendre quels attributs sont disponibles (notamment
+	// print-color-mode, sides, et possiblement des extensions PWG comme
+	// pwg-impressions-completed-col). À retirer une fois le diagnostic fait.
+	log.Printf("[claudine-proxy] DEBUG Get-Job-Attributes response (%d bytes):\n%s",
+		len(respBody), DumpAttrs(respBody))
+
 	return ExtractJobState(respBody)
 }
 
