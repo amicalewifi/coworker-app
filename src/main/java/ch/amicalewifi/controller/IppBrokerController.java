@@ -58,9 +58,16 @@ public class IppBrokerController {
 
     @PostMapping("/{jobId}/complete")
     public ResponseEntity<?> complete(@RequestHeader(value = "X-Print-Broker-Key", required = false) String key,
-                                      @PathVariable UUID jobId) {
+                                      @PathVariable UUID jobId,
+                                      @RequestBody(required = false) CompleteRequest req) {
         if (!checkKey(key)) return unauthorized();
-        ippPrintService.complete(jobId);
+        IppPrintService.CompleteOverride override = null;
+        if (req != null && (req.pages() != null || req.copies() != null
+                || req.color() != null || req.duplex() != null)) {
+            override = new IppPrintService.CompleteOverride(
+                    req.pages(), req.copies(), req.color(), req.duplex());
+        }
+        ippPrintService.complete(jobId, override);
         return ResponseEntity.noContent().build();
     }
 
@@ -113,4 +120,9 @@ public class IppBrokerController {
                                 boolean color, boolean duplex, String submittedUsername) {}
     public record SubmitResponse(UUID jobId, int creditsCost) {}
     public record ErrorRequest(String message) {}
+    /** Body optionnel pour /complete : permet le deferred billing
+     *  (claudine-proxy fournit pages/copies/color/duplex APRÈS le job). Champs
+     *  nullables — chaque champ non-null override la valeur stockée à /submit. */
+    public record CompleteRequest(Integer pages, Integer copies,
+                                   Boolean color, Boolean duplex) {}
 }
