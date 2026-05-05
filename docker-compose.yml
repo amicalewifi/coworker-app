@@ -83,16 +83,21 @@ services:
     depends_on:
       - app
 
-  # CUPS broker pour Claudine (imprimante virtuelle IPP).
+  # Claudine — printer-application PAPPL pour l'imprimante virtuelle.
+  # Remplace l'ancien container `cups` (CUPS 2.4 + ipp-shim) qui n'arrivait
+  # pas à satisfaire le Microsoft IPP Class Driver (CUPS = client IPP
+  # Everywhere, pas serveur). PAPPL est conçu exactement pour ce cas :
+  # exposer une imprimante non-IPP (la Kyocera en raw 9100) en IPPS conforme,
+  # accepté nativement par Windows 10/11, macOS, iOS, Linux, Android.
+  #
   # network_mode: host est requis pour atteindre 192.168.1.10 via wg0
-  # (l'interface WireGuard vit dans le namespace réseau du host).
+  # (l'interface WireGuard vit dans le namespace réseau du host) et pour
+  # que le mDNS/DNS-SD broadcast sorte sur l'interface réseau du host.
   # Pas d'`image:` — l'image n'est pas publiée sur GHCR (build-only local).
-  # Compose génère un tag automatique du type repo-cups au build, et skippe
-  # le service à `docker compose pull` car il n'y a que `build:`.
-  cups:
+  claudine:
     build:
-      context: ./docker/cups-broker
-    container_name: amicale_cups
+      context: ./docker/claudine-pappl
+    container_name: amicale_claudine
     restart: unless-stopped
     network_mode: host
     environment:
@@ -102,7 +107,7 @@ services:
       AMICALE_PRINTER_PORT:      9100
       AMICALE_QUEUE_NAME:        claudine
     volumes:
-      - cups_spool:/var/spool/cups
+      - claudine_spool:/var/lib/pappl
     depends_on:
       - app
 
@@ -111,13 +116,13 @@ volumes:
   pgadmin_data:
   caddy_data:
   caddy_config:
-  cups_spool:
+  claudine_spool:
 
 # Pin du subnet du bridge `default` pour que l'IP du gateway (172.18.0.1)
-# soit stable. Caddy reverse-proxy vers cette IP pour atteindre le CUPS
-# broker en network_mode: host (le gateway du bridge depuis l'intérieur du
-# bridge = le host lui-même). Une règle UFW dans bootstrap.sh autorise ce
-# subnet → host:631.
+# soit stable. Caddy reverse-proxy vers cette IP pour atteindre le binaire
+# claudine (PAPPL) en network_mode: host (le gateway du bridge depuis
+# l'intérieur du bridge = le host lui-même). Une règle UFW dans bootstrap.sh
+# autorise ce subnet → host:8000 (port d'écoute PAPPL).
 networks:
   default:
     ipam:

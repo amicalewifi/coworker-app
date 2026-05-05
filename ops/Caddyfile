@@ -14,8 +14,9 @@ coworker.amicalewifi.ch {
     }
 }
 
-# Imprimante virtuelle Claudine — CUPS broker tourne sur le host (network_mode:
-# host, port interne 6310) pour atteindre wg0 → Kyocera. Caddy termine TLS et
+# Imprimante virtuelle Claudine — binaire PAPPL `claudine` tourne sur le host
+# (network_mode: host, port 8000) pour atteindre wg0 → Kyocera et pour
+# broadcaster du mDNS sur l'interface du host. Caddy termine TLS et
 # reverse-proxy vers le gateway du bridge du projet (172.18.0.1, subnet pinné
 # dans docker-compose.yml).
 #
@@ -23,18 +24,24 @@ coworker.amicalewifi.ch {
 # `ipps://print.amicalewifi.ch/printers/claudine` (port 631 par défaut).
 # Windows (Microsoft IPP Class Driver) utilise `https://` sans port, ce qui
 # résout sur 443 — on écoute donc les deux.
-# Pour debug en CLI : `curl https://print.amicalewifi.ch:631/printers/claudine`.
+# Pour debug en CLI : `curl https://print.amicalewifi.ch:631/ipp/print`.
 
-(print_cups) {
+(print_claudine) {
     encode gzip
     request_body {
         max_size 500MB
     }
-    # 6311 = ipp-shim (middleware Python qui absorbe l'op Microsoft 0x4000
-    # bloquant l'install Windows 11) ; le shim proxifie tout le reste vers
-    # cupsd sur 6310 en interne. Voir docker/cups-broker/ipp-shim.
-    reverse_proxy 172.18.0.1:6311 {
-        # CUPS / shim attendent HTTP/1.1 chunked pour IPP — pas de HTTP/2.
+    # PAPPL expose ses imprimantes à `/ipp/print/<nom>`. Les clients (et
+    # surtout les installs existantes macOS) utilisent l'URL legacy CUPS
+    # `/printers/<nom>` documentée depuis le début. On rewrite côté Caddy
+    # pour garder cette URL stable côté users — sinon ils devraient tous
+    # supprimer + réinstaller leur imprimante.
+    rewrite /printers/claudine /ipp/print/claudine
+
+    # 8000 = binaire claudine (PAPPL) en host networking. Voir
+    # docker/claudine-pappl/claudine.c.
+    reverse_proxy 172.18.0.1:8000 {
+        # PAPPL / IPP attendent HTTP/1.1 chunked — pas de HTTP/2.
         transport http {
             versions 1.1
         }
@@ -43,10 +50,10 @@ coworker.amicalewifi.ch {
 
 # Port 443 — Windows (https:// sans port explicite)
 print.amicalewifi.ch {
-    import print_cups
+    import print_claudine
 }
 
 # Port 631 — macOS / Linux / iOS (ipps:// ou https://:631)
 https://print.amicalewifi.ch:631 {
-    import print_cups
+    import print_claudine
 }
