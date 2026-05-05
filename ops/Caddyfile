@@ -14,34 +14,30 @@ coworker.amicalewifi.ch {
     }
 }
 
-# Imprimante virtuelle Claudine — binaire PAPPL `claudine` tourne sur le host
-# (network_mode: host, port 8000) pour atteindre wg0 → Kyocera et pour
-# broadcaster du mDNS sur l'interface du host. Caddy termine TLS et
-# reverse-proxy vers le gateway du bridge du projet (172.18.0.1, subnet pinné
-# dans docker-compose.yml).
+# Imprimante virtuelle Claudine — claudine-proxy (Go) tourne sur le host
+# (network_mode: host, port 8000) pour atteindre wg0 → Kyocera. Caddy termine
+# TLS et reverse-proxy vers le gateway du bridge du projet (172.18.0.1,
+# subnet pinné dans docker-compose.yml). claudine-proxy authentifie le
+# client puis forwarde le job IPP en streaming à la Kyocera native
+# (192.168.1.10:443/ipp/print) qui parle IPP Everywhere nativement.
 #
 # IPPS a son port standard à 631 (RFC 8011) — macOS/Linux utilisent
 # `ipps://print.amicalewifi.ch/printers/claudine` (port 631 par défaut).
 # Windows (Microsoft IPP Class Driver) utilise `https://` sans port, ce qui
 # résout sur 443 — on écoute donc les deux.
 # Pour debug en CLI : `curl https://print.amicalewifi.ch:631/ipp/print`.
+#
+# Compat path : claudine-proxy accepte n'importe quel path (Director Go
+# réécrit vers /ipp/print côté Kyocera), donc les installs existantes qui
+# pointent sur /printers/claudine continuent de fonctionner.
 
 (print_claudine) {
     encode gzip
     request_body {
         max_size 500MB
     }
-    # PAPPL expose ses imprimantes à `/ipp/print/<nom>`. Les clients (et
-    # surtout les installs existantes macOS) utilisent l'URL legacy CUPS
-    # `/printers/<nom>` documentée depuis le début. On rewrite côté Caddy
-    # pour garder cette URL stable côté users — sinon ils devraient tous
-    # supprimer + réinstaller leur imprimante.
-    rewrite /printers/claudine /ipp/print/claudine
-
-    # 8000 = binaire claudine (PAPPL) en host networking. Voir
-    # docker/claudine-pappl/claudine.c.
     reverse_proxy 172.18.0.1:8000 {
-        # PAPPL / IPP attendent HTTP/1.1 chunked — pas de HTTP/2.
+        # IPP attend HTTP/1.1 chunked — pas de HTTP/2.
         transport http {
             versions 1.1
         }

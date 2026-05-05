@@ -51,7 +51,11 @@ public class IppPrintService {
                              boolean color, boolean duplex, String submittedUsername) {
         Member m = authenticate(token);
 
-        if (pages <= 0)  throw new InvalidPrintRequestException("pages doit être > 0");
+        // pages == 0 = mode "deferred billing" (claudine-proxy ne connaît pas
+        // encore le page count, il sera fourni au /complete via le polling
+        // Kyocera). On crée le job sans vérifier le quota — la vérification
+        // sera faite à /complete avec le coût réel.
+        if (pages < 0)   throw new InvalidPrintRequestException("pages doit être >= 0");
         if (copies <= 0) throw new InvalidPrintRequestException("copies doit être > 0");
 
         if (submittedUsername != null && !submittedUsername.isBlank()
@@ -61,11 +65,15 @@ public class IppPrintService {
         }
 
         int factor = color ? colorFactor : bwFactor;
-        int cost   = pages * copies * factor;
-        int remaining = m.getPrintQuota() - m.getPrintUsed();
-        if (cost > remaining) {
-            throw new InsufficientPrintCreditsException(
-                    "crédits insuffisants — " + remaining + " disponibles, " + cost + " requis");
+        if (pages > 0) {
+            // Mode legacy : page count connu à l'admission, on vérifie le quota
+            // dès maintenant (early reject si insuffisant — UX broker CUPS).
+            int cost = pages * copies * factor;
+            int remaining = m.getPrintQuota() - m.getPrintUsed();
+            if (cost > remaining) {
+                throw new InsufficientPrintCreditsException(
+                        "crédits insuffisants — " + remaining + " disponibles, " + cost + " requis");
+            }
         }
 
         BigDecimal costPerPage = color ? new BigDecimal("0.200") : new BigDecimal("0.100");
@@ -79,19 +87,42 @@ public class IppPrintService {
                 .status(PrintJobStatus.PRINTING)
                 .costPerPage(costPerPage)
                 .build());
-        log.info("Print submit: {} · {}p × {} · {} · cost={} · job={}",
-                m.getDisplayName(), pages, copies, color ? "couleur" : "N&B", cost, job.getId());
+        log.info("Print submit: {} · {}p × {} · {} · job={}",
+                m.getDisplayName(), pages, copies, color ? "couleur" : "N&B", job.getId());
         return job;
     }
 
     @Transactional
     public void complete(UUID jobId) {
+        complete(jobId, null);
+    }
+
+    /**
+     * Finalise un job : applique l'override (si fourni) sur pages/copies/
+     * color/duplex puis débite le membre. L'override permet le deferred
+     * billing utilisé par claudine-proxy (Go) qui ne connaît le vrai page
+     * count qu'en pollant la Kyocera après le job.
+     *
+     * Backward compat : appel sans override (override == null) garde le
+     * comportement legacy — utilise les champs initialement passés au /submit.
+     *
+     * Idempotent : status == COMPLETED → no-op.
+     */
+    @Transactional
+    public void complete(UUID jobId, CompleteOverride override) {
         PrinterJob job = jobRepo.findById(jobId)
                 .orElseThrow(() -> new InvalidPrintRequestException("job inconnu: " + jobId));
         if (job.getStatus() == PrintJobStatus.COMPLETED) {
             log.debug("complete() idempotent no-op pour job {}", jobId);
             return;
         }
+        if (override != null) {
+            if (override.pages() != null && override.pages() > 0) job.setPages(override.pages());
+            if (override.copies() != null && override.copies() > 0) job.setCopies(override.copies());
+            if (override.color() != null)  job.setColor(override.color());
+            if (override.duplex() != null) job.setDuplex(override.duplex());
+        }
+
         int factor = job.isColor() ? colorFactor : bwFactor;
         int cost   = job.getPages() * job.getCopies() * factor;
 
@@ -104,9 +135,14 @@ public class IppPrintService {
         job.setCompletedAt(LocalDateTime.now());
         job.setUpdatedAt(LocalDateTime.now());
         jobRepo.save(job);
-        log.info("Print complete: job={} · {} · +{} crédits (total used={}/{})",
-                jobId, m.getDisplayName(), cost, m.getPrintUsed(), m.getPrintQuota());
+        log.info("Print complete: job={} · {} · {}p × {} · +{} crédits (total used={}/{})",
+                jobId, m.getDisplayName(), job.getPages(), job.getCopies(),
+                cost, m.getPrintUsed(), m.getPrintQuota());
     }
+
+    /** Override pour le deferred billing : tous les champs nullables. */
+    public record CompleteOverride(Integer pages, Integer copies,
+                                    Boolean color, Boolean duplex) {}
 
     @Transactional
     public void deleteJob(UUID jobId) {

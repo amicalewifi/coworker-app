@@ -83,20 +83,22 @@ services:
     depends_on:
       - app
 
-  # Claudine — printer-application PAPPL pour l'imprimante virtuelle.
-  # Remplace l'ancien container `cups` (CUPS 2.4 + ipp-shim) qui n'arrivait
-  # pas à satisfaire le Microsoft IPP Class Driver (CUPS = client IPP
-  # Everywhere, pas serveur). PAPPL est conçu exactement pour ce cas :
-  # exposer une imprimante non-IPP (la Kyocera en raw 9100) en IPPS conforme,
-  # accepté nativement par Windows 10/11, macOS, iOS, Linux, Android.
+  # Claudine — mini reverse-proxy IPPS Go entre Caddy et la Kyocera native.
+  # Remplace l'ancienne stack PAPPL (et avant, CUPS) qui essayait de
+  # réimplémenter IPP Everywhere côté serveur. La Kyocera TASKalfa 352ci
+  # est elle-même IPP Everywhere conformante (testée AirPrint+Mopria) et
+  # parle nativement au Microsoft IPP Class Driver. claudine-proxy ne fait
+  # plus que (1) authentifier le client via Basic auth contre coworker-app,
+  # (2) forward le job IPP brut en streaming à 192.168.1.10:443, (3) poller
+  # la Kyocera après le job pour récupérer le page count et débiter les
+  # crédits via /api/v1/print/{jobId}/complete.
   #
   # network_mode: host est requis pour atteindre 192.168.1.10 via wg0
-  # (l'interface WireGuard vit dans le namespace réseau du host) et pour
-  # que le mDNS/DNS-SD broadcast sorte sur l'interface réseau du host.
+  # (l'interface WireGuard vit dans le namespace réseau du host).
   # Pas d'`image:` — l'image n'est pas publiée sur GHCR (build-only local).
   claudine:
     build:
-      context: ./docker/claudine-pappl
+      context: ./docker/claudine-proxy
     container_name: amicale_claudine
     restart: unless-stopped
     network_mode: host
@@ -104,10 +106,8 @@ services:
       AMICALE_APP_URL:           http://127.0.0.1:8081
       AMICALE_PRINT_BROKER_KEY:  ${AMICALE_PRINT_BROKER_KEY}
       AMICALE_PRINTER_HOST:      192.168.1.10
-      AMICALE_PRINTER_PORT:      9100
+      AMICALE_PRINTER_PORT:      443
       AMICALE_QUEUE_NAME:        claudine
-    volumes:
-      - claudine_spool:/var/lib/pappl
     depends_on:
       - app
 
@@ -116,7 +116,6 @@ volumes:
   pgadmin_data:
   caddy_data:
   caddy_config:
-  claudine_spool:
 
 # Pin du subnet du bridge `default` pour que l'IP du gateway (172.18.0.1)
 # soit stable. Caddy reverse-proxy vers cette IP pour atteindre le binaire
