@@ -266,16 +266,14 @@ func BuildGetJobAttributes(jobURI string, reqID uint32) []byte {
 	writeAttr(&buf, tagCharset, "attributes-charset", []byte("utf-8"))
 	writeAttr(&buf, tagNaturalLanguage, "attributes-natural-language", []byte("en-us"))
 	writeAttr(&buf, tagURI, "job-uri", []byte(jobURI))
-	// requested-attributes (multi-valué, name vide pour continuation).
-	// On demande aussi print-color-mode et sides parce que pour les flows
-	// Create-Job + Send-Document (macOS AirPrint), ces attributs ne sont
-	// pas dans le Create-Job qu'on intercepte côté handler — la Kyocera
-	// reste la source de vérité.
-	writeAttr(&buf, tagKeyword, "requested-attributes", []byte("job-state"))
-	writeAttr(&buf, tagKeyword, "", []byte("job-impressions-completed"))
-	writeAttr(&buf, tagKeyword, "", []byte("job-media-sheets-completed"))
-	writeAttr(&buf, tagKeyword, "", []byte("print-color-mode"))
-	writeAttr(&buf, tagKeyword, "", []byte("sides"))
+	// requested-attributes = "all" : DEBUG temporaire pour voir TOUS les
+	// attributs que la Kyocera expose pour ce job. La requête nominale
+	// (job-state + job-impressions-completed + job-media-sheets-completed +
+	// print-color-mode + sides) renvoyait des valeurs DEFAULT-machine pour
+	// print-color-mode/sides au lieu des actual-job — donc on cherche le
+	// vrai nom d'attribut pour les actuals (peut-être print-color-mode-actual,
+	// output-mode, ou autre selon firmware).
+	writeAttr(&buf, tagKeyword, "requested-attributes", []byte("all"))
 	// Fin
 	buf.WriteByte(tagEndOfAttrs)
 	return buf.Bytes()
