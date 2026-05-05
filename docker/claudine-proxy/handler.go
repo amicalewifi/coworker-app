@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"io"
 	"log"
@@ -19,18 +20,53 @@ const (
 	ctxEmail
 )
 
-// printHandler authentifie le client (Basic auth → token coworker-app),
-// crée un job côté Spring (pages=0, billing déféré), puis délègue le forward
-// streaming à la ReverseProxy.
+// IPP operation IDs (RFC 8011).
+// Notre proxy fait Submit + auth uniquement pour les ops qui soumettent un
+// job réel ; les autres (discovery, validation, status) sont pass-through
+// transparent vers la Kyocera. Sans cette distinction, on créerait un
+// PrinterJob orphelin pour chaque Get-Printer-Attributes envoyé par
+// Windows pendant l'install (et l'auth Basic forcée casserait le probe
+// initial qui doit pouvoir réussir sans creds).
+const (
+	opPrintJob   = 0x0002
+	opCreateJob  = 0x0005
+)
+
+// printHandler : auth + Spring Submit pour Print-Job/Create-Job, pass-through
+// pour le reste.
 func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// GET / etc. : on forwarde direct (utile pour curl health-check, et
-		// pour le endpoint web minimal que la Kyocera expose sur GET).
+		// GET et autres méthodes : pass-through (la Kyocera sert un endpoint
+		// web minimal sur GET utile pour les health checks).
 		if r.Method != http.MethodPost {
 			proxy.ServeHTTP(w, r)
 			return
 		}
 
+		// Peek les 8 premiers octets du body pour lire l'op-id IPP. On
+		// reconstitue ensuite le body complet pour le forward (peek + reste
+		// via MultiReader). Cela ne touche pas au streaming des PDF lourds —
+		// on lit juste 8 octets, le reste reste en stream.
+		header := make([]byte, 8)
+		n, _ := io.ReadFull(r.Body, header)
+		header = header[:n]
+		r.Body = io.NopCloser(io.MultiReader(bytes.NewReader(header), r.Body))
+
+		var opID uint16
+		if n >= 4 {
+			opID = binary.BigEndian.Uint16(header[2:4])
+		}
+
+		// Ops de discovery/status : pass-through transparent. Pas d'auth, pas
+		// de Submit. La Kyocera répond directement (capabilities, état, etc.)
+		// et Windows IPP Class Driver est satisfait sans qu'on intervienne.
+		if opID != opPrintJob && opID != opCreateJob {
+			proxy.ServeHTTP(w, r)
+			return
+		}
+
+		// Ici : opID = Print-Job ou Create-Job. On exige l'auth Basic et on
+		// crée le PrinterJob côté Spring avant de forwarder.
 		email, token, ok := r.BasicAuth()
 		if !ok || email == "" || token == "" {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Claudine"`)
@@ -38,12 +74,10 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			return
 		}
 
-		// Validate token + create PrinterJob (pages=0, deferred billing).
-		// Le coût final sera calculé au /complete avec le page count réel
-		// récupéré du polling Kyocera.
 		jobID, err := spring.Submit(r.Context(), token, email)
 		if err != nil {
-			log.Printf("[claudine-proxy] spring submit (email=%s): %v", email, err)
+			log.Printf("[claudine-proxy] spring submit (email=%s op=0x%04x): %v",
+				email, opID, err)
 			switch {
 			case errors.Is(err, ErrUnauthorized):
 				w.Header().Set("WWW-Authenticate", `Basic realm="Claudine"`)
@@ -60,8 +94,8 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 
 		ctx := context.WithValue(r.Context(), ctxJobID, jobID)
 		ctx = context.WithValue(ctx, ctxEmail, email)
-		log.Printf("[claudine-proxy] forwarding job spring-id=%s email=%s",
-			jobID, email)
+		log.Printf("[claudine-proxy] forwarding Print-Job spring-id=%s email=%s op=0x%04x",
+			jobID, email, opID)
 		proxy.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
@@ -83,18 +117,24 @@ func directorFn(target *url.URL) func(*http.Request) {
 	}
 }
 
-// modifyResponseFn lit la réponse IPP de la Kyocera (petite, < 1KB en
-// pratique), extrait le job-uri assigned par la Kyocera, et lance le polling
-// en goroutine. La réponse est restituée intacte au client.
+// modifyResponseFn lit la réponse IPP de la Kyocera et, si c'est une réponse
+// Print-Job (présence de job-uri), lance le polling en goroutine. Les
+// réponses Get-Printer-Attributes peuvent peser plusieurs MB (capabilities
+// IPP Everywhere complètes) — d'où la limite haute à 4 MB. La réponse est
+// restituée intacte au client (Windows IPP Class Driver lit ces capabilities
+// pour s'auto-configurer).
 func modifyResponseFn(resp *http.Response) error {
-	const maxRead = 64 * 1024
+	const maxRead = 4 * 1024 * 1024
 	buf := &bytes.Buffer{}
 	_, err := io.Copy(buf, io.LimitReader(resp.Body, maxRead))
 	if err != nil {
 		return err
 	}
-	// Si on n'a pas tout lu (cas hyper rare pour un IPP response), on drain.
-	_, _ = io.Copy(io.Discard, resp.Body)
+	// Drain résiduel improbable (réponse > 4MB) — on logue pour audit.
+	if extra, _ := io.Copy(io.Discard, resp.Body); extra > 0 {
+		log.Printf("[claudine-proxy] response truncated: %d extra bytes discarded "
+			+ "(consider raising maxRead)", extra)
+	}
 	resp.Body.Close()
 
 	body := buf.Bytes()
@@ -102,21 +142,19 @@ func modifyResponseFn(resp *http.Response) error {
 	resp.ContentLength = int64(len(body))
 	resp.Header.Set("Content-Length", strconv.Itoa(len(body)))
 
-	if len(body) == 0 {
+	// Pas de jobID dans le contexte = c'était une op autre que Print-Job
+	// (discovery, status, etc.) → rien à faire.
+	jobID, _ := resp.Request.Context().Value(ctxJobID).(string)
+	if jobID == "" || len(body) == 0 {
 		return nil
 	}
 
 	jobURI, kyoceraJobID, err := ExtractJobURI(body)
 	if err != nil || jobURI == "" {
-		// Pas de job-uri : c'est probablement une réponse non-Print-Job
-		// (Get-Printer-Attributes etc.) ou une erreur IPP. Pas d'action.
-		return nil
-	}
-
-	jobID, _ := resp.Request.Context().Value(ctxJobID).(string)
-	if jobID == "" {
-		log.Printf("[claudine-proxy] no jobID in context (kyocera-id=%d uri=%s)",
-			kyoceraJobID, jobURI)
+		log.Printf("[claudine-proxy] Print-Job response without job-uri (spring-id=%s): %v",
+			jobID, err)
+		// Le job côté Spring restera en PRINTING ; pas de complete, pas de
+		// débit. Optionnel : on pourrait reportError ici.
 		return nil
 	}
 
