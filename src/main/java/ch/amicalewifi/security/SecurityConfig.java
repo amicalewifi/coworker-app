@@ -47,6 +47,12 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/admin/entries-today").permitAll()
                 // Webhook zahls.ch — appelé par les serveurs Payrexx, pas de session
                 .requestMatchers("/api/v1/zahls/**").permitAll()
+                // Actuator health — utilisé par le monitor app-healthcheck du
+                // VPS (coworker-deploy). Sans `permitAll`, Spring redirige
+                // vers /login (302) et le monitor ne peut pas distinguer
+                // "app vivante mais DB down" d'"app vivante normale".
+                // /actuator/info et /actuator/metrics restent protégés.
+                .requestMatchers("/actuator/health").permitAll()
                 // API REST
                 .requestMatchers("/api/**").hasAnyRole("ADMIN","COWORKER")
                 // QR Code — venue public pour scan par les membres
