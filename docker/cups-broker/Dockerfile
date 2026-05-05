@@ -42,6 +42,13 @@ COPY cupsd.conf /etc/cups/cupsd.conf
 # au backend, mais on ne veut pas qu'il valide contre /etc/passwd. Le backend
 # fait la vraie auth contre coworker-app via le print_token.
 COPY pam-cups /etc/pam.d/cups
+
+# ipp-shim — middleware HTTP/IPP qui absorbe l'op Microsoft 0x4000
+# ("windows-ext"). Voir le commentaire en tête du script. Caddy reverse-proxy
+# vers le shim (port 6311) au lieu de cupsd directement (6310).
+COPY ipp-shim /usr/local/bin/ipp-shim
+RUN chmod 0755 /usr/local/bin/ipp-shim
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod 0755 /usr/local/bin/entrypoint.sh
 

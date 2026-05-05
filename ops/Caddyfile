@@ -30,8 +30,11 @@ coworker.amicalewifi.ch {
     request_body {
         max_size 500MB
     }
-    reverse_proxy 172.18.0.1:6310 {
-        # CUPS attend HTTP/1.1 chunked pour IPP — pas de fallback HTTP/2.
+    # 6311 = ipp-shim (middleware Python qui absorbe l'op Microsoft 0x4000
+    # bloquant l'install Windows 11) ; le shim proxifie tout le reste vers
+    # cupsd sur 6310 en interne. Voir docker/cups-broker/ipp-shim.
+    reverse_proxy 172.18.0.1:6311 {
+        # CUPS / shim attendent HTTP/1.1 chunked pour IPP — pas de HTTP/2.
         transport http {
             versions 1.1
         }
