@@ -437,13 +437,17 @@ static pappl_system_t *claudine_system_cb(int num_options,
     papplSystemSetAuthCallback(system, CLAUDINE_AUTH_SCHEME,
                                 claudine_auth_cb, NULL);
 
+    /* Crée la printer "Claudine". Argument order PAPPL :
+     *   (system, printer_id, printer_name, driver_name, device_id, device_uri)
+     * (l'ordre est subtil — driver_name vient APRÈS printer_name, et
+     * device_id avant device_uri). */
     pappl_printer_t *printer = papplPrinterCreate(
         system,
         0,                          /* printer-id auto */
-        CLAUDINE_DRIVER_NAME,
         CLAUDINE_PRINTER_NAME,
-        CLAUDINE_DEVICE_URI,
-        CLAUDINE_DEVICE_ID
+        CLAUDINE_DRIVER_NAME,
+        CLAUDINE_DEVICE_ID,
+        CLAUDINE_DEVICE_URI
     );
     if (!printer) {
         fprintf(stderr, "claudine: papplPrinterCreate failed\n");
