@@ -35,8 +35,9 @@ const requestPeekCap = 16 * 1024
 // Windows pendant l'install (et l'auth Basic forcée casserait le probe
 // initial qui doit pouvoir réussir sans creds).
 const (
-	opPrintJob   = 0x0002
-	opCreateJob  = 0x0005
+	opPrintJob     = 0x0002
+	opSendDocument = 0x0006
+	opCreateJob    = 0x0005
 )
 
 // printHandler : auth + Spring Submit pour Print-Job/Create-Job, pass-through
@@ -65,6 +66,18 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 		var opID uint16
 		if n >= 4 {
 			opID = binary.BigEndian.Uint16(peek[2:4])
+		}
+
+		// DEBUG TEMPORAIRE — Send-Document (op 0x0006) : on l'observe
+		// passer pour voir si macOS AirPrint y envoie print-color-mode et
+		// sides (cas où Create-Job précédent ne les avait pas). On ne change
+		// rien d'autre — pas de Submit (le job a déjà été créé via Create-
+		// Job qui a fait le Submit), juste log + pass-through.
+		if opID == opSendDocument {
+			log.Printf("[claudine-proxy] DEBUG Send-Document (op=0x0006, %d bytes peek):\n%s",
+				len(peek), DumpAttrs(peek))
+			proxy.ServeHTTP(w, r)
+			return
 		}
 
 		// Ops de discovery/status : pass-through transparent. Pas d'auth, pas
