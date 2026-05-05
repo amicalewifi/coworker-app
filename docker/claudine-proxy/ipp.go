@@ -23,6 +23,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"strings"
 )
 
 // Delimiter tags.
@@ -158,6 +160,42 @@ func ExtractJobURI(body []byte) (string, int, error) {
 	}
 	id, _ := attrInt(parsed, "job-id")
 	return uri, id, nil
+}
+
+// DumpAttrs : helper de debug — formatte tous les attributs IPP du body en
+// "name=value" (un par ligne, value tronquée à 80 chars). Ignore les bytes
+// au-delà des attributs (document data PDF). Utile pour comprendre ce qu'un
+// client IPP envoie ou ce qu'une imprimante renvoie.
+func DumpAttrs(body []byte) string {
+	_, _, _, attrs, err := ParseHeader(body)
+	if err != nil {
+		return fmt.Sprintf("(parse err: %v)", err)
+	}
+	parsed := parseAttributes(attrs)
+	if len(parsed) == 0 {
+		return "(no attrs)"
+	}
+	var sb strings.Builder
+	for _, a := range parsed {
+		val := string(a.value)
+		// Pour les valeurs binaires (integer, enum, boolean, etc.), formatter
+		// en hex pour rester lisible.
+		switch a.valueTag {
+		case tagInteger, tagEnum:
+			if len(a.value) >= 4 {
+				val = fmt.Sprintf("%d", int32(binary.BigEndian.Uint32(a.value[0:4])))
+			}
+		case tagBoolean:
+			if len(a.value) >= 1 {
+				val = fmt.Sprintf("%t", a.value[0] != 0)
+			}
+		}
+		if len(val) > 80 {
+			val = val[:80] + "…"
+		}
+		fmt.Fprintf(&sb, "  [0x%02x] %s = %q\n", a.valueTag, a.name, val)
+	}
+	return sb.String()
 }
 
 // ExtractJobState lit la réponse IPP d'un Get-Job-Attributes.
