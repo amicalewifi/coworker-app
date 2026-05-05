@@ -47,7 +47,7 @@ func nextReqID() uint32 {
 	return atomic.AddUint32(&reqIDCounter, 1)
 }
 
-func pollAndComplete(jobID, kyoceraJobURI string) {
+func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), pollDeadline)
 	defer cancel()
 
@@ -64,7 +64,7 @@ func pollAndComplete(jobID, kyoceraJobURI string) {
 				kyoceraJobURI))
 			return
 		case <-ticker.C:
-			state, impressions, err := fetchJobState(ctx, kyoceraJobURI)
+			state, impressions, sheets, err := fetchJobState(ctx, kyoceraJobURI)
 			if err != nil {
 				log.Printf("[claudine-proxy] poll job=%s: %v", jobID, err)
 				continue // retry au prochain tick
@@ -72,15 +72,28 @@ func pollAndComplete(jobID, kyoceraJobURI string) {
 
 			switch state {
 			case jobStateCompleted:
-				if impressions <= 0 {
-					// Pas de count rapporté — fallback à 1 page pour éviter
-					// le print gratuit. Logue pour audit.
-					log.Printf("[claudine-proxy] job=%s completed but no impressions, defaulting to 1",
-						jobID)
-					impressions = 1
+				// Choix de l'unité de billing :
+				// - sheets (job-media-sheets-completed) si la Kyocera le
+				//   rapporte → bill par feuille physique (recto-verso = 1
+				//   feuille = 1 unit, encourage l'éco).
+				// - sinon fallback impressions (job-impressions-completed)
+				//   = bill par côté de feuille.
+				// - en dernier recours 1 (jamais de free print silencieux).
+				billUnit := sheets
+				unitLabel := "sheets"
+				if billUnit <= 0 {
+					billUnit = impressions
+					unitLabel = "impressions"
 				}
-				log.Printf("[claudine-proxy] job=%s completed: %d pages", jobID, impressions)
-				reportComplete(jobID, impressions)
+				if billUnit <= 0 {
+					log.Printf("[claudine-proxy] job=%s completed but no count reported (impressions=%d sheets=%d), defaulting to 1",
+						jobID, impressions, sheets)
+					billUnit = 1
+					unitLabel = "fallback"
+				}
+				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v)",
+					jobID, billUnit, unitLabel, color, duplex)
+				reportComplete(jobID, billUnit, color, duplex)
 				return
 			case jobStateCanceled, jobStateAborted:
 				log.Printf("[claudine-proxy] job=%s ended state=%d", jobID, state)
@@ -94,13 +107,15 @@ func pollAndComplete(jobID, kyoceraJobURI string) {
 }
 
 // fetchJobState envoie Get-Job-Attributes à la Kyocera et parse la réponse.
-func fetchJobState(ctx context.Context, jobURI string) (state, impressions int, err error) {
+// Retourne aussi sheets (job-media-sheets-completed, peut être 0 si non
+// supporté par le firmware) en plus de impressions.
+func fetchJobState(ctx context.Context, jobURI string) (state, impressions, sheets int, err error) {
 	body := BuildGetJobAttributes(jobURI, nextReqID())
 	req, err := http.NewRequestWithContext(ctx, "POST",
 		"https://"+printerHost+":"+printerPort+"/ipp/print",
 		bytes.NewReader(body))
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	req.Header.Set("Content-Type", "application/ipp")
 	if kyoceraUser != "" {
@@ -109,13 +124,13 @@ func fetchJobState(ctx context.Context, jobURI string) (state, impressions int, 
 
 	resp, err := kyoceraClient.Do(req)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, 0, err
 	}
 	return ExtractJobState(respBody)
 }
@@ -127,10 +142,14 @@ func fetchJobState(ctx context.Context, jobURI string) (state, impressions int, 
 // momentanément lent (GC pause, redéploiement, etc.) provoquait un job
 // imprimé physiquement mais non débité côté coworker-app — observé en
 // prod le 2026-05-05 sur le job 01b3cb9c (free print accidentel).
-func reportComplete(jobID string, pages int) {
+//
+// pages = unité de billing déjà calculée (sheets ou impressions, copies
+// incluses dans le total côté Kyocera). copies passé à 1 côté Spring car
+// le multiplicateur copies est déjà appliqué par la Kyocera.
+func reportComplete(jobID string, pages int, color, duplex bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 	defer cancel()
-	if err := spring.Complete(ctx, jobID, pages, 1, false, false); err != nil {
+	if err := spring.Complete(ctx, jobID, pages, 1, color, duplex); err != nil {
 		log.Printf("[claudine-proxy] spring complete job=%s: %v", jobID, err)
 	}
 }
