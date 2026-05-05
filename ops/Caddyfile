@@ -19,24 +19,31 @@ coworker.amicalewifi.ch {
 # reverse-proxy vers le gateway du bridge du projet (172.18.0.1, subnet pinné
 # dans docker-compose.yml).
 #
-# IPPS a son port standard à 631 (RFC 8011). On n'écoute QUE là — les members
-# tapent `ipps://print.amicalewifi.ch/printers/claudine` sans port. Pour debug
-# en CLI : `curl https://print.amicalewifi.ch:631/printers/claudine`.
-#
-# Cert Let's Encrypt obtenu via challenge HTTP-01 sur le port 80 (déjà servi
-# par Caddy pour `coworker.amicalewifi.ch`).
-https://print.amicalewifi.ch:631 {
-    encode gzip
+# IPPS a son port standard à 631 (RFC 8011) — macOS/Linux utilisent
+# `ipps://print.amicalewifi.ch/printers/claudine` (port 631 par défaut).
+# Windows (Microsoft IPP Class Driver) utilise `https://` sans port, ce qui
+# résout sur 443 — on écoute donc les deux.
+# Pour debug en CLI : `curl https://print.amicalewifi.ch:631/printers/claudine`.
 
-    # Les PDF d'impression peuvent être gros (rapports, présentations, photos).
+(print_cups) {
+    encode gzip
     request_body {
         max_size 500MB
     }
-
     reverse_proxy 172.18.0.1:6310 {
         # CUPS attend HTTP/1.1 chunked pour IPP — pas de fallback HTTP/2.
         transport http {
             versions 1.1
         }
     }
+}
+
+# Port 443 — Windows (https:// sans port explicite)
+print.amicalewifi.ch {
+    import print_cups
+}
+
+# Port 631 — macOS / Linux / iOS (ipps:// ou https://:631)
+https://print.amicalewifi.ch:631 {
+    import print_cups
 }
