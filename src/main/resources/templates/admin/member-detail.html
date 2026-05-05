@@ -90,6 +90,12 @@ function toggleValidUntil(val) {
   const noExpiry = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
   document.getElementById('renewValidUntilRow').style.display = noExpiry ? 'none' : '';
 }
+function toggleAdjustFields(val) {
+  const noUnits   = val === 'PERMANENT' || val === 'UNITAIRE' || val === 'DOMICILIATION';
+  const noExpiry  = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
+  document.getElementById('adjustUnitsRow').style.display  = noUnits  ? 'none' : '';
+  document.getElementById('adjustExpiryRow').style.display = noExpiry ? 'none' : '';
+}
 function toggleActMenu() {
   document.getElementById('act-menu').classList.toggle('open');
 }
@@ -165,7 +171,10 @@ document.addEventListener('click', function(e) {
     </div>
     <!-- Pack -->
     <div class="card">
-      <div class="card-hdr"><span class="card-ttl">Pack &amp; crédits</span></div>
+      <div class="card-hdr">
+        <span class="card-ttl">Pack &amp; crédits</span>
+        <button class="btn btn-sm" onclick="openModal('m-adjust')">Ajuster</button>
+      </div>
       <div class="card-body">
         <div style="margin-bottom:12px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
@@ -381,6 +390,41 @@ document.addEventListener('click', function(e) {
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-delete')">Annuler</button>
         <button type="submit" class="btn btn-r">Supprimer définitivement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal ajustement solde -->
+<div id="m-adjust" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Ajuster le solde</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <form th:action="@{/admin/members/{id}/adjust-pack(id=${member.id})}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Formule</label>
+        <select name="membership" class="form-sel" id="adjustMembership"
+                onchange="toggleAdjustFields(this.value)">
+          <option th:each="m : ${memberships}" th:value="${m.name()}"
+                  th:text="${m.label}"
+                  th:selected="${member.membership.name() == m.name()}"></option>
+        </select>
+      </div>
+      <div class="form-row" id="adjustUnitsRow"
+           th:style="${member.membership.name()=='PERMANENT' or member.membership.name()=='UNITAIRE' or member.membership.name()=='DOMICILIATION' ? 'display:none' : ''}">
+        <label class="form-lbl">Jours restants</label>
+        <input type="number" name="unitsRemaining" class="form-in" step="0.5" min="0"
+               th:value="${member.packUnitsRemaining}">
+      </div>
+      <div class="form-row" id="adjustExpiryRow"
+           th:style="${member.membership.name()=='PACK_MATIN' or member.membership.name()=='PACK_APMIDI' ? 'display:none' : ''}">
+        <label class="form-lbl">Date d'expiration</label>
+        <input type="date" name="packExpires" class="form-in"
+               th:value="${member.packExpires != null ? #temporals.format(member.packExpires,'yyyy-MM-dd') : ''}">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-adjust')">Annuler</button>
+        <button type="submit" class="btn btn-g">Enregistrer</button>
       </div>
     </form>
   </div>

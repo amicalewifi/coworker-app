@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -182,6 +183,18 @@ public class AdminController {
         LocalDate expiryDate = (validUntil != null && !validUntil.isBlank()) ? LocalDate.parse(validUntil) : null;
         Member m = memberService.renewPack(id, membership, expiryDate);
         ra.addFlashAttribute("success", "Pack renouvelé: " + membership.getLabel() + " pour " + m.getDisplayName());
+        return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/members/{id}/adjust-pack")
+    public String adjustPack(@PathVariable UUID id,
+                             @RequestParam MembershipType membership,
+                             @RequestParam(required = false) BigDecimal unitsRemaining,
+                             @RequestParam(required = false) String packExpires,
+                             RedirectAttributes ra) {
+        LocalDate expiryDate = (packExpires != null && !packExpires.isBlank()) ? LocalDate.parse(packExpires) : null;
+        Member m = memberService.adjustPack(id, membership, unitsRemaining, expiryDate);
+        ra.addFlashAttribute("success", "Solde ajusté pour " + m.getDisplayName());
         return "redirect:/admin/members/" + id;
     }
 
