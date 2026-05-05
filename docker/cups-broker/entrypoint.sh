@@ -49,12 +49,7 @@ else
     lpadmin -p "${QUEUE}" \
         -E \
         -v "amicale-broker:///${QUEUE}" \
-        -m everywhere \
-        -L "Imprimante virtuelle Claudine — l'Amicale du WiFi" \
-    || lpadmin -p "${QUEUE}" \
-        -E \
-        -v "amicale-broker:///${QUEUE}" \
-        -m raw \
+        -P /usr/share/ppd/claudine.ppd \
         -L "Imprimante virtuelle Claudine — l'Amicale du WiFi"
 fi
 

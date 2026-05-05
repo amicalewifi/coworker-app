@@ -162,10 +162,13 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   </div>
 
   <div id="tab-windows" class="tab-content">
-    <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Paramètres → Bluetooth et appareils → Imprimantes & scanners</strong>.</div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-text">Ouvre <strong>Paramètres → Bluetooth et appareils → Imprimantes &amp; scanners</strong>.</div></div>
     <div class="step"><div class="step-num">2</div><div class="step-text">Clique <strong>Ajouter un appareil</strong>, puis <strong>Ajouter manuellement</strong>.</div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-text">Choisis <strong>Sélectionner une imprimante partagée par son nom</strong> et entre l'URL <code id="winUrl" th:text="'https://' + ${publicHost} + '/printers/' + ${queueName}"></code>.</div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-text">Pilote : <strong>Microsoft IPP Class Driver</strong> (par défaut). Au premier print, donne ton email et ton token.</div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Choisis <strong>Sélectionner une imprimante partagée par son nom</strong> et entre l'URL <code id="winUrl" th:text="'https://' + ${publicHost} + ':631/printers/' + ${queueName}"></code>.
+      <div class="warn-box" style="margin-top:8px;">Le port <strong>:631</strong> est obligatoire sous Windows — sans lui, Windows tente le port 443 qui ne répond pas encore au trafic d'impression.</div>
+    </div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Pilote : <strong>Microsoft IPP Class Driver</strong> (par défaut). Clique <strong>Suivant</strong>.</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">Au premier print, Windows demande un nom d'utilisateur et un mot de passe : entre ton <strong>email</strong> et ton <strong>token</strong> (les deux sont en haut de cette page). Coche <strong>« Mémoriser mes informations d'identification »</strong>.</div></div>
   </div>
 
   <div id="tab-linux" class="tab-content">
