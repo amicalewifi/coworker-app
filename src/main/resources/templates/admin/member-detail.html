@@ -90,6 +90,9 @@ function toggleValidUntil(val) {
   const noExpiry = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
   document.getElementById('renewValidUntilRow').style.display = noExpiry ? 'none' : '';
 }
+function toggleAddUnitaire(val) {
+  document.getElementById('addUnitaireRow').style.display = val === 'TRIAL' ? 'none' : '';
+}
 function toggleAdjustFields(val) {
   const noUnits   = val === 'PERMANENT' || val === 'UNITAIRE' || val === 'DOMICILIATION';
   const noExpiry  = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
@@ -229,9 +232,12 @@ document.addEventListener('click', function(e) {
 
   <!-- Historique présences -->
   <div class="card">
-    <div class="card-hdr"><span class="card-ttl">Historique des présences</span></div>
+    <div class="card-hdr">
+      <span class="card-ttl">Historique des présences</span>
+      <button class="btn btn-sm" onclick="openModal('m-add-presence')">Ajouter</button>
+    </div>
     <table class="table">
-      <thead><tr><th>Date</th><th>Type</th><th>Arrivée</th><th>Départ</th><th>Décompte</th><th>Statut</th></tr></thead>
+      <thead><tr><th>Date</th><th>Type</th><th>Arrivée</th><th>Départ</th><th>Décompte</th><th>Statut</th><th></th></tr></thead>
       <tbody>
         <tr th:each="p : ${presences}">
           <td th:text="${#temporals.format(p.date,'d MMM yyyy')}"></td>
@@ -260,9 +266,18 @@ document.addEventListener('click', function(e) {
               <span th:case="*"           class="b b-r">Annulé</span>
             </span>
           </td>
+          <td>
+            <form th:action="@{/admin/presences/{pid}/remove(pid=${p.id})}" method="post"
+                  onsubmit="return confirm('Supprimer cette présence et rembourser les crédits ?')">
+              <input type="hidden" name="memberId" th:value="${member.id}">
+              <button type="submit" class="btn btn-sm btn-r" style="padding:3px 8px;font-size:11px;">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
+              </button>
+            </form>
+          </td>
         </tr>
         <tr th:if="${#lists.isEmpty(presences)}">
-          <td colspan="6" style="text-align:center;color:var(--t3);padding:20px;">Aucune présence</td>
+          <td colspan="7" style="text-align:center;color:var(--t3);padding:20px;">Aucune présence</td>
         </tr>
       </tbody>
     </table>
@@ -390,6 +405,39 @@ document.addEventListener('click', function(e) {
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeModal('m-delete')">Annuler</button>
         <button type="submit" class="btn btn-r">Supprimer définitivement</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal ajout présence -->
+<div id="m-add-presence" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-ttl">Ajouter une présence</div>
+    <div class="modal-sub" th:text="${member.displayName}"></div>
+    <form th:action="@{/admin/members/{id}/presences/add(id=${member.id})}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Date</label>
+        <input type="date" name="date" class="form-in" th:value="${#temporals.format(#temporals.createToday(),'yyyy-MM-dd')}" required>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Type</label>
+        <select name="presenceType" class="form-sel" id="addPresenceType" onchange="toggleAddUnitaire(this.value)">
+          <option value="FULL_DAY">Journée complète (−1.0j)</option>
+          <option value="HALF_AM">Demi-journée matin (−0.5j)</option>
+          <option value="HALF_PM">Demi-journée AP-M (−0.5j)</option>
+          <option value="TRIAL">Journée d'essai (gratuit)</option>
+        </select>
+      </div>
+      <div class="form-row" id="addUnitaireRow">
+        <label class="form-lbl" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" name="unitaire" value="true" style="width:auto;">
+          Unitaire (décompté séparément, pas sur le pack)
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('m-add-presence')">Annuler</button>
+        <button type="submit" class="btn btn-g">Ajouter</button>
       </div>
     </form>
   </div>

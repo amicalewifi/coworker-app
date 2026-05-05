@@ -420,6 +420,34 @@ public class AdminController {
         return "redirect:/admin/";
     }
 
+    @PostMapping("/members/{id}/presences/add")
+    public String addPresence(@PathVariable UUID id,
+                              @RequestParam PresenceType presenceType,
+                              @RequestParam(required = false, defaultValue = "false") boolean unitaire,
+                              @RequestParam String date,
+                              RedirectAttributes ra) {
+        try {
+            memberService.manualEntryForDate(id, presenceType, unitaire, LocalDate.parse(date));
+            ra.addFlashAttribute("success", "Présence ajoutée : " + presenceType.getLabel());
+        } catch (IllegalStateException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/members/" + id;
+    }
+
+    @PostMapping("/presences/{id}/remove")
+    public String removePresence(@PathVariable UUID id,
+                                 @RequestParam UUID memberId,
+                                 RedirectAttributes ra) {
+        try {
+            memberService.removePresence(id);
+            ra.addFlashAttribute("success", "Présence supprimée et crédits remboursés");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/members/" + memberId;
+    }
+
     @PostMapping("/presences/permanent-checkin/{memberId}")
     public String permanentCheckin(@PathVariable UUID memberId, RedirectAttributes ra) {
         Member m = memberService.getById(memberId);
