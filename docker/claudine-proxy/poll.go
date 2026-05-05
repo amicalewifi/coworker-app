@@ -64,7 +64,7 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 				kyoceraJobURI))
 			return
 		case <-ticker.C:
-			state, impressions, sheets, err := fetchJobState(ctx, kyoceraJobURI)
+			state, impressions, sheets, kColor, kDuplex, err := fetchJobState(ctx, kyoceraJobURI)
 			if err != nil {
 				log.Printf("[claudine-proxy] poll job=%s: %v", jobID, err)
 				continue // retry au prochain tick
@@ -72,27 +72,42 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 
 			switch state {
 			case jobStateCompleted:
+				// Source de vérité pour color/duplex : la Kyocera (kColor /
+				// kDuplex) prime sur ce qu'on a peeké côté handler — celui-ci
+				// peut être faux pour les flows Create-Job + Send-Document
+				// (macOS AirPrint) où les attributs sont dans le
+				// Send-Document qu'on n'intercepte pas. On garde le OR pour
+				// le cas inverse théorique (peek a vu, Kyocera n'expose pas).
+				color = color || kColor
+				duplex = duplex || kDuplex
+
 				// Choix de l'unité de billing :
-				// - sheets (job-media-sheets-completed) si la Kyocera le
-				//   rapporte → bill par feuille physique (recto-verso = 1
-				//   feuille = 1 unit, encourage l'éco).
-				// - sinon fallback impressions (job-impressions-completed)
-				//   = bill par côté de feuille.
-				// - en dernier recours 1 (jamais de free print silencieux).
-				billUnit := sheets
-				unitLabel := "sheets"
-				if billUnit <= 0 {
+				//   1. sheets si la Kyocera le rapporte (job-media-sheets-completed)
+				//   2. sinon : impressions / 2 (arrondi sup) si duplex →
+				//      reconstitue le nombre de feuilles physiques quand le
+				//      firmware ne supporte pas l'attribut PWG dédié
+				//   3. sinon impressions (per-side, recto)
+				//   4. en dernier recours 1 (jamais de free print silencieux)
+				var billUnit int
+				var unitLabel string
+				switch {
+				case sheets > 0:
+					billUnit = sheets
+					unitLabel = "sheets"
+				case duplex && impressions > 0:
+					billUnit = (impressions + 1) / 2
+					unitLabel = "sheets-from-impressions"
+				case impressions > 0:
 					billUnit = impressions
 					unitLabel = "impressions"
-				}
-				if billUnit <= 0 {
+				default:
 					log.Printf("[claudine-proxy] job=%s completed but no count reported (impressions=%d sheets=%d), defaulting to 1",
 						jobID, impressions, sheets)
 					billUnit = 1
 					unitLabel = "fallback"
 				}
-				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v)",
-					jobID, billUnit, unitLabel, color, duplex)
+				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v impressions=%d sheets=%d)",
+					jobID, billUnit, unitLabel, color, duplex, impressions, sheets)
 				reportComplete(jobID, billUnit, color, duplex)
 				return
 			case jobStateCanceled, jobStateAborted:
@@ -107,15 +122,16 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 }
 
 // fetchJobState envoie Get-Job-Attributes à la Kyocera et parse la réponse.
-// Retourne aussi sheets (job-media-sheets-completed, peut être 0 si non
-// supporté par le firmware) en plus de impressions.
-func fetchJobState(ctx context.Context, jobURI string) (state, impressions, sheets int, err error) {
+// Retourne sheets (peut être 0 si non supporté par firmware), color, duplex
+// (vrai état du job côté Kyocera, autoritaire) en plus de state +
+// impressions.
+func fetchJobState(ctx context.Context, jobURI string) (state, impressions, sheets int, color, duplex bool, err error) {
 	body := BuildGetJobAttributes(jobURI, nextReqID())
 	req, err := http.NewRequestWithContext(ctx, "POST",
 		"https://"+printerHost+":"+printerPort+"/ipp/print",
 		bytes.NewReader(body))
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, false, false, err
 	}
 	req.Header.Set("Content-Type", "application/ipp")
 	if kyoceraUser != "" {
@@ -124,13 +140,13 @@ func fetchJobState(ctx context.Context, jobURI string) (state, impressions, shee
 
 	resp, err := kyoceraClient.Do(req)
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, false, false, err
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, false, false, err
 	}
 	return ExtractJobState(respBody)
 }

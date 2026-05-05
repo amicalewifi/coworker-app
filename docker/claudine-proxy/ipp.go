@@ -168,16 +168,29 @@ func ExtractJobURI(body []byte) (string, int, error) {
 //   - sheets : job-media-sheets-completed (compte par feuille physique,
 //     copies incluses → 10 pages × 3 copies duplex = 15 sheets). 0 si la
 //     Kyocera ne le supporte pas → on fallback à impressions côté billing.
-func ExtractJobState(body []byte) (state, impressions, sheets int, err error) {
+//   - color : true si le job a été soumis avec print-color-mode = color/auto
+//   - duplex : true si sides = two-sided-long-edge ou two-sided-short-edge
+//
+// Critique pour les flows Create-Job + Send-Document (macOS AirPrint) où
+// les attributs print-color-mode/sides sont dans le Send-Document (op
+// 0x0006) qu'on ne peek pas côté handler. La Kyocera, elle, connaît la
+// vraie config du job une fois assemblé.
+func ExtractJobState(body []byte) (state, impressions, sheets int, color, duplex bool, err error) {
 	_, _, _, attrs, err := ParseHeader(body)
 	if err != nil {
-		return 0, 0, 0, err
+		return 0, 0, 0, false, false, err
 	}
 	parsed := parseAttributes(attrs)
 	state, _ = attrInt(parsed, "job-state")
 	impressions, _ = attrInt(parsed, "job-impressions-completed")
 	sheets, _ = attrInt(parsed, "job-media-sheets-completed")
-	return state, impressions, sheets, nil
+	if mode, ok := attrString(parsed, "print-color-mode"); ok {
+		color = mode == "color" || mode == "auto"
+	}
+	if sides, ok := attrString(parsed, "sides"); ok {
+		duplex = sides == "two-sided-long-edge" || sides == "two-sided-short-edge"
+	}
+	return state, impressions, sheets, color, duplex, nil
 }
 
 // ExtractPrintJobAttrs parse le body d'une requête Print-Job ou Create-Job
@@ -215,10 +228,16 @@ func BuildGetJobAttributes(jobURI string, reqID uint32) []byte {
 	writeAttr(&buf, tagCharset, "attributes-charset", []byte("utf-8"))
 	writeAttr(&buf, tagNaturalLanguage, "attributes-natural-language", []byte("en-us"))
 	writeAttr(&buf, tagURI, "job-uri", []byte(jobURI))
-	// requested-attributes (multi-valué, name vide pour continuation)
+	// requested-attributes (multi-valué, name vide pour continuation).
+	// On demande aussi print-color-mode et sides parce que pour les flows
+	// Create-Job + Send-Document (macOS AirPrint), ces attributs ne sont
+	// pas dans le Create-Job qu'on intercepte côté handler — la Kyocera
+	// reste la source de vérité.
 	writeAttr(&buf, tagKeyword, "requested-attributes", []byte("job-state"))
 	writeAttr(&buf, tagKeyword, "", []byte("job-impressions-completed"))
 	writeAttr(&buf, tagKeyword, "", []byte("job-media-sheets-completed"))
+	writeAttr(&buf, tagKeyword, "", []byte("print-color-mode"))
+	writeAttr(&buf, tagKeyword, "", []byte("sides"))
 	// Fin
 	buf.WriteByte(tagEndOfAttrs)
 	return buf.Bytes()
