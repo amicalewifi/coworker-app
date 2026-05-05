@@ -50,13 +50,11 @@ else
         -E \
         -v "amicale-broker:///${QUEUE}" \
         -m everywhere \
-        -o auth-info-required=username,password \
         -L "Imprimante virtuelle Claudine — l'Amicale du WiFi" \
     || lpadmin -p "${QUEUE}" \
         -E \
         -v "amicale-broker:///${QUEUE}" \
         -m raw \
-        -o auth-info-required=username,password \
         -L "Imprimante virtuelle Claudine — l'Amicale du WiFi"
 fi
 
