@@ -32,6 +32,7 @@ RUN apt-get update \
 
 # Notre backend Python custom — invoqué par cupsd quand un job arrive sur la
 # queue claudine. Doit être exécutable et appartenir à root (CUPS le refuse sinon).
+COPY claudine.ppd /usr/share/ppd/claudine.ppd
 COPY backend/amicale-broker /usr/lib/cups/backend/amicale-broker
 RUN chmod 0700 /usr/lib/cups/backend/amicale-broker \
  && chown root:root /usr/lib/cups/backend/amicale-broker
