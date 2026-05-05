@@ -13,9 +13,12 @@ set -euo pipefail
 # font le broadcast mDNS sur l'interface réseau du container (= host, vu que
 # network_mode: host dans docker-compose.yml).
 mkdir -p /run/dbus /var/run/avahi-daemon
+# Cleanup pidfiles résiduels — au restart du container, les fichiers persistent
+# si /run est sur un tmpfs partagé avec network_mode: host (ou si le précédent
+# arrêt a été non-graceful). Sans ce cleanup, dbus-daemon refuse de démarrer
+# avec "pid file exists".
+rm -f /run/dbus/pid /run/avahi-daemon/pid
 dbus-daemon --system --fork
-# --no-rlimits évite les warnings de container, --no-drop-root-privileges
-# nécessaire si on tourne déjà non-root (ici on est root). Daemonize.
 avahi-daemon -D --no-rlimits
 
 # ─── 2. Persistance des AMICALE_* pour le backend Python ────────────────
