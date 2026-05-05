@@ -100,7 +100,7 @@ public class MemberService {
             m.setPackUnitsUsed(total.subtract(remaining));
         } else {
             m.setPackUnitsTotal(null);
-            m.setPackUnitsUsed(null);
+            m.setPackUnitsUsed(BigDecimal.ZERO);
         }
         m.setPackExpires(packExpires);
         m.setUpdatedAt(LocalDateTime.now());

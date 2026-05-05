@@ -109,6 +109,23 @@ public class IppPrintService {
     }
 
     @Transactional
+    public void deleteJob(UUID jobId) {
+        PrinterJob job = jobRepo.findById(jobId).orElse(null);
+        if (job == null) return;
+        if (job.getStatus() == PrintJobStatus.COMPLETED && job.getMember() != null) {
+            int factor = job.isColor() ? colorFactor : bwFactor;
+            int cost   = job.getPages() * job.getCopies() * factor;
+            Member m   = job.getMember();
+            m.setPrintUsed(Math.max(0, m.getPrintUsed() - cost));
+            m.setUpdatedAt(LocalDateTime.now());
+            memberRepo.save(m);
+            log.info("Print refund on delete: job={} · {} · -{} crédits (used now={}/{})",
+                    jobId, m.getDisplayName(), cost, m.getPrintUsed(), m.getPrintQuota());
+        }
+        jobRepo.delete(job);
+    }
+
+    @Transactional
     public void error(UUID jobId, String message) {
         PrinterJob job = jobRepo.findById(jobId)
                 .orElseThrow(() -> new InvalidPrintRequestException("job inconnu: " + jobId));
