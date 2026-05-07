@@ -28,22 +28,20 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         boolean isCoworker = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_COWORKER"));
 
-        if (isCoworker) {
-            memberRepo.findByEmail(auth.getName()).ifPresent(member -> {
-                if (member.getWifiMac() == null) {
-                    String ip  = getClientIp(request);
-                    String mac = unifiService.getMacForIp(ip);
-                    if (mac != null) {
-                        member.setWifiMac(mac);
-                        member.setUpdatedAt(LocalDateTime.now());
-                        memberRepo.save(member);
-                        log.info("Login MAC auto-enregistrée: {} → {} ({})", member.getDisplayName(), mac, ip);
-                    } else {
-                        log.debug("Login MAC non trouvée pour IP: {}", ip);
-                    }
+        memberRepo.findByEmail(auth.getName()).ifPresent(member -> {
+            if (member.getWifiMac() == null) {
+                String ip  = getClientIp(request);
+                String mac = unifiService.getMacForIp(ip);
+                if (mac != null) {
+                    member.setWifiMac(mac);
+                    member.setUpdatedAt(LocalDateTime.now());
+                    memberRepo.save(member);
+                    log.info("Login MAC auto-enregistrée: {} → {} ({})", member.getDisplayName(), mac, ip);
+                } else {
+                    log.debug("Login MAC non trouvée pour IP: {}", ip);
                 }
-            });
-        }
+            }
+        });
 
         response.sendRedirect(request.getContextPath() + (isCoworker ? "/mobile/" : "/admin/"));
     }
