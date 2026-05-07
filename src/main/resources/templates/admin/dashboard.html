@@ -73,15 +73,15 @@
     <div class="card-hdr">
       <span class="card-ttl" th:text="${isToday} ? 'Présents maintenant' : 'Présents — '+${#temporals.format(selectedDate,'EEEE d MMMM',#locale)}"></span>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <a th:href="@{/(date=${prevDay})}" class="btn btn-sm">← Préc.</a>
+        <a th:href="@{/admin(date=${prevDay})}" class="btn btn-sm">← Préc.</a>
         <form method="get" action="/admin" style="display:inline;margin:0;">
           <input type="date" name="date" class="form-in"
                  style="font-size:12px;padding:4px 8px;height:auto;width:auto;"
                  th:value="${#temporals.format(selectedDate,'yyyy-MM-dd')}"
                  onchange="this.form.submit()">
         </form>
-        <a th:href="@{/(date=${nextDay})}" class="btn btn-sm">Suiv. →</a>
-        <a th:unless="${isToday}" th:href="@{/}" class="btn btn-sm">Aujourd'hui</a>
+        <a th:href="@{/admin(date=${nextDay})}" class="btn btn-sm">Suiv. →</a>
+        <a th:unless="${isToday}" th:href="@{/admin}" class="btn btn-sm">Aujourd'hui</a>
         <span class="b b-g" th:text="${#lists.size(presences)}"></span>
       </div>
     </div>
