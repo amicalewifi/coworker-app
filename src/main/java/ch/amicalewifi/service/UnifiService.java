@@ -11,6 +11,7 @@ import javax.net.ssl.*;
 import java.net.HttpURLConnection;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Intégration UniFi Cloud — création de vouchers hotspot WiFi.
@@ -94,17 +95,27 @@ public class UnifiService {
                 .map(c -> (String) c.get("mac"))
                 .filter(mac -> mac != null && !mac.isBlank())
                 .map(String::toLowerCase)
-                .collect(java.util.stream.Collectors.toList());
+                .collect(Collectors.toList());
     }
 
-    public String getMacForIp(String ip) {
-        if (ip == null || ip.isBlank()) return null;
+    /** Connected clients whose MAC is not in knownMacs, with mac + hostname fields. */
+    public List<Map<String, String>> getUnknownClients(Set<String> knownMacs) {
         return getConnectedClients().stream()
-                .filter(c -> ip.equals(c.get("ip")))
-                .map(c -> (String) c.get("mac"))
-                .filter(mac -> mac != null && !mac.isBlank())
-                .map(String::toLowerCase)
-                .findFirst().orElse(null);
+                .filter(c -> {
+                    Object raw = c.get("mac");
+                    if (!(raw instanceof String mac)) return false;
+                    return !mac.isBlank() && !knownMacs.contains(mac.toLowerCase());
+                })
+                .map(c -> {
+                    String mac      = ((String) c.get("mac")).toLowerCase();
+                    Object hostnameRaw = c.get("hostname");
+                    String hostname = hostnameRaw instanceof String h ? h : mac;
+                    Map<String, String> entry = new LinkedHashMap<>();
+                    entry.put("mac",      mac);
+                    entry.put("hostname", hostname);
+                    return entry;
+                })
+                .collect(Collectors.toList());
     }
 
     @SuppressWarnings("unchecked")

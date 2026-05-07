@@ -50,27 +50,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <span th:text="${error}"></span>
   </div>
 
-  <!-- Bannière MAC détectée -->
-  <div th:if="${detectedMac != null}"
-       style="background:var(--prim-l);border:1.5px solid var(--prim);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
-    <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(0,122,245,.12);display:flex;align-items:center;justify-content:center;">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--prim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--prim)" stroke="none"/></svg>
-    </div>
-    <div style="flex:1;">
-      <div style="font-size:13px;font-weight:700;color:var(--prim);">Activer la détection automatique</div>
-      <div style="font-size:11px;color:var(--t2);margin-top:2px;">Votre appareil WiFi a été détecté. Voulez-vous activer la présence automatique ?</div>
-      <div style="font-size:10px;color:var(--t3);margin-top:2px;font-family:monospace;" th:text="${detectedMac}"></div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <form th:action="@{/mobile/register-device/confirm}" method="post">
-        <button type="submit" style="background:var(--prim);color:#fff;font-size:11px;font-weight:700;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;">Oui ✓</button>
-      </form>
-      <form th:action="@{/mobile/register-device/decline}" method="post">
-        <button type="submit" style="background:transparent;color:var(--t3);font-size:11px;font-weight:600;border:1px solid var(--bdr);padding:6px 12px;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;">Non merci</button>
-      </form>
-    </div>
-  </div>
-
   <!-- Carte membre -->
   <div class="member-card">
     <div class="mc-top">

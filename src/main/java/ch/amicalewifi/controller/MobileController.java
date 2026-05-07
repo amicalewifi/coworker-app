@@ -54,8 +54,7 @@ public class MobileController {
     @GetMapping({"", "/"})
     public String home(Authentication auth,
                        @RequestParam(required = false) String renewed,
-                       Model model,
-                       HttpServletRequest request) {
+                       Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if ("ok".equals(renewed)) {
             model.addAttribute("success", "Paiement reçu — votre pack a été renouvelé !");
@@ -78,49 +77,35 @@ public class MobileController {
         model.addAttribute("bookings",       todayBookings);
         model.addAttribute("bookedRoomIds",  bookedRoomIds);
         model.addAttribute("presenceTypes",  List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
-        model.addAttribute("detectedMac",    request.getSession().getAttribute("detectedMac"));
         return "mobile/dashboard";
     }
 
-    @PostMapping("/register-device/confirm")
-    public String confirmMac(HttpServletRequest request, Authentication auth, RedirectAttributes ra) {
-        String mac = (String) request.getSession().getAttribute("detectedMac");
-        if (mac != null) {
-            Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-            if (member.getWifiMac() == null) {
-                member.setWifiMac(mac);
-                member.setUpdatedAt(LocalDateTime.now());
-                memberRepo.save(member);
-                request.getSession().removeAttribute("detectedMac");
-                ra.addFlashAttribute("success", "Appareil enregistré — détection automatique de présence activée !");
-            }
-        }
-        return "redirect:/mobile/";
-    }
-
-    @PostMapping("/register-device/decline")
-    public String declineMac(HttpServletRequest request) {
-        request.getSession().removeAttribute("detectedMac");
-        request.getSession().setAttribute("skipWifiMac", Boolean.TRUE);
-        return "redirect:/mobile/";
-    }
-
     @GetMapping("/register-device")
-    public String registerDevicePage(HttpServletRequest request, Authentication auth, Model model) {
+    public String registerDevicePage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if (member.getWifiMac() != null) return "redirect:/mobile/";
 
-        String ip  = getClientIp(request);
-        String mac = unifiService.getMacForIp(ip);
-        if (mac != null) {
-            member.setWifiMac(mac);
+        Set<String> knownMacs = memberRepo.findAll().stream()
+                .map(Member::getWifiMac)
+                .filter(m -> m != null && !m.isBlank())
+                .collect(Collectors.toSet());
+        model.addAttribute("member",         member);
+        model.addAttribute("unknownClients", unifiService.getUnknownClients(knownMacs));
+        return "mobile/register-device";
+    }
+
+    @PostMapping("/register-device/select")
+    public String selectMac(@RequestParam String mac, Authentication auth,
+                            HttpServletRequest request, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if (member.getWifiMac() == null) {
+            member.setWifiMac(mac.toLowerCase().trim());
             member.setUpdatedAt(LocalDateTime.now());
             memberRepo.save(member);
-            return "redirect:/mobile/?macRegistered=true";
+            request.getSession().removeAttribute("skipWifiMac");
+            ra.addFlashAttribute("success", "Appareil enregistré — la présence sera détectée automatiquement !");
         }
-        model.addAttribute("member",   member);
-        model.addAttribute("clientIp", ip);
-        return "mobile/register-device";
+        return "redirect:/mobile/";
     }
 
     @PostMapping("/register-device/skip")
@@ -187,11 +172,6 @@ public class MobileController {
         return "redirect:/mobile/";
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
-        return request.getRemoteAddr();
-    }
 
     @PostMapping("/scan")
     public String scan(Authentication auth,
