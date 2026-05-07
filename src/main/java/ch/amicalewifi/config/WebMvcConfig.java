@@ -14,12 +14,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(wifiMacInterceptor)
-                .addPathPatterns("/mobile/**")
-                .excludePathPatterns(
-                        "/mobile/register-device",
-                        "/mobile/register-device/select",
-                        "/mobile/register-device/skip"
-                );
+        // WifiMacInterceptor supprimé : la détection MAC se fait silencieusement
+        // au login (LoginSuccessHandler). L'enregistrement manuel est accessible
+        // depuis le profil mobile.
     }
 }
