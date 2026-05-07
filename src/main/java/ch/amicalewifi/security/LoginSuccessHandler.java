@@ -38,7 +38,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
                     memberRepo.save(member);
                     log.info("Login MAC auto-enregistrée: {} → {} ({})", member.getDisplayName(), mac, ip);
                 } else {
-                    log.debug("Login MAC non trouvée pour IP: {}", ip);
+                    log.info("Login MAC non trouvée — IP vue: {} (vérifier X-Forwarded-For Nginx)", ip);
                 }
             }
         });

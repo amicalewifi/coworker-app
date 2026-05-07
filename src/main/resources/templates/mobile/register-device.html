@@ -12,15 +12,11 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .hero-icon{width:68px;height:68px;border-radius:20px;background:var(--ol);display:inline-flex;align-items:center;justify-content:center;margin-bottom:18px;}
 .hero-title{font-size:21px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;}
 .hero-sub{font-size:13px;color:var(--t3);line-height:1.5;}
-.section-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);padding:0 16px;margin-bottom:8px;}
-.device-card{margin:0 16px 8px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
-.device-name{font-size:14px;font-weight:700;}
-.device-mac{font-size:11px;color:var(--t3);font-family:monospace;margin-top:2px;}
 .info-card{margin:0 16px 16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:14px;padding:16px;}
 .info-row{display:flex;align-items:flex-start;gap:12px;padding:8px 0;border-bottom:1px solid var(--bdr);}
-.info-row:last-child{border-bottom:none;}
+.info-row:last-child{border-bottom:none;padding-bottom:0;}
 .info-num{width:22px;height:22px;border-radius:50%;background:var(--prim-l);color:var(--prim);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
-.info-txt{font-size:12px;color:var(--t2);line-height:1.45;}
+.info-txt{font-size:12px;color:var(--t2);line-height:1.5;}
 .info-txt strong{color:var(--text);}
 .actions{padding:0 16px 32px;}
 .btn-full{display:block;width:100%;padding:14px;border-radius:14px;font-size:15px;font-weight:700;text-align:center;border:none;cursor:pointer;font-family:var(--font);margin-bottom:10px;box-sizing:border-box;}
@@ -43,60 +39,54 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="2.5"/>
     </svg>
   </div>
-  <div class="hero-title">Enregistrer votre appareil</div>
+  <div class="hero-title">Détection automatique inactive</div>
   <div class="hero-sub">
-    Sélectionnez votre laptop dans la liste des appareils<br>connectés au WiFi du coworking.
+    Votre appareil n'a pas pu être détecté automatiquement.<br>
+    Activez la détection en suivant les étapes ci-dessous.
   </div>
 </div>
 
-<!-- Liste appareils détectés -->
-<div th:if="${!#lists.isEmpty(unknownClients)}">
-  <div class="section-lbl">Appareils connectés au WiFi</div>
-  <div th:each="client : ${unknownClients}" class="device-card">
-    <div>
-      <div class="device-name" th:text="${client.hostname}">MacBook-Pro</div>
-      <div class="device-mac" th:text="${client.mac}">aa:bb:cc:dd:ee:ff</div>
-    </div>
-    <form th:action="@{/mobile/register-device/select}" method="post">
-      <input type="hidden" name="mac" th:value="${client.mac}">
-      <button type="submit" style="background:var(--prim);color:#fff;font-size:12px;font-weight:700;border:none;padding:8px 14px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">C'est le mien</button>
-    </form>
+<!-- Instructions activation -->
+<div class="info-card">
+  <div class="info-row">
+    <div class="info-num">1</div>
+    <div class="info-txt">Connectez votre laptop au WiFi du coworking.</div>
   </div>
-  <div style="height:12px;"></div>
+  <div class="info-row">
+    <div class="info-num">2</div>
+    <div class="info-txt">
+      <strong>Désactivez la randomisation MAC</strong> sur ce réseau :<br>
+      <strong>macOS</strong> : Réglages → WiFi → détails → désactiver <em>Adresse Wi-Fi privée</em><br>
+      <strong>Windows</strong> : Paramètres → Réseau → WiFi → Propriétés → désactiver <em>Adresses matérielles aléatoires</em>
+    </div>
+  </div>
+  <div class="info-row">
+    <div class="info-num">3</div>
+    <div class="info-txt">Reconnectez-vous — votre appareil sera détecté automatiquement.</div>
+  </div>
 </div>
 
-<!-- Aucun appareil détecté -->
-<div th:if="${#lists.isEmpty(unknownClients)}">
-  <div style="margin:0 16px 16px;padding:14px 16px;background:var(--surf-2);border:1px solid var(--bdr);border-radius:12px;text-align:center;color:var(--t3);font-size:13px;">
-    Aucun appareil inconnu détecté sur le WiFi du coworking.
-  </div>
-
-  <div class="section-lbl">Comment faire</div>
-  <div class="info-card">
-    <div class="info-row">
-      <div class="info-num">1</div>
-      <div class="info-txt">Connectez votre laptop au réseau WiFi du coworking.</div>
-    </div>
-    <div class="info-row">
-      <div class="info-num">2</div>
-      <div class="info-txt">
-        <strong>Désactivez la randomisation MAC</strong> sur ce réseau :<br>
-        <strong>macOS</strong> : Réglages → WiFi → détails → désactiver <em>Adresse Wi-Fi privée</em><br>
-        <strong>Windows</strong> : Paramètres → Réseau → WiFi → Propriétés → désactiver <em>Adresses matérielles aléatoires</em>
-      </div>
-    </div>
-    <div class="info-row">
-      <div class="info-num">3</div>
-      <div class="info-txt">Reconnectez-vous au WiFi et revenez sur cette page.</div>
-    </div>
+<!-- Saisie manuelle -->
+<div style="margin:0 16px 16px;">
+  <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:8px;">Ou saisir manuellement</div>
+  <form th:action="@{/mobile/register-device/select}" method="post" style="display:flex;gap:8px;">
+    <input type="text" name="mac"
+           placeholder="aa:bb:cc:dd:ee:ff"
+           pattern="^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$"
+           required
+           style="flex:1;padding:11px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:13px;font-family:monospace;background:var(--surf-2);color:var(--text);outline:none;">
+    <button type="submit"
+            style="background:var(--prim);color:#fff;font-size:13px;font-weight:700;border:none;padding:11px 16px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap;">
+      Enregistrer
+    </button>
+  </form>
+  <div style="font-size:11px;color:var(--t3);margin-top:6px;">
+    Trouvez votre adresse MAC : <strong>macOS</strong> → Réglages WiFi → détails ·
+    <strong>Windows</strong> → <code>ipconfig /all</code> → "Adresse physique"
   </div>
 </div>
 
 <div class="actions">
-  <a th:href="@{/mobile/register-device}"
-     style="display:block;text-align:center;padding:13px;border:1.5px solid var(--bdr);border-radius:14px;font-size:14px;font-weight:600;color:var(--t2);text-decoration:none;margin-bottom:10px;">
-    ↺ Actualiser la liste
-  </a>
   <form th:action="@{/mobile/register-device/skip}" method="post">
     <button type="submit" class="btn-full" style="background:transparent;color:var(--t3);border:1px solid var(--bdr);font-size:13px;">
       Continuer sans détection automatique
