@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c1222">
+<title>Enregistrement appareil — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
+.hero{padding:40px 24px 24px;text-align:center;}
+.hero-icon{width:72px;height:72px;border-radius:20px;background:var(--ol);display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;}
+.hero-title{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:8px;}
+.hero-sub{font-size:14px;color:var(--t3);line-height:1.5;}
+.info-card{margin:0 16px 16px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;padding:18px;}
+.info-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr);}
+.info-row:last-child{border-bottom:none;}
+.info-num{width:24px;height:24px;border-radius:50%;background:var(--prim-l);color:var(--prim);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.info-txt{font-size:13px;color:var(--t2);line-height:1.45;}
+.info-txt strong{color:var(--text);}
+.btn-full{display:block;width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;text-align:center;border:none;cursor:pointer;font-family:var(--font);margin-bottom:10px;}
+.actions{padding:0 16px 32px;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar app-topbar-spread">
+  <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi"
+       style="height:28px;width:auto;filter:brightness(0) invert(1);">
+  <form th:action="@{/logout}" method="post" style="display:inline;">
+    <button type="submit" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:8px;">Déconnexion</button>
+  </form>
+</div>
+
+<div class="hero">
+  <div class="hero-icon">
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/>
+      <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="2.5"/>
+    </svg>
+  </div>
+  <div class="hero-title">Enregistrement de votre appareil</div>
+  <div class="hero-sub">
+    Votre appareil n'a pas été reconnu sur le réseau WiFi du coworking.<br>
+    Pour activer la détection automatique de présence, suivez ces étapes.
+  </div>
+</div>
+
+<div class="info-card">
+  <div class="info-row">
+    <div class="info-num">1</div>
+    <div class="info-txt">
+      Connectez votre laptop au réseau WiFi du coworking si ce n'est pas déjà fait.
+    </div>
+  </div>
+  <div class="info-row">
+    <div class="info-num">2</div>
+    <div class="info-txt">
+      <strong>Désactivez la randomisation MAC</strong> sur ce réseau :<br>
+      <strong>macOS</strong> : Paramètres WiFi → détails du réseau → désactiver <em>Adresse Wi-Fi privée</em><br>
+      <strong>Windows</strong> : Paramètres → Réseau → WiFi → Propriétés → désactiver <em>Adresses matérielles aléatoires</em>
+    </div>
+  </div>
+  <div class="info-row">
+    <div class="info-num">3</div>
+    <div class="info-txt">
+      Reconnectez-vous à cette page depuis le WiFi du coworking. Votre appareil sera enregistré automatiquement.
+    </div>
+  </div>
+</div>
+
+<div style="margin:0 16px 12px;padding:12px 14px;background:var(--surf-2);border:1px solid var(--bdr);border-radius:12px;font-size:12px;color:var(--t3);">
+  IP détectée : <code th:text="${clientIp}">—</code> · Non trouvée dans le réseau UniFi
+</div>
+
+<div class="actions">
+  <form th:action="@{/mobile/register-device/skip}" method="post">
+    <button type="submit" class="btn-full" style="background:var(--prim);color:#fff;">
+      Continuer sans détection automatique
+    </button>
+  </form>
+  <a th:href="@{/mobile/register-device}"
+     style="display:block;text-align:center;font-size:13px;color:var(--t3);padding:8px;text-decoration:none;">
+    ↺ Réessayer la détection
+  </a>
+</div>
+
+</body>
+</html>

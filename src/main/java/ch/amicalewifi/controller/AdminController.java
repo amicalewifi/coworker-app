@@ -258,6 +258,7 @@ public class AdminController {
                                @RequestParam(required = false) String company,
                                @RequestParam(required = false) String tvaNumber,
                                @RequestParam(required = false) String badgeUid,
+                               @RequestParam(required = false) String wifiMac,
                                @RequestParam(required = false) String address,
                                @RequestParam(required = false) String city,
                                @RequestParam(required = false) String postalCode,
@@ -273,6 +274,7 @@ public class AdminController {
         m.setCompany(company);
         m.setTvaNumber(tvaNumber);
         m.setBadgeUid(badgeUid != null && !badgeUid.isBlank() ? badgeUid : null);
+        m.setWifiMac(wifiMac != null && !wifiMac.isBlank() ? wifiMac.toLowerCase().trim() : null);
         m.setAddress(address != null && !address.isBlank() ? address : null);
         m.setCity(city != null && !city.isBlank() ? city : null);
         m.setPostalCode(postalCode != null && !postalCode.isBlank() ? postalCode : null);

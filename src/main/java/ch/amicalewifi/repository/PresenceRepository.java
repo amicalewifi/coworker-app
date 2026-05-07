@@ -22,6 +22,9 @@ public interface PresenceRepository extends JpaRepository<Presence, UUID> {
 
     List<Presence> findByMemberIdOrderByDateDescCheckedInAtDesc(UUID memberId);
 
+    @Query("SELECT p FROM Presence p WHERE p.member.id = :memberId AND p.date = :date AND p.status <> 'CANCELLED' ORDER BY p.checkedInAt ASC")
+    List<Presence> findActiveByMemberAndDate(@Param("memberId") UUID memberId, @Param("date") LocalDate date);
+
     boolean existsByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);
 
     java.util.Optional<Presence> findByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);
