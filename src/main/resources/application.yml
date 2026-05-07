@@ -90,6 +90,7 @@ spring:
 
 server:
   port: 8081
+  forward-headers-strategy: native
   # Graceful shutdown: on SIGTERM, stop accepting new connections but let
   # in-flight requests finish (up to spring.lifecycle.timeout-per-shutdown-phase
   # below) before killing the JVM. Pairs with Caddy's lb_try_duration to make
