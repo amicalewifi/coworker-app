@@ -34,6 +34,7 @@ public class MemberService {
     public Member         getByEmail(String email) { return memberRepo.findByEmail(email).orElse(null); }
     public List<Member>   getPackAlerts()          { return memberRepo.findPackAlerts(LocalDate.now().plusDays(7)); }
     public List<Presence> getToday()               { return presenceRepo.findTodayActive(LocalDate.now()); }
+    public List<Presence> getForDate(LocalDate d)  { return presenceRepo.findTodayActive(d); }
     public List<Presence> getForMember(UUID id)    { return presenceRepo.findByMemberIdOrderByDateDescCheckedInAtDesc(id); }
     public long           countToday()             { return presenceRepo.countTodayActive(LocalDate.now()); }
 

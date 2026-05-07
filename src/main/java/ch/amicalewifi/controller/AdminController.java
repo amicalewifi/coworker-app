@@ -59,7 +59,8 @@ public class AdminController {
     private static final SecureRandom RNG = new SecureRandom();
 
     @GetMapping({"", "/"})
-    public String dashboard(Model model) {
+    public String dashboard(@RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date, Model model) {
+        LocalDate selectedDate = (date != null) ? date : LocalDate.now();
         List<RoomBooking> todayBookings = roomService.getToday();
         LocalTime now = LocalTime.now();
         Set<UUID> bookedRoomIds = todayBookings.stream()
@@ -85,7 +86,11 @@ public class AdminController {
 
         model.addAttribute("stats",                  stats);
         model.addAttribute("todayDate",              LocalDate.now());
-        model.addAttribute("presences",              memberService.getToday());
+        model.addAttribute("selectedDate",           selectedDate);
+        model.addAttribute("prevDay",                selectedDate.minusDays(1).toString());
+        model.addAttribute("nextDay",                selectedDate.plusDays(1).toString());
+        model.addAttribute("isToday",                selectedDate.equals(LocalDate.now()));
+        model.addAttribute("presences",              memberService.getForDate(selectedDate));
         model.addAttribute("allMembers",             memberService.getAll());
         model.addAttribute("rooms",                  roomService.getAll());
         model.addAttribute("todayBookings",          todayBookings);
@@ -558,20 +563,30 @@ public class AdminController {
     }
 
     @GetMapping("/printer")
-    public String printer(@RequestParam(required = false) String month, Model model) {
+    public String printer(@RequestParam(required = false) String month,
+                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day,
+                          Model model) {
         YearMonth ym = (month != null) ? YearMonth.parse(month) : YearMonth.now();
         LocalDateTime from = ym.atDay(1).atStartOfDay();
         LocalDateTime to   = ym.atEndOfMonth().atTime(23, 59, 59);
 
+        LocalDate selectedDay = (day != null) ? day : LocalDate.now();
+        LocalDateTime dayFrom = selectedDay.atStartOfDay();
+        LocalDateTime dayTo   = selectedDay.atTime(23, 59, 59);
+
         model.addAttribute("printing",      printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.PRINTING));
         model.addAttribute("queued",        printerRepo.findByStatusOrderByCreatedAtAsc(PrintJobStatus.QUEUED));
-        model.addAttribute("monthJobs",     printerRepo.findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(PrintJobStatus.COMPLETED, from, to));
+        model.addAttribute("dayJobs",       printerRepo.findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(PrintJobStatus.COMPLETED, dayFrom, dayTo));
         model.addAttribute("creditTxs",     printCreditTxRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(from, to));
         model.addAttribute("printPacks",    ch.amicalewifi.model.PrintPackType.values());
         model.addAttribute("allMembers",    memberService.getAll());
         model.addAttribute("billingMonth",  ym);
         model.addAttribute("prevMonth",     ym.minusMonths(1).toString());
         model.addAttribute("nextMonth",     ym.plusMonths(1).toString());
+        model.addAttribute("selectedDay",   selectedDay);
+        model.addAttribute("prevDay",       selectedDay.minusDays(1).toString());
+        model.addAttribute("nextDay",       selectedDay.plusDays(1).toString());
+        model.addAttribute("isDayToday",    selectedDay.equals(LocalDate.now()));
         model.addAttribute("printerOnline", printerService.isOnline());
         model.addAttribute("printerHost",   printerService.getHost());
         return "admin/printer";

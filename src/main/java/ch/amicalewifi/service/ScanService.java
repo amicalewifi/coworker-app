@@ -4,7 +4,6 @@ import ch.amicalewifi.model.*;
 import ch.amicalewifi.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,9 +20,6 @@ public class ScanService {
     private final MemberRepository      memberRepo;
     private final PresenceRepository    presenceRepo;
     private final AccessEventRepository eventRepo;
-
-    @Value("${amicale.business.opening-hour}") private int openH;
-    @Value("${amicale.business.closing-hour}") private int closeH;
 
     /** Badge RFID Akuvox A05S — ouvre la porte, ne décompte pas de pack. */
     public ScanResult processBadgeAccess(String badgeUid) {
@@ -81,15 +77,6 @@ public class ScanService {
             Presence p = savePresence(member, PresenceType.TRIAL, date);
             saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, PresenceType.TRIAL, BigDecimal.ZERO, null);
             return new ScanResult.Granted(member, p, null, null);
-        }
-
-        // Only enforce opening hours for same-day registration
-        if (!date.isAfter(LocalDate.now())) {
-            int hour = LocalTime.now().getHour();
-            if (hour < openH || hour >= closeH) {
-                saveEvent(member, uid, AccessEventType.ENTRY_DENIED, null, null, "outside_hours");
-                return new ScanResult.Denied("outside_hours", member);
-            }
         }
 
         BigDecimal needed    = presenceType.getUnits();
