@@ -86,7 +86,7 @@
       </div>
     </div>
       <table class="table">
-        <thead><tr><th>Membre</th><th>Arrivée</th><th>Type</th><th>Décompte</th><th></th></tr></thead>
+        <thead><tr><th>Membre</th><th>Arrivée</th><th>Type</th><th>Décompte</th><th th:text="${isToday} ? '' : 'Départ'"></th></tr></thead>
         <tbody>
           <tr th:each="p : ${presences}">
             <td>
@@ -113,12 +113,14 @@
               </span>
             </td>
             <td style="text-align:center;">
-              <form th:if="${!p.member.permanent}" th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
+              <form th:if="${p.status.name() == 'ACTIVE' and !p.member.permanent}" th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
                 <label class="sw" title="Cliquer pour enregistrer le départ">
                   <input type="checkbox" checked onchange="this.closest('form').submit()">
                   <span class="sw-k"></span>
                 </label>
               </form>
+              <span th:if="${p.status.name() == 'COMPLETED'}" style="font-size:12px;color:var(--t3);"
+                    th:text="${p.checkedOutAt != null ? #temporals.format(p.checkedOutAt,'HH:mm') : '—'}"></span>
               <span th:if="${p.member.permanent}" title="Membre permanent — présent toute la journée" style="color:var(--t3);font-size:18px;">∞</span>
             </td>
           </tr>
