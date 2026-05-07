@@ -18,6 +18,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/mobile/**")
                 .excludePathPatterns(
                         "/mobile/register-device",
+                        "/mobile/register-device/select",
                         "/mobile/register-device/skip"
                 );
     }
