@@ -89,7 +89,7 @@ spring:
     timeout-per-shutdown-phase: 20s
 
 server:
-  port: 8082
+  port: 8081
   # Graceful shutdown: on SIGTERM, stop accepting new connections but let
   # in-flight requests finish (up to spring.lifecycle.timeout-per-shutdown-phase
   # below) before killing the JVM. Pairs with Caddy's lb_try_duration to make
