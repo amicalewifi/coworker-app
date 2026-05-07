@@ -164,14 +164,22 @@
     </table>
   </div>
 
-  <!-- Détail des jobs du mois -->
+  <!-- Détail des jobs du jour -->
   <div class="card" style="margin-bottom:18px;">
     <div class="card-hdr">
       <span class="card-ttl">Impressions</span>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <span style="font-size:13px;color:var(--t3);font-weight:500;text-transform:capitalize;"
-              th:text="${#temporals.format(billingMonth.atDay(1),'MMMM yyyy')}"></span>
-        <span class="b b-gr" th:text="${#lists.size(monthJobs)}+' jobs'"></span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <a th:href="@{/admin/printer(day=${prevDay},month=${billingMonth})}" class="btn btn-sm">← Préc.</a>
+        <form method="get" action="/admin/printer" style="display:inline;margin:0;">
+          <input type="hidden" name="month" th:value="${billingMonth}">
+          <input type="date" name="day" class="form-in"
+                 style="font-size:12px;padding:4px 8px;height:auto;width:auto;"
+                 th:value="${#temporals.format(selectedDay,'yyyy-MM-dd')}"
+                 onchange="this.form.submit()">
+        </form>
+        <a th:href="@{/admin/printer(day=${nextDay},month=${billingMonth})}" class="btn btn-sm">Suiv. →</a>
+        <a th:unless="${isDayToday}" th:href="@{/admin/printer(month=${billingMonth})}" class="btn btn-sm">Aujourd'hui</a>
+        <span class="b b-gr" th:text="${#lists.size(dayJobs)}+' jobs'"></span>
         <form th:action="@{/admin/printer/jobs/clean-completed}" method="post" style="display:inline;">
           <button type="submit" class="btn btn-sm btn-r"
                   onclick="return confirm('Supprimer tous les jobs imprimés ?')">Nettoyer</button>
@@ -181,7 +189,7 @@
     <table class="table">
       <thead>
         <tr>
-          <th>Date</th>
+          <th>Heure</th>
           <th>Membre</th>
           <th>Fichier</th>
           <th>Pages</th>
@@ -191,9 +199,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="j : ${monthJobs}">
+        <tr th:each="j : ${dayJobs}">
           <td style="white-space:nowrap;font-size:12px;color:var(--t3);"
-              th:text="${#temporals.format(j.createdAt,'d MMM HH:mm')}"></td>
+              th:text="${#temporals.format(j.createdAt,'HH:mm')}"></td>
           <td th:text="${j.member!=null?j.member.displayName:'Anonyme'}"></td>
           <td style="color:var(--t2);font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
               th:text="${j.filename}"></td>
@@ -212,8 +220,8 @@
             </form>
           </td>
         </tr>
-        <tr th:if="${#lists.isEmpty(monthJobs)}">
-          <td colspan="7" style="text-align:center;color:var(--t3);padding:24px;">Aucune impression ce mois</td>
+        <tr th:if="${#lists.isEmpty(dayJobs)}">
+          <td colspan="7" style="text-align:center;color:var(--t3);padding:24px;">Aucune impression ce jour</td>
         </tr>
       </tbody>
     </table>
