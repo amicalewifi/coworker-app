@@ -98,6 +98,16 @@ public class UnifiService {
                 .collect(Collectors.toList());
     }
 
+    public String getMacForIp(String ip) {
+        if (ip == null || ip.isBlank()) return null;
+        return getConnectedClients().stream()
+                .filter(c -> ip.equals(c.get("ip")))
+                .map(c -> (String) c.get("mac"))
+                .filter(mac -> mac != null && !mac.isBlank())
+                .map(String::toLowerCase)
+                .findFirst().orElse(null);
+    }
+
     /** Connected clients whose MAC is not in knownMacs, with mac + hostname fields. */
     public List<Map<String, String>> getUnknownClients(Set<String> knownMacs) {
         return getConnectedClients().stream()
