@@ -89,6 +89,24 @@ public class UnifiService {
         }
     }
 
+    public List<String> getConnectedClientMacs() {
+        return getConnectedClients().stream()
+                .map(c -> (String) c.get("mac"))
+                .filter(mac -> mac != null && !mac.isBlank())
+                .map(String::toLowerCase)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    public String getMacForIp(String ip) {
+        if (ip == null || ip.isBlank()) return null;
+        return getConnectedClients().stream()
+                .filter(c -> ip.equals(c.get("ip")))
+                .map(c -> (String) c.get("mac"))
+                .filter(mac -> mac != null && !mac.isBlank())
+                .map(String::toLowerCase)
+                .findFirst().orElse(null);
+    }
+
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getConnectedClients() {
         try {

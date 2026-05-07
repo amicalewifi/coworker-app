@@ -69,12 +69,6 @@
           Désassocier compte
         </button>
         <div class="act-sep"></div>
-        <div class="act-group-lbl">Accès</div>
-        <a th:href="@{/qr/venue}" target="_blank" class="act-item">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="10" y="1" width="5" height="5" rx="1"/><rect x="1" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/></svg>
-          QR d'entrée ↗
-        </a>
-        <div class="act-sep"></div>
         <div class="act-group-lbl">Zone dangereuse</div>
         <button class="act-item act-item-r" onclick="closeActMenu();openModal('m-delete')">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10"/></svg>
@@ -154,6 +148,13 @@ document.addEventListener('click', function(e) {
             </td>
           </tr>
           <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
+          <tr>
+            <td style="color:var(--t3);padding:5px 0;">WiFi MAC</td>
+            <td>
+              <code th:if="${member.wifiMac != null}" th:text="${member.wifiMac}"></code>
+              <span th:unless="${member.wifiMac != null}" class="b b-gr">Non enregistrée</span>
+            </td>
+          </tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
           <tr th:if="${member.tvaNumber}"><td style="color:var(--t3);padding:5px 0;">N° TVA</td><td th:text="${member.tvaNumber}"></td></tr>
@@ -320,6 +321,13 @@ document.addEventListener('click', function(e) {
       <div class="form-row">
         <label class="form-lbl">Badge NFC (UID)</label>
         <input name="badgeUid" class="form-in" th:value="${member.badgeUid}" placeholder="ex: A1B2C3D4">
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Adresse MAC WiFi</label>
+        <input name="wifiMac" class="form-in" th:value="${member.wifiMac}"
+               placeholder="ex: aa:bb:cc:dd:ee:ff"
+               pattern="^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$"
+               title="Format: aa:bb:cc:dd:ee:ff">
       </div>
       <div class="form-row">
         <label class="form-lbl">Adresse</label>

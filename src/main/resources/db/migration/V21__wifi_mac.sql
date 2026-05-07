@@ -1,0 +1,1 @@
+ALTER TABLE members ADD COLUMN wifi_mac VARCHAR(17) UNIQUE;

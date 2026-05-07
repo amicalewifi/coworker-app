@@ -19,6 +19,7 @@ public interface MemberRepository extends JpaRepository<Member, UUID> {
     Optional<Member> findByBadgeUid(String uid);
     Optional<Member> findByQrToken(UUID token);
     Optional<Member> findByPrintToken(UUID token);
+    Optional<Member> findByWifiMac(String wifiMac);
     List<Member>     findByActiveTrueOrderByLastNameAsc();
 
     @Query("SELECT m FROM Member m ORDER BY m.active DESC, m.lastName ASC")

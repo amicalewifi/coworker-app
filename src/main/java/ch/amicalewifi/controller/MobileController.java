@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -44,6 +45,7 @@ public class MobileController {
     private final RoomRepository           roomRepo;
     private final RoomBookingRepository    bookingRepo;
     private final PasswordEncoder          passwordEncoder;
+    private final ch.amicalewifi.repository.PresenceRepository presenceRepo;
 
     @Value("${amicale.venue.qr-token}") private String venueQrToken;
     @Value("${amicale.print.public-host}") private String printPublicHost;
@@ -52,7 +54,8 @@ public class MobileController {
     @GetMapping({"", "/"})
     public String home(Authentication auth,
                        @RequestParam(required = false) String renewed,
-                       Model model) {
+                       Model model,
+                       HttpServletRequest request) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if ("ok".equals(renewed)) {
             model.addAttribute("success", "Paiement reçu — votre pack a été renouvelé !");
@@ -66,13 +69,128 @@ public class MobileController {
         Set<UUID> bookedRoomIds = todayBookings.stream()
                 .map(b -> b.getRoom().getId())
                 .collect(Collectors.toSet());
-        model.addAttribute("member",        member);
-        model.addAttribute("presences",     memberService.getForMember(member.getId()).stream().limit(5).toList());
-        model.addAttribute("rooms",         roomService.getAll());
-        model.addAttribute("bookings",      todayBookings);
-        model.addAttribute("bookedRoomIds", bookedRoomIds);
-        model.addAttribute("presenceTypes", List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
+        List<ch.amicalewifi.model.Presence> todayPresences =
+                presenceRepo.findActiveByMemberAndDate(member.getId(), LocalDate.now());
+        model.addAttribute("member",         member);
+        model.addAttribute("todayPresences", todayPresences);
+        model.addAttribute("presences",      memberService.getForMember(member.getId()).stream().limit(5).toList());
+        model.addAttribute("rooms",          roomService.getAll());
+        model.addAttribute("bookings",       todayBookings);
+        model.addAttribute("bookedRoomIds",  bookedRoomIds);
+        model.addAttribute("presenceTypes",  List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
+        model.addAttribute("detectedMac",    request.getSession().getAttribute("detectedMac"));
         return "mobile/dashboard";
+    }
+
+    @PostMapping("/register-device/confirm")
+    public String confirmMac(HttpServletRequest request, Authentication auth, RedirectAttributes ra) {
+        String mac = (String) request.getSession().getAttribute("detectedMac");
+        if (mac != null) {
+            Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+            if (member.getWifiMac() == null) {
+                member.setWifiMac(mac);
+                member.setUpdatedAt(LocalDateTime.now());
+                memberRepo.save(member);
+                request.getSession().removeAttribute("detectedMac");
+                ra.addFlashAttribute("success", "Appareil enregistré — détection automatique de présence activée !");
+            }
+        }
+        return "redirect:/mobile/";
+    }
+
+    @PostMapping("/register-device/decline")
+    public String declineMac(HttpServletRequest request) {
+        request.getSession().removeAttribute("detectedMac");
+        request.getSession().setAttribute("skipWifiMac", Boolean.TRUE);
+        return "redirect:/mobile/";
+    }
+
+    @GetMapping("/register-device")
+    public String registerDevicePage(HttpServletRequest request, Authentication auth, Model model) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if (member.getWifiMac() != null) return "redirect:/mobile/";
+
+        String ip  = getClientIp(request);
+        String mac = unifiService.getMacForIp(ip);
+        if (mac != null) {
+            member.setWifiMac(mac);
+            member.setUpdatedAt(LocalDateTime.now());
+            memberRepo.save(member);
+            return "redirect:/mobile/?macRegistered=true";
+        }
+        model.addAttribute("member",   member);
+        model.addAttribute("clientIp", ip);
+        return "mobile/register-device";
+    }
+
+    @PostMapping("/register-device/skip")
+    public String skipMacRegistration(HttpServletRequest request) {
+        request.getSession().setAttribute("skipWifiMac", Boolean.TRUE);
+        return "redirect:/mobile/";
+    }
+
+    @PostMapping("/presence/{id}/upgrade")
+    public String upgradePresence(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        ch.amicalewifi.model.Presence p = presenceRepo.findById(id).orElseThrow();
+
+        if (!p.getMember().getId().equals(member.getId())) {
+            ra.addFlashAttribute("error", "Accès refusé");
+            return "redirect:/mobile/";
+        }
+        if (!p.getDate().equals(LocalDate.now())) {
+            ra.addFlashAttribute("error", "Modification possible uniquement le jour même");
+            return "redirect:/mobile/";
+        }
+        PresenceType cur = p.getPresenceType();
+        if (cur != PresenceType.HALF_AM && cur != PresenceType.HALF_PM) {
+            ra.addFlashAttribute("error", "Présence déjà en journée complète");
+            return "redirect:/mobile/";
+        }
+        BigDecimal extra = new BigDecimal("0.5");
+        if (!member.isPermanent()) {
+            BigDecimal remaining = member.getPackUnitsRemaining() != null ? member.getPackUnitsRemaining() : BigDecimal.ZERO;
+            if (remaining.compareTo(extra) < 0) {
+                ra.addFlashAttribute("error", "Solde insuffisant pour passer en journée complète");
+                return "redirect:/mobile/";
+            }
+            member.setPackUnitsUsed(member.getPackUnitsUsed().add(extra));
+            memberRepo.save(member);
+        }
+        p.setPresenceType(PresenceType.FULL_DAY);
+        p.setUnitsConsumed(new BigDecimal("1.0"));
+        presenceRepo.save(p);
+        ra.addFlashAttribute("success", "Présence mise à jour en journée complète");
+        return "redirect:/mobile/";
+    }
+
+    @PostMapping("/presence/{id}/cancel")
+    public String cancelPresence(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        ch.amicalewifi.model.Presence p = presenceRepo.findById(id).orElseThrow();
+
+        if (!p.getMember().getId().equals(member.getId())) {
+            ra.addFlashAttribute("error", "Accès refusé");
+            return "redirect:/mobile/";
+        }
+        if (!p.getDate().equals(LocalDate.now())) {
+            ra.addFlashAttribute("error", "Modification possible uniquement le jour même");
+            return "redirect:/mobile/";
+        }
+        if (!member.isPermanent() && p.getUnitsConsumed() != null) {
+            member.setPackUnitsUsed(member.getPackUnitsUsed().subtract(p.getUnitsConsumed()));
+            memberRepo.save(member);
+        }
+        p.setStatus(ch.amicalewifi.model.PresenceStatus.CANCELLED);
+        presenceRepo.save(p);
+        ra.addFlashAttribute("success", "Présence annulée — crédits remboursés");
+        return "redirect:/mobile/";
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/scan")
@@ -221,6 +339,16 @@ public class MobileController {
         userRepo.save(user);
         ra.addFlashAttribute("success", "Mot de passe modifié avec succès.");
         return "redirect:/mobile/security";
+    }
+
+    @PostMapping("/profile/reset-mac")
+    public String resetMac(Authentication auth, RedirectAttributes ra) {
+        Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        m.setWifiMac(null);
+        m.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(m);
+        ra.addFlashAttribute("success", "Adresse MAC supprimée — la détection automatique est désactivée.");
+        return "redirect:/mobile/profile";
     }
 
     /** Page ouverte après scan du QR code du coworking. */
