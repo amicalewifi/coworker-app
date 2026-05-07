@@ -84,13 +84,7 @@ public class MobileController {
     public String registerDevicePage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if (member.getWifiMac() != null) return "redirect:/mobile/";
-
-        Set<String> knownMacs = memberRepo.findAll().stream()
-                .map(Member::getWifiMac)
-                .filter(m -> m != null && !m.isBlank())
-                .collect(Collectors.toSet());
-        model.addAttribute("member",         member);
-        model.addAttribute("unknownClients", unifiService.getUnknownClients(knownMacs));
+        model.addAttribute("member", member);
         return "mobile/register-device";
     }
 
