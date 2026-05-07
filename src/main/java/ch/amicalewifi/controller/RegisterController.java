@@ -4,6 +4,8 @@ import ch.amicalewifi.model.*;
 import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.EmailService;
 import ch.amicalewifi.service.MemberService;
+import ch.amicalewifi.service.UnifiService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +25,7 @@ public class RegisterController {
     private final MemberService    memberService;
     private final EmailService     emailService;
     private final PasswordEncoder  passwordEncoder;
+    private final UnifiService     unifiService;
 
     @GetMapping
     public String form() {
@@ -40,6 +43,7 @@ public class RegisterController {
                          @RequestParam(required = false) String city,
                          @RequestParam(required = false) String postalCode,
                          @RequestParam(required = false) String country,
+                         HttpServletRequest request,
                          Model model,
                          RedirectAttributes ra) {
 
@@ -56,6 +60,9 @@ public class RegisterController {
                     .role(UserRole.COWORKER)
                     .build());
 
+            String wifiMac = unifiService.getMacForIp(getClientIp(request));
+            if (wifiMac != null) log.info("Inscription MAC détectée: {} {} → {}", firstName, lastName, wifiMac);
+
             memberService.create(Member.builder()
                     .firstName(firstName).lastName(lastName)
                     .email(email).phone(phone).company(company)
@@ -63,6 +70,7 @@ public class RegisterController {
                     .postalCode(postalCode)
                     .country(country != null && !country.isBlank() ? country : "Suisse")
                     .membership(MembershipType.JOURNEE_ESSAI)
+                    .wifiMac(wifiMac)
                     .user(user)
                     .active(true)
                     .build());
@@ -75,12 +83,19 @@ public class RegisterController {
 
         } catch (Exception e) {
             log.error("Erreur lors de l'inscription de {}: {}", email, e.getMessage(), e);
-            // Nettoyer l'utilisateur orphelin si le membre n'a pas pu être créé
             if (user != null) {
                 try { userRepo.delete(user); } catch (Exception ignored) {}
             }
             model.addAttribute("error", "Une erreur est survenue lors de la création du compte : " + e.getMessage());
             return "auth/register";
         }
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) return realIp.trim();
+        return request.getRemoteAddr();
     }
 }
