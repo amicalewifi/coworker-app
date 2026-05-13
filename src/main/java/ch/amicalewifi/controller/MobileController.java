@@ -34,7 +34,6 @@ public class MobileController {
 
     private final MemberService            memberService;
     private final RoomService              roomService;
-    private final ScanService              scanService;
     private final ZahlsService             zahlsService;
     private final PrinterService           printerService;
     private final WifiAccessService        wifiAccessService;
@@ -45,9 +44,7 @@ public class MobileController {
     private final RoomBookingRepository    bookingRepo;
     private final MemberWifiMacRepository  wifiMacRepo;
     private final PasswordEncoder          passwordEncoder;
-    private final ch.amicalewifi.repository.PresenceRepository presenceRepo;
 
-    @Value("${amicale.venue.qr-token}") private String venueQrToken;
     @Value("${amicale.print.public-host}") private String printPublicHost;
     @Value("${amicale.print.queue-name}")  private String printQueueName;
 
@@ -68,15 +65,10 @@ public class MobileController {
         Set<UUID> bookedRoomIds = todayBookings.stream()
                 .map(b -> b.getRoom().getId())
                 .collect(Collectors.toSet());
-        List<ch.amicalewifi.model.Presence> todayPresences =
-                presenceRepo.findActiveByMemberAndDate(member.getId(), LocalDate.now());
-        model.addAttribute("member",         member);
-        model.addAttribute("todayPresences", todayPresences);
-        model.addAttribute("presences",      memberService.getForMember(member.getId()).stream().limit(5).toList());
-        model.addAttribute("rooms",          roomService.getAll());
-        model.addAttribute("bookings",       todayBookings);
-        model.addAttribute("bookedRoomIds",  bookedRoomIds);
-        model.addAttribute("presenceTypes",  List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
+        model.addAttribute("member",        member);
+        model.addAttribute("rooms",         roomService.getAll());
+        model.addAttribute("bookings",      todayBookings);
+        model.addAttribute("bookedRoomIds", bookedRoomIds);
         return "mobile/dashboard";
     }
 
@@ -114,71 +106,6 @@ public class MobileController {
         });
         ra.addFlashAttribute("success", "Appareil supprimé.");
         return "redirect:/mobile/devices";
-    }
-
-    @PostMapping("/presence/{id}/upgrade")
-    public String upgradePresence(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
-        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        ch.amicalewifi.model.Presence p = presenceRepo.findById(id).orElseThrow();
-
-        if (!p.getMember().getId().equals(member.getId())) {
-            ra.addFlashAttribute("error", "Accès refusé");
-            return "redirect:/mobile/";
-        }
-        if (!p.getDate().equals(LocalDate.now())) {
-            ra.addFlashAttribute("error", "Modification possible uniquement le jour même");
-            return "redirect:/mobile/";
-        }
-        PresenceType cur = p.getPresenceType();
-        if (cur != PresenceType.HALF_AM && cur != PresenceType.HALF_PM) {
-            ra.addFlashAttribute("error", "Présence déjà en journée complète");
-            return "redirect:/mobile/";
-        }
-        // Les unités de pack sont désormais décomptées par le poller WiFi.
-        // Ici on ne fait que mettre à jour le libellé de la présence.
-        p.setPresenceType(PresenceType.FULL_DAY);
-        p.setUnitsConsumed(new BigDecimal("1.0"));
-        presenceRepo.save(p);
-        ra.addFlashAttribute("success", "Présence mise à jour en journée complète");
-        return "redirect:/mobile/";
-    }
-
-    @PostMapping("/presence/{id}/cancel")
-    public String cancelPresence(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
-        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        ch.amicalewifi.model.Presence p = presenceRepo.findById(id).orElseThrow();
-
-        if (!p.getMember().getId().equals(member.getId())) {
-            ra.addFlashAttribute("error", "Accès refusé");
-            return "redirect:/mobile/";
-        }
-        if (!p.getDate().equals(LocalDate.now())) {
-            ra.addFlashAttribute("error", "Modification possible uniquement le jour même");
-            return "redirect:/mobile/";
-        }
-        // Pas de remboursement de pack : la consommation est calculée par
-        // le temps de connexion WiFi, indépendamment de la présence déclarée.
-        p.setStatus(ch.amicalewifi.model.PresenceStatus.CANCELLED);
-        presenceRepo.save(p);
-        ra.addFlashAttribute("success", "Présence annulée");
-        return "redirect:/mobile/";
-    }
-
-
-    @PostMapping("/scan")
-    public String scan(Authentication auth,
-                       @RequestParam(defaultValue = "FULL_DAY") PresenceType presenceType,
-                       @RequestParam(defaultValue = "false") boolean unitaire,
-                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                       Model model) {
-        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
-        if (member == null) return "redirect:/mobile/";
-        if (unitaire) presenceType = presenceType.toUnitaire();
-        LocalDate presenceDate = (date != null) ? date : LocalDate.now();
-        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType, presenceDate);
-        model.addAttribute("result", result);
-        model.addAttribute("member", member);
-        return "mobile/scan-result";
     }
 
     @GetMapping("/pack")
@@ -311,41 +238,6 @@ public class MobileController {
         userRepo.save(user);
         ra.addFlashAttribute("success", "Mot de passe modifié avec succès.");
         return "redirect:/mobile/security";
-    }
-
-    /** Page ouverte après scan du QR code du coworking. */
-    @GetMapping("/presence")
-    public String presenceScan(@RequestParam(required = false) String venue,
-                               Authentication auth, Model model) {
-        if (venue == null || !venue.equals(venueQrToken)) {
-            return "redirect:/mobile/?error=qr_invalide";
-        }
-        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
-        if (member == null) return "redirect:/mobile/";
-        model.addAttribute("member", member);
-        model.addAttribute("venue", venue);
-        model.addAttribute("presenceTypes", List.of(PresenceType.HALF_AM, PresenceType.FULL_DAY, PresenceType.HALF_PM));
-        return "mobile/presence";
-    }
-
-    /** Enregistrement de présence via QR scan du coworking. */
-    @PostMapping("/presence")
-    public String presenceConfirm(@RequestParam(required = false) String venue,
-                                  @RequestParam(defaultValue = "FULL_DAY") PresenceType presenceType,
-                                  @RequestParam(defaultValue = "false") boolean unitaire,
-                                  @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-                                  Authentication auth, Model model) {
-        if (venue == null || !venue.equals(venueQrToken)) {
-            return "redirect:/mobile/?error=qr_invalide";
-        }
-        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
-        if (member == null) return "redirect:/mobile/";
-        if (unitaire) presenceType = presenceType.toUnitaire();
-        LocalDate presenceDate = (date != null) ? date : LocalDate.now();
-        ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType, presenceDate);
-        model.addAttribute("result", result);
-        model.addAttribute("member", member);
-        return "mobile/scan-result";
     }
 
     @GetMapping("/room-scan")
