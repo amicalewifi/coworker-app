@@ -61,8 +61,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 // API REST
                 .requestMatchers("/api/**").hasAnyRole("ADMIN","COWORKER")
-                // QR Code — venue public pour scan par les membres
-                .requestMatchers("/qr/venue").hasAnyRole("ADMIN","COWORKER")
+                // QR Code — pour les salles de conférence
                 .requestMatchers("/qr/**").hasAnyRole("ADMIN","COWORKER")
                 .anyRequest().authenticated()
             )

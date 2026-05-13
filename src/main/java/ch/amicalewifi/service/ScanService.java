@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.*;
-import java.util.UUID;
 
 @Service
 @Transactional
@@ -38,43 +37,6 @@ public class ScanService {
         // d'unités de pack est désormais pilotée par le temps de connexion WiFi.
         Presence p = savePresence(member, PresenceType.FULL_DAY, LocalDate.now());
         saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, PresenceType.FULL_DAY, BigDecimal.ZERO, null);
-        BigDecimal remaining = member.isPermanent() ? null : member.getPackUnitsRemaining();
-        Integer halfDays    = member.isPermanent() ? null : member.getHalfDaysRemaining();
-        return new ScanResult.Granted(member, p, remaining, halfDays);
-    }
-
-    public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType) {
-        return processScanByToken(qrToken, presenceType, LocalDate.now());
-    }
-
-    public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType, LocalDate date) {
-        log.info("Scan QR: {} · {} · {}", qrToken, presenceType, date);
-        Member member = memberRepo.findByQrToken(qrToken).orElse(null);
-        if (member == null) {
-            return new ScanResult.Denied("token_invalid", null);
-        }
-        return processScanForMember(member, "qr:" + qrToken, presenceType, date);
-    }
-
-    private ScanResult processScanForMember(Member member, String uid, PresenceType presenceType) {
-        return processScanForMember(member, uid, presenceType, LocalDate.now());
-    }
-
-    private ScanResult processScanForMember(Member member, String uid, PresenceType presenceType, LocalDate date) {
-        if (!member.isBadgeActive() ||
-                (member.getBadgeExpires() != null && member.getBadgeExpires().isBefore(LocalDate.now()))) {
-            saveEvent(member, uid, AccessEventType.ENTRY_DENIED, null, null, "badge_expired");
-            return new ScanResult.Denied("badge_expired", member);
-        }
-
-        // Le décompte des unités de pack est désormais piloté par le temps de
-        // connexion WiFi (WifiUsagePoller). Le badge / QR ne consomme plus
-        // d'unités : il enregistre uniquement la présence à des fins
-        // analytiques et le passage de porte.
-        PresenceType effectiveType = member.getMembership() == MembershipType.JOURNEE_ESSAI
-                ? PresenceType.TRIAL : presenceType;
-        Presence p = savePresence(member, effectiveType, date);
-        saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, effectiveType, BigDecimal.ZERO, null);
         BigDecimal remaining = member.isPermanent() ? null : member.getPackUnitsRemaining();
         Integer halfDays    = member.isPermanent() ? null : member.getHalfDaysRemaining();
         return new ScanResult.Granted(member, p, remaining, halfDays);
