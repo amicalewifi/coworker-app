@@ -89,13 +89,6 @@ public class WifiAccessService {
         return ok;
     }
 
-    /** Révoque une MAC sur UniFi (ex: suppression d'appareil, kick de minuit). */
-    public void revoke(Member member, String macRaw, String reason) {
-        if (unifi.unauthorizeGuest(macRaw)) {
-            audit(member, macRaw, "UNAUTHORIZED", reason);
-        }
-    }
-
     /**
      * Vrai si le membre a actuellement droit au WiFi.
      * Note : on accepte aussi le cas « déjà décompté aujourd'hui » : si le
