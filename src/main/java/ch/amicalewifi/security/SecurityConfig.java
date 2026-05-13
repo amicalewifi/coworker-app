@@ -39,6 +39,8 @@ public class SecurityConfig {
                 .requestMatchers("/login", "/register", "/forgot-password", "/reset-password",
                                  "/css/**", "/js/**", "/icons/**",
                                  "/images/**", "/manifest.json", "/sw.js", "/error").permitAll()
+                // Portail captif UniFi — pré-auth pour capturer les params puis rediriger sur /login
+                .requestMatchers("/guest/**").permitAll()
                 // Admin uniquement
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Mobile: membres et admin
