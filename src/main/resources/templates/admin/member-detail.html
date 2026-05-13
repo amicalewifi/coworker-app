@@ -148,13 +148,6 @@ document.addEventListener('click', function(e) {
             </td>
           </tr>
           <tr><td style="color:var(--t3);width:140px;padding:5px 0;">Badge NFC</td><td><code th:text="${member.badgeUid?:'Non assigné'}"></code></td></tr>
-          <tr>
-            <td style="color:var(--t3);padding:5px 0;">WiFi MAC</td>
-            <td>
-              <code th:if="${member.wifiMac != null}" th:text="${member.wifiMac}"></code>
-              <span th:unless="${member.wifiMac != null}" class="b b-gr">Non enregistrée</span>
-            </td>
-          </tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Téléphone</td><td th:text="${member.phone?:'—'}"></td></tr>
           <tr><td style="color:var(--t3);padding:5px 0;">Entreprise</td><td th:text="${member.company?:'—'}"></td></tr>
           <tr th:if="${member.tvaNumber}"><td style="color:var(--t3);padding:5px 0;">N° TVA</td><td th:text="${member.tvaNumber}"></td></tr>
@@ -321,13 +314,6 @@ document.addEventListener('click', function(e) {
       <div class="form-row">
         <label class="form-lbl">Badge NFC (UID)</label>
         <input name="badgeUid" class="form-in" th:value="${member.badgeUid}" placeholder="ex: A1B2C3D4">
-      </div>
-      <div class="form-row">
-        <label class="form-lbl">Adresse MAC WiFi</label>
-        <input name="wifiMac" class="form-in" th:value="${member.wifiMac}"
-               placeholder="ex: aa:bb:cc:dd:ee:ff"
-               pattern="^([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}$"
-               title="Format: aa:bb:cc:dd:ee:ff">
       </div>
       <div class="form-row">
         <label class="form-lbl">Adresse</label>

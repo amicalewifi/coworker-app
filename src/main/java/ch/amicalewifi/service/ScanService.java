@@ -34,13 +34,13 @@ public class ScanService {
             saveEvent(member, badgeUid, AccessEventType.ENTRY_DENIED, null, null, "badge_expired");
             return new ScanResult.Denied("badge_expired", member);
         }
-        if (member.isPermanent()) {
-            Presence p = savePresence(member, PresenceType.FULL_DAY, LocalDate.now());
-            saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, PresenceType.FULL_DAY, null, null);
-            return new ScanResult.Granted(member, p, null, null);
-        }
-        saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, null, null, null);
-        return new ScanResult.Granted(member, null, member.getPackUnitsRemaining(), member.getHalfDaysRemaining());
+        // Le badge ouvre la porte et enregistre la présence. La consommation
+        // d'unités de pack est désormais pilotée par le temps de connexion WiFi.
+        Presence p = savePresence(member, PresenceType.FULL_DAY, LocalDate.now());
+        saveEvent(member, badgeUid, AccessEventType.ENTRY_GRANTED, PresenceType.FULL_DAY, BigDecimal.ZERO, null);
+        BigDecimal remaining = member.isPermanent() ? null : member.getPackUnitsRemaining();
+        Integer halfDays    = member.isPermanent() ? null : member.getHalfDaysRemaining();
+        return new ScanResult.Granted(member, p, remaining, halfDays);
     }
 
     public ScanResult processScanByToken(UUID qrToken, PresenceType presenceType) {
@@ -67,41 +67,17 @@ public class ScanService {
             return new ScanResult.Denied("badge_expired", member);
         }
 
-        if (member.isPermanent()) {
-            Presence p = savePresence(member, presenceType, date);
-            saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, new BigDecimal("1.0"), null);
-            return new ScanResult.Granted(member, p, null, null);
-        }
-
-        if (member.getMembership() == MembershipType.JOURNEE_ESSAI) {
-            Presence p = savePresence(member, PresenceType.TRIAL, date);
-            saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, PresenceType.TRIAL, BigDecimal.ZERO, null);
-            return new ScanResult.Granted(member, p, null, null);
-        }
-
-        BigDecimal needed    = presenceType.getUnits();
-        BigDecimal remaining = member.getPackUnitsRemaining() != null
-                ? member.getPackUnitsRemaining() : BigDecimal.ZERO;
-        if (remaining.compareTo(needed) < 0) {
-            saveEvent(member, uid, AccessEventType.ENTRY_DENIED, presenceType, null, "pack_exhausted");
-            return new ScanResult.Denied("pack_exhausted", member);
-        }
-
-        boolean alreadyCheckedIn = presenceRepo.findByMemberIdAndDateAndPresenceType(
-                member.getId(), date, presenceType).isPresent();
-
-        Presence p = savePresence(member, presenceType, date);
-
-        Member updated;
-        if (alreadyCheckedIn) {
-            updated = member;
-        } else {
-            member.setPackUnitsUsed(member.getPackUnitsUsed().add(needed));
-            updated = memberRepo.save(member);
-        }
-        saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, presenceType, alreadyCheckedIn ? BigDecimal.ZERO : needed, null);
-
-        return new ScanResult.Granted(updated, p, updated.getPackUnitsRemaining(), updated.getHalfDaysRemaining());
+        // Le décompte des unités de pack est désormais piloté par le temps de
+        // connexion WiFi (WifiUsagePoller). Le badge / QR ne consomme plus
+        // d'unités : il enregistre uniquement la présence à des fins
+        // analytiques et le passage de porte.
+        PresenceType effectiveType = member.getMembership() == MembershipType.JOURNEE_ESSAI
+                ? PresenceType.TRIAL : presenceType;
+        Presence p = savePresence(member, effectiveType, date);
+        saveEvent(member, uid, AccessEventType.ENTRY_GRANTED, effectiveType, BigDecimal.ZERO, null);
+        BigDecimal remaining = member.isPermanent() ? null : member.getPackUnitsRemaining();
+        Integer halfDays    = member.isPermanent() ? null : member.getHalfDaysRemaining();
+        return new ScanResult.Granted(member, p, remaining, halfDays);
     }
 
     private Presence savePresence(Member m, PresenceType type, LocalDate date) {

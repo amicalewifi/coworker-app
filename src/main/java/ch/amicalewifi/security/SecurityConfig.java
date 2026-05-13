@@ -14,6 +14,8 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 
 import java.util.List;
 
@@ -25,10 +27,12 @@ public class SecurityConfig {
 
     private final UserRepository    userRepo;
     private final LoginSuccessHandler loginSuccessHandler;
+    private final CaptivePortalParamFilter captivePortalParamFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .addFilterBefore(captivePortalParamFilter, UsernamePasswordAuthenticationFilter.class)
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/logout"))
             .authorizeHttpRequests(auth -> auth
                 // Ressources publiques
@@ -97,6 +101,20 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * CaptivePortalParamFilter est un @Component (Spring Boot l'enregistre
+     * automatiquement sur /*). Or on l'ajoute aussi dans la chaîne Spring
+     * Security via addFilterBefore. On désactive l'auto-enregistrement
+     * servlet pour éviter une double exécution.
+     */
+    @Bean
+    public FilterRegistrationBean<CaptivePortalParamFilter> captivePortalRegistration(
+            CaptivePortalParamFilter filter) {
+        FilterRegistrationBean<CaptivePortalParamFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
     }
 
     @Bean

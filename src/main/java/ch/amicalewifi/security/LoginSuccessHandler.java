@@ -1,9 +1,11 @@
 package ch.amicalewifi.security;
 
+import ch.amicalewifi.model.Member;
 import ch.amicalewifi.repository.MemberRepository;
-import ch.amicalewifi.service.UnifiService;
+import ch.amicalewifi.service.WifiAccessService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -11,15 +13,15 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.net.URI;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final MemberRepository memberRepo;
-    private final UnifiService     unifiService;
+    private final MemberRepository  memberRepo;
+    private final WifiAccessService wifiAccess;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -28,29 +30,43 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
         boolean isCoworker = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_COWORKER"));
 
-        memberRepo.findByEmail(auth.getName()).ifPresent(member -> {
-            if (member.getWifiMac() == null) {
-                String ip  = getClientIp(request);
-                String mac = unifiService.getMacForIp(ip);
-                if (mac != null) {
-                    member.setWifiMac(mac);
-                    member.setUpdatedAt(LocalDateTime.now());
-                    memberRepo.save(member);
-                    log.info("Login MAC auto-enregistrée: {} → {} ({})", member.getDisplayName(), mac, ip);
-                } else {
-                    log.info("Login MAC non trouvée — IP vue: {} (vérifier X-Forwarded-For Nginx)", ip);
-                }
-            }
-        });
+        HttpSession session = request.getSession(false);
+        CaptivePortalParamFilter.CaptivePortalContext ctx = (session == null) ? null
+                : (CaptivePortalParamFilter.CaptivePortalContext)
+                    session.getAttribute(CaptivePortalParamFilter.SESSION_KEY);
 
-        response.sendRedirect(request.getContextPath() + (isCoworker ? "/mobile/" : "/admin/"));
+        Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
+
+        if (member != null && ctx != null && ctx.mac() != null) {
+            wifiAccess.bindMacToMember(ctx.mac(), member);
+            wifiAccess.tryAuthorize(member, ctx.mac());
+        }
+
+        if (session != null) session.removeAttribute(CaptivePortalParamFilter.SESSION_KEY);
+
+        String target = safeOriginalUrl(ctx);
+        if (target == null) {
+            target = request.getContextPath() + (isCoworker ? "/mobile/" : "/admin/");
+        }
+        response.sendRedirect(target);
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) return forwarded.split(",")[0].trim();
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) return realIp.trim();
-        return request.getRemoteAddr();
+    /**
+     * URL de redirection post-login fournie par UniFi (paramètre "url" du
+     * portail captif). On l'accepte uniquement si c'est une URL http(s)
+     * absolue — sinon on retombe sur le dashboard par défaut.
+     */
+    private static String safeOriginalUrl(CaptivePortalParamFilter.CaptivePortalContext ctx) {
+        if (ctx == null || ctx.originalUrl() == null || ctx.originalUrl().isBlank()) return null;
+        try {
+            URI u = URI.create(ctx.originalUrl());
+            if (u.getScheme() == null || u.getHost() == null) return null;
+            String scheme = u.getScheme().toLowerCase();
+            if (!"http".equals(scheme) && !"https".equals(scheme)) return null;
+            return u.toString();
+        } catch (Exception e) {
+            log.warn("URL de redirection captive invalide: {}", ctx.originalUrl());
+            return null;
+        }
     }
 }

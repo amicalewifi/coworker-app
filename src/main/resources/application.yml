@@ -151,10 +151,12 @@ amicale:
     api-key:  CHANGE_ME
     site:     default
     base-url: https://api.ui.com/proxy/network
-    voucher-expire-minutes: 600   # 10 heures
-    wifi-presence-enabled:  true
-    wifi-presence-poll-ms:  180000  # 3 minutes
-    wifi-presence-am-end:   "12:30"
+
+  # Portail captif WiFi (UniFi External Portal)
+  wifi:
+    poll-interval-ms:          120000   # Polling stat/sta toutes les 2 min
+    half-day-threshold-seconds: 1800    # 30 min de connexion → 0.5 unité
+    full-day-threshold-seconds: 18000   # 5 h de connexion   → 1.0 unité
 
   zahls:
     instance:    CHANGE_ME
