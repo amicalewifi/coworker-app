@@ -16,11 +16,16 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .dev-label{font-size:14px;font-weight:700;line-height:1.2;}
 .dev-mac{font-size:11px;color:var(--t3);font-family:monospace;margin-top:2px;}
 .dev-seen{font-size:10px;color:var(--t3);margin-top:3px;}
-.dev-actions{margin-top:10px;display:flex;gap:8px;}
-.dev-actions input{flex:1;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;}
-.dev-actions button.save{background:var(--prim);color:#fff;font-size:12px;font-weight:700;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-family:inherit;}
-.dev-actions button.del{background:transparent;color:var(--red);font-size:11px;font-weight:600;border:1px solid rgba(239,68,68,.3);padding:8px 10px;border-radius:8px;cursor:pointer;font-family:inherit;}
+.dev-rename{margin-top:10px;}
+.dev-rename input{width:100%;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
+.dev-rename input:focus{border-color:var(--prim);box-shadow:0 0 0 3px rgba(0,122,245,.1);}
+.dev-rename input.saving{border-color:var(--prim);background:#fff;}
+.dev-rename input.saved{border-color:#16a34a;}
+.dev-rename input.errored{border-color:#ef4444;}
 .empty{margin:16px;padding:32px 16px;text-align:center;background:var(--surf);border:1px dashed var(--bdr);border-radius:14px;color:var(--t3);font-size:13px;line-height:1.5;}
+.autosave-toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);background:#0c1222;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:50;display:flex;align-items:center;gap:8px;}
+.autosave-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.autosave-toast.err{background:#b91c1c;}
 </style>
 </head>
 <body>
@@ -31,15 +36,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 </div>
 
 <div class="app-content">
-  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l4 4 6-6"/></svg>
-    <span th:text="${success}"></span>
-  </div>
-
   <div class="intro">
-    Chaque appareil que vous connectez au WiFi du coworking est ajouté ici automatiquement,
-    après votre première connexion via le portail. Vous pouvez renommer un appareil
-    ou le supprimer pour révoquer son accès.
+    Chaque appareil que vous connectez au WiFi du coworking est ajouté ici automatiquement
+    après votre première connexion via le portail. Vous pouvez renommer un appareil pour
+    le retrouver plus facilement.
   </div>
 
   <div th:if="${#lists.isEmpty(devices)}" class="empty">
@@ -50,25 +50,31 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div th:each="d : ${devices}" class="dev-card">
     <div class="dev-row">
       <div class="dev-ico">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--t2)" stroke="none"/></svg>
+        <!-- Icône laptop : écran + base -->
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="11" rx="1.5"/>
+          <path d="M2 19h20"/>
+        </svg>
       </div>
       <div class="dev-body">
-        <div class="dev-label" th:text="${d.label != null ? d.label : 'Appareil sans nom'}">iPhone</div>
+        <div class="dev-label" th:text="${d.label != null ? d.label : 'Appareil sans nom'}">MacBook</div>
         <div class="dev-mac" th:text="${d.mac}">aa:bb:cc:dd:ee:ff</div>
         <div class="dev-seen" th:if="${d.lastSeenAt != null}"
              th:text="'Vu pour la dernière fois ' + ${#temporals.format(d.lastSeenAt, 'd MMM HH:mm', #locale)}"></div>
       </div>
     </div>
-    <form th:action="@{'/mobile/devices/' + ${d.id} + '/label'}" method="post" class="dev-actions">
-      <input type="text" name="label" maxlength="64" th:value="${d.label}" placeholder="Nom (ex. iPhone, MacBook…)">
-      <button type="submit" class="save">Enregistrer</button>
-    </form>
-    <form th:action="@{'/mobile/devices/' + ${d.id} + '/delete'}" method="post"
-          onsubmit="return confirm('Supprimer cet appareil ? Il devra se reconnecter via le portail.')"
-          style="margin-top:6px;text-align:right;">
-      <button type="submit" class="del">Supprimer</button>
-    </form>
+    <div class="dev-rename">
+      <input type="text" maxlength="64" th:value="${d.label}"
+             placeholder="Nom (ex. iPhone, MacBook…)"
+             th:attr="data-device-id=${d.id}, data-initial=${d.label != null ? d.label : ''}">
+    </div>
   </div>
+</div>
+
+<!-- Indicateur d'autosauvegarde -->
+<div id="autosave-toast" class="autosave-toast" role="status" aria-live="polite">
+  <svg id="autosave-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 4 6-6"/></svg>
+  <span id="autosave-text">Enregistré</span>
 </div>
 
 <div class="bottom-nav">
@@ -93,6 +99,70 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     Profil
   </a>
 </div>
+
+<script th:inline="javascript">
+(function () {
+  const inputs   = document.querySelectorAll('.dev-rename input[data-device-id]');
+  const toast    = document.getElementById('autosave-toast');
+  const toastTxt = document.getElementById('autosave-text');
+  const toastSvg = document.getElementById('autosave-icon');
+  const ICON_OK  = '<path d="M3 8l4 4 6-6"/>';
+  const ICON_ERR = '<circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/>';
+  const csrfToken     = /*[[${_csrf?.token}]]*/ '';
+  const csrfHeader    = /*[[${_csrf?.headerName}]]*/ 'X-CSRF-TOKEN';
+  const csrfParameter = /*[[${_csrf?.parameterName}]]*/ '_csrf';
+
+  let toastTimer = null;
+  function showToast(msg, ok) {
+    toastTxt.textContent = msg;
+    toastSvg.innerHTML   = ok ? ICON_OK : ICON_ERR;
+    toast.classList.toggle('err', !ok);
+    toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), ok ? 1500 : 4000);
+  }
+
+  async function save(input) {
+    const id     = input.dataset.deviceId;
+    const label  = input.value;
+    const body   = new URLSearchParams();
+    body.set('label', label);
+    if (csrfToken) body.set(csrfParameter, csrfToken);
+
+    input.classList.remove('saved', 'errored');
+    input.classList.add('saving');
+    try {
+      const resp = await fetch('/mobile/devices/' + encodeURIComponent(id) + '/label', {
+        method: 'POST',
+        body,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      input.classList.remove('saving');
+      input.classList.add('saved');
+      setTimeout(() => input.classList.remove('saved'), 1200);
+      input.dataset.initial = label;
+      // Met aussi à jour le libellé affiché au-dessus
+      const card = input.closest('.dev-card');
+      const lbl  = card ? card.querySelector('.dev-label') : null;
+      if (lbl) lbl.textContent = label && label.trim() ? label.trim() : 'Appareil sans nom';
+      showToast('Enregistré', true);
+    } catch (e) {
+      input.classList.remove('saving');
+      input.classList.add('errored');
+      showToast("Erreur d'enregistrement — réessayez", false);
+    }
+  }
+
+  inputs.forEach(inp => {
+    inp.addEventListener('change', () => {
+      if (inp.value === inp.dataset.initial) return; // pas de changement réel
+      save(inp);
+    });
+  });
+})();
+</script>
 
 </body>
 </html>

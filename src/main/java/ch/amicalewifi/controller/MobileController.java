@@ -36,7 +36,6 @@ public class MobileController {
     private final RoomService              roomService;
     private final ZahlsService             zahlsService;
     private final PrinterService           printerService;
-    private final WifiAccessService        wifiAccessService;
     private final PrinterJobRepository     printerJobRepo;
     private final MemberRepository         memberRepo;
     private final UserRepository           userRepo;
@@ -82,8 +81,9 @@ public class MobileController {
     }
 
     @PostMapping("/devices/{id}/label")
-    public String renameDevice(@PathVariable UUID id,
+    public Object renameDevice(@PathVariable UUID id,
                                @RequestParam(required = false) String label,
+                               @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
                                Authentication auth, RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         wifiMacRepo.findById(id).ifPresent(mac -> {
@@ -91,20 +91,10 @@ public class MobileController {
             mac.setLabel(label != null && !label.isBlank() ? label.trim() : null);
             wifiMacRepo.save(mac);
         });
+        if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
+            return ResponseEntity.noContent().build();
+        }
         ra.addFlashAttribute("success", "Nom de l'appareil mis à jour.");
-        return "redirect:/mobile/devices";
-    }
-
-    @PostMapping("/devices/{id}/delete")
-    public String deleteDevice(@PathVariable UUID id,
-                               Authentication auth, RedirectAttributes ra) {
-        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        wifiMacRepo.findById(id).ifPresent(mac -> {
-            if (!mac.getMember().getId().equals(member.getId())) return;
-            wifiAccessService.revoke(member, mac.getMac(), "user-removed");
-            wifiMacRepo.delete(mac);
-        });
-        ra.addFlashAttribute("success", "Appareil supprimé.");
         return "redirect:/mobile/devices";
     }
 
