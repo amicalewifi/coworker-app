@@ -25,9 +25,6 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication auth) throws IOException {
-        boolean isCoworker = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_COWORKER"));
-
         memberRepo.findByEmail(auth.getName()).ifPresent(member -> {
             if (member.getWifiMac() == null) {
                 String ip  = getClientIp(request);
@@ -43,7 +40,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             }
         });
 
-        response.sendRedirect(request.getContextPath() + (isCoworker ? "/mobile/" : "/admin/"));
+        response.sendRedirect(request.getContextPath() + "/mobile/");
     }
 
     private String getClientIp(HttpServletRequest request) {
