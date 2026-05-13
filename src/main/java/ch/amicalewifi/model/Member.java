@@ -28,8 +28,6 @@ public class Member {
     @Column(name = "badge_active") @Builder.Default private boolean badgeActive = true;
     @Column(name = "badge_expires")             private LocalDate badgeExpires;
 
-    @Column(name = "wifi_mac", unique = true)   private String wifiMac;
-
     // QR token unique (toujours disponible, indépendant du badge NFC)
     @Column(name = "qr_token", unique = true)
     @Builder.Default private UUID qrToken = UUID.randomUUID();

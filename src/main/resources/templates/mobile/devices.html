@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c1222">
+<link rel="manifest" th:href="@{/manifest.json}">
+<title>Mes appareils — l'Amicale du WiFi</title>
+<link rel="stylesheet" th:href="@{/css/amicale.css}">
+<style>
+body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
+.intro{padding:8px 18px 14px;font-size:12px;color:var(--t3);line-height:1.55;}
+.dev-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;margin:0 16px 10px;padding:14px 16px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+.dev-row{display:flex;align-items:center;gap:12px;}
+.dev-ico{width:36px;height:36px;border-radius:10px;background:var(--surf-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dev-body{flex:1;min-width:0;}
+.dev-label{font-size:14px;font-weight:700;line-height:1.2;}
+.dev-mac{font-size:11px;color:var(--t3);font-family:monospace;margin-top:2px;}
+.dev-seen{font-size:10px;color:var(--t3);margin-top:3px;}
+.dev-actions{margin-top:10px;display:flex;gap:8px;}
+.dev-actions input{flex:1;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;}
+.dev-actions button.save{background:var(--prim);color:#fff;font-size:12px;font-weight:700;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;font-family:inherit;}
+.dev-actions button.del{background:transparent;color:var(--red);font-size:11px;font-weight:600;border:1px solid rgba(239,68,68,.3);padding:8px 10px;border-radius:8px;cursor:pointer;font-family:inherit;}
+.empty{margin:16px;padding:32px 16px;text-align:center;background:var(--surf);border:1px dashed var(--bdr);border-radius:14px;color:var(--t3);font-size:13px;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div class="app-topbar">
+  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
+  <div class="app-title">Mes appareils</div>
+</div>
+
+<div class="app-content">
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+
+  <div class="intro">
+    Chaque appareil que vous connectez au WiFi du coworking est ajouté ici automatiquement,
+    après votre première connexion via le portail. Vous pouvez renommer un appareil
+    ou le supprimer pour révoquer son accès.
+  </div>
+
+  <div th:if="${#lists.isEmpty(devices)}" class="empty">
+    Aucun appareil enregistré pour l'instant.<br>
+    Connectez-vous au WiFi du coworking pour ajouter votre premier appareil.
+  </div>
+
+  <div th:each="d : ${devices}" class="dev-card">
+    <div class="dev-row">
+      <div class="dev-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--t2)" stroke="none"/></svg>
+      </div>
+      <div class="dev-body">
+        <div class="dev-label" th:text="${d.label != null ? d.label : 'Appareil sans nom'}">iPhone</div>
+        <div class="dev-mac" th:text="${d.mac}">aa:bb:cc:dd:ee:ff</div>
+        <div class="dev-seen" th:if="${d.lastSeenAt != null}"
+             th:text="'Vu pour la dernière fois ' + ${#temporals.format(d.lastSeenAt, 'd MMM HH:mm', #locale)}"></div>
+      </div>
+    </div>
+    <form th:action="@{'/mobile/devices/' + ${d.id} + '/label'}" method="post" class="dev-actions">
+      <input type="text" name="label" maxlength="64" th:value="${d.label}" placeholder="Nom (ex. iPhone, MacBook…)">
+      <button type="submit" class="save">Enregistrer</button>
+    </form>
+    <form th:action="@{'/mobile/devices/' + ${d.id} + '/delete'}" method="post"
+          onsubmit="return confirm('Supprimer cet appareil ? Il devra se reconnecter via le portail.')"
+          style="margin-top:6px;text-align:right;">
+      <button type="submit" class="del">Supprimer</button>
+    </form>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <a th:href="@{/mobile/}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2L2 8v10h5v-5h6v5h5V8z"/></svg>
+    Accueil
+  </a>
+  <a th:href="@{/mobile/pack}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="16" height="11" rx="1.5"/><path d="M6 7V5a4 4 0 018 0v2"/><path d="M2 11h16"/></svg>
+    Pack
+  </a>
+  <a th:href="@{/mobile/rooms}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M8 4v12M2 9h6"/></svg>
+    Salles
+  </a>
+  <a th:href="@{/mobile/print}" class="nav-btn">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="7" width="14" height="9" rx="1.5"/><path d="M6 7V4h8v3"/><circle cx="14.5" cy="11" r=".75" fill="currentColor" stroke="none"/></svg>
+    Imprimer
+  </a>
+  <a th:href="@{/mobile/profile}" class="nav-btn active">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="7" r="3"/><path d="M3 18c0-4 3-6 7-6s7 2 7 6"/></svg>
+    Profil
+  </a>
+</div>
+
+</body>
+</html>

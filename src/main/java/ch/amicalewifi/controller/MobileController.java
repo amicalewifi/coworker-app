@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
-import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -36,14 +35,15 @@ public class MobileController {
     private final MemberService            memberService;
     private final RoomService              roomService;
     private final ScanService              scanService;
-    private final UnifiService             unifiService;
     private final ZahlsService             zahlsService;
     private final PrinterService           printerService;
+    private final WifiAccessService        wifiAccessService;
     private final PrinterJobRepository     printerJobRepo;
     private final MemberRepository         memberRepo;
     private final UserRepository           userRepo;
     private final RoomRepository           roomRepo;
     private final RoomBookingRepository    bookingRepo;
+    private final MemberWifiMacRepository  wifiMacRepo;
     private final PasswordEncoder          passwordEncoder;
     private final ch.amicalewifi.repository.PresenceRepository presenceRepo;
 
@@ -80,32 +80,40 @@ public class MobileController {
         return "mobile/dashboard";
     }
 
-    @GetMapping("/register-device")
-    public String registerDevicePage(Authentication auth, Model model) {
+    @GetMapping("/devices")
+    public String devicesPage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        if (member.getWifiMac() != null) return "redirect:/mobile/";
         model.addAttribute("member", member);
-        return "mobile/register-device";
+        model.addAttribute("devices",
+                wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+        return "mobile/devices";
     }
 
-    @PostMapping("/register-device/select")
-    public String selectMac(@RequestParam String mac, Authentication auth,
-                            HttpServletRequest request, RedirectAttributes ra) {
+    @PostMapping("/devices/{id}/label")
+    public String renameDevice(@PathVariable UUID id,
+                               @RequestParam(required = false) String label,
+                               Authentication auth, RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        if (member.getWifiMac() == null) {
-            member.setWifiMac(mac.toLowerCase().trim());
-            member.setUpdatedAt(LocalDateTime.now());
-            memberRepo.save(member);
-            request.getSession().removeAttribute("skipWifiMac");
-            ra.addFlashAttribute("success", "Appareil enregistré — la présence sera détectée automatiquement !");
-        }
-        return "redirect:/mobile/";
+        wifiMacRepo.findById(id).ifPresent(mac -> {
+            if (!mac.getMember().getId().equals(member.getId())) return;
+            mac.setLabel(label != null && !label.isBlank() ? label.trim() : null);
+            wifiMacRepo.save(mac);
+        });
+        ra.addFlashAttribute("success", "Nom de l'appareil mis à jour.");
+        return "redirect:/mobile/devices";
     }
 
-    @PostMapping("/register-device/skip")
-    public String skipMacRegistration(HttpServletRequest request) {
-        request.getSession().setAttribute("skipWifiMac", Boolean.TRUE);
-        return "redirect:/mobile/";
+    @PostMapping("/devices/{id}/delete")
+    public String deleteDevice(@PathVariable UUID id,
+                               Authentication auth, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        wifiMacRepo.findById(id).ifPresent(mac -> {
+            if (!mac.getMember().getId().equals(member.getId())) return;
+            wifiAccessService.revoke(member, mac.getMac(), "user-removed");
+            wifiMacRepo.delete(mac);
+        });
+        ra.addFlashAttribute("success", "Appareil supprimé.");
+        return "redirect:/mobile/devices";
     }
 
     @PostMapping("/presence/{id}/upgrade")
@@ -126,16 +134,8 @@ public class MobileController {
             ra.addFlashAttribute("error", "Présence déjà en journée complète");
             return "redirect:/mobile/";
         }
-        BigDecimal extra = new BigDecimal("0.5");
-        if (!member.isPermanent()) {
-            BigDecimal remaining = member.getPackUnitsRemaining() != null ? member.getPackUnitsRemaining() : BigDecimal.ZERO;
-            if (remaining.compareTo(extra) < 0) {
-                ra.addFlashAttribute("error", "Solde insuffisant pour passer en journée complète");
-                return "redirect:/mobile/";
-            }
-            member.setPackUnitsUsed(member.getPackUnitsUsed().add(extra));
-            memberRepo.save(member);
-        }
+        // Les unités de pack sont désormais décomptées par le poller WiFi.
+        // Ici on ne fait que mettre à jour le libellé de la présence.
         p.setPresenceType(PresenceType.FULL_DAY);
         p.setUnitsConsumed(new BigDecimal("1.0"));
         presenceRepo.save(p);
@@ -156,13 +156,11 @@ public class MobileController {
             ra.addFlashAttribute("error", "Modification possible uniquement le jour même");
             return "redirect:/mobile/";
         }
-        if (!member.isPermanent() && p.getUnitsConsumed() != null) {
-            member.setPackUnitsUsed(member.getPackUnitsUsed().subtract(p.getUnitsConsumed()));
-            memberRepo.save(member);
-        }
+        // Pas de remboursement de pack : la consommation est calculée par
+        // le temps de connexion WiFi, indépendamment de la présence déclarée.
         p.setStatus(ch.amicalewifi.model.PresenceStatus.CANCELLED);
         presenceRepo.save(p);
-        ra.addFlashAttribute("success", "Présence annulée — crédits remboursés");
+        ra.addFlashAttribute("success", "Présence annulée");
         return "redirect:/mobile/";
     }
 
@@ -315,16 +313,6 @@ public class MobileController {
         return "redirect:/mobile/security";
     }
 
-    @PostMapping("/profile/reset-mac")
-    public String resetMac(Authentication auth, RedirectAttributes ra) {
-        Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        m.setWifiMac(null);
-        m.setUpdatedAt(LocalDateTime.now());
-        memberRepo.save(m);
-        ra.addFlashAttribute("success", "Adresse MAC supprimée — la détection automatique est désactivée.");
-        return "redirect:/mobile/profile";
-    }
-
     /** Page ouverte après scan du QR code du coworking. */
     @GetMapping("/presence")
     public String presenceScan(@RequestParam(required = false) String venue,
@@ -355,10 +343,6 @@ public class MobileController {
         if (unitaire) presenceType = presenceType.toUnitaire();
         LocalDate presenceDate = (date != null) ? date : LocalDate.now();
         ScanResult result = scanService.processScanByToken(member.getQrToken(), presenceType, presenceDate);
-        if (result instanceof ScanResult.Granted) {
-            unifiService.createVoucher(member.getDisplayName())
-                    .ifPresent(code -> model.addAttribute("wifiVoucher", code));
-        }
         model.addAttribute("result", result);
         model.addAttribute("member", member);
         return "mobile/scan-result";

@@ -8,24 +8,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import javax.net.ssl.*;
-import java.net.HttpURLConnection;
 import java.security.cert.X509Certificate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
- * Intégration UniFi Cloud — création de vouchers hotspot WiFi.
+ * Intégration UniFi pour le portail captif externe.
  *
- * Lorsqu'un membre confirme sa présence via l'appli mobile, un voucher
- * à usage unique est généré et affiché pour qu'il se connecte au réseau
- * invité du coworking.
+ * Le contrôleur UniFi redirige toute association WiFi vers
+ * https://coworker.amicalewifi.ch/login?id=<MAC>&ap=<AP>&ssid=&t=&url=
+ * On vérifie l'accès du membre (pack actif / contrat permanent), puis on
+ * autorise (ou non) sa MAC via cette classe.
  *
- * API : POST {baseUrl}/api/s/{site}/cmd/hotspot
- *       Header : X-API-KEY
- *       Body   : {"cmd":"create-voucher","expire":<min>,"n":1,"quota":1,"note":"<nom>"}
- *
- * Après création, un second appel GET /api/s/{site}/stat/voucher?create_time=<ts>
- * récupère le code lisible (ex: "12345-67890").
+ * Endpoints utilisés :
+ *   POST {baseUrl}/api/s/{site}/cmd/stamgr
+ *       body : {"cmd":"authorize-guest","mac":"<mac>","minutes":<n>}
+ *       body : {"cmd":"unauthorize-guest","mac":"<mac>"}
+ *   GET  {baseUrl}/api/s/{site}/stat/sta
+ *       → liste des clients connectés (avec mac + uptime) pour le poller.
+ * Authentification : header X-API-KEY.
  */
 @Service
 @Slf4j
@@ -34,7 +34,6 @@ public class UnifiService {
     @Value("${amicale.unifi.api-key}")               private String apiKey;
     @Value("${amicale.unifi.site:default}")          private String site;
     @Value("${amicale.unifi.base-url:https://unifi.ui.com/proxy/network}") private String baseUrl;
-    @Value("${amicale.unifi.voucher-expire-minutes:600}") private int expireMinutes;
 
     private final RestTemplate rest = buildRestTemplate();
 
@@ -56,9 +55,24 @@ public class UnifiService {
     }
 
     /**
-     * Retourne les statistiques du site depuis l'EA API (/ea/sites).
-     * L'API cloud UniFi n'expose pas les clients individuels.
+     * Normalise une adresse MAC vers le format lowercase aa:bb:cc:dd:ee:ff.
+     * Accepte les variantes courantes : aabbccddeeff, AA-BB-CC-DD-EE-FF,
+     * AA:BB:CC:DD:EE:FF, séparateurs '.', etc.
+     * Retourne null si l'entrée n'est pas une MAC valide.
      */
+    public static String normalizeMac(String raw) {
+        if (raw == null) return null;
+        String hex = raw.toLowerCase().replaceAll("[^0-9a-f]", "");
+        if (hex.length() != 12) return null;
+        StringBuilder sb = new StringBuilder(17);
+        for (int i = 0; i < 12; i += 2) {
+            if (i > 0) sb.append(':');
+            sb.append(hex, i, i + 2);
+        }
+        return sb.toString();
+    }
+
+    /** Statistiques globales du site UniFi (utilisé par /admin/wifi). */
     @SuppressWarnings("unchecked")
     public Map<String, Object> getSiteStats() {
         try {
@@ -90,44 +104,13 @@ public class UnifiService {
         }
     }
 
-    public List<String> getConnectedClientMacs() {
-        return getConnectedClients().stream()
-                .map(c -> (String) c.get("mac"))
-                .filter(mac -> mac != null && !mac.isBlank())
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-    }
-
-    public String getMacForIp(String ip) {
-        if (ip == null || ip.isBlank()) return null;
-        return getConnectedClients().stream()
-                .filter(c -> ip.equals(c.get("ip")))
-                .map(c -> (String) c.get("mac"))
-                .filter(mac -> mac != null && !mac.isBlank())
-                .map(String::toLowerCase)
-                .findFirst().orElse(null);
-    }
-
-    /** Connected clients whose MAC is not in knownMacs, with mac + hostname fields. */
-    public List<Map<String, String>> getUnknownClients(Set<String> knownMacs) {
-        return getConnectedClients().stream()
-                .filter(c -> {
-                    Object raw = c.get("mac");
-                    if (!(raw instanceof String mac)) return false;
-                    return !mac.isBlank() && !knownMacs.contains(mac.toLowerCase());
-                })
-                .map(c -> {
-                    String mac      = ((String) c.get("mac")).toLowerCase();
-                    Object hostnameRaw = c.get("hostname");
-                    String hostname = hostnameRaw instanceof String h ? h : mac;
-                    Map<String, String> entry = new LinkedHashMap<>();
-                    entry.put("mac",      mac);
-                    entry.put("hostname", hostname);
-                    return entry;
-                })
-                .collect(Collectors.toList());
-    }
-
+    /**
+     * Liste brute des clients WiFi connectés (champ par champ tel que renvoyé
+     * par l'API UniFi). Chaque entrée contient au minimum :
+     *   - "mac"      : adresse MAC du client
+     *   - "uptime"   : secondes depuis l'association courante
+     *   - "hostname" : nom d'hôte (optionnel)
+     */
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getConnectedClients() {
         try {
@@ -151,108 +134,65 @@ public class UnifiService {
         }
     }
 
-    /** Retourne la réponse brute pour diagnostic admin. */
-    public String getConnectedClientsRaw() {
-        StringBuilder out = new StringBuilder();
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("X-API-KEY", apiKey);
-
-        String hostId = "70A741F15DCF0000000006A67B3B0000000006F698BD0000000063065C68:727259026";
-        String[] candidates = {
-            "https://unifi.ui.com/proxy/network/api/s/default/stat/sta",
-            "https://unifi.ui.com/proxy/network/api/self/sites",
-            "https://unifi.ui.com/consoles/" + hostId + "/proxy/network/api/s/default/stat/sta",
-            "https://unifi.ui.com/consoles/" + hostId + "/proxy/network/api/self/sites",
-        };
-        for (String url : candidates) {
-            out.append("=== GET ").append(url).append(" ===\n");
-            out.append(rawGet(url, headers)).append("\n\n");
+    /**
+     * Autorise une MAC sur le réseau invité UniFi pour la durée donnée.
+     * Appelé après login réussi sur le portail captif quand le membre a
+     * un pack actif (ou un contrat permanent).
+     *
+     * @param macRaw adresse MAC (n'importe quelle forme acceptée par normalizeMac)
+     * @param minutes durée d'autorisation en minutes
+     * @return true si l'appel UniFi a réussi
+     */
+    public boolean authorizeGuest(String macRaw, long minutes) {
+        String mac = normalizeMac(macRaw);
+        if (mac == null) {
+            log.warn("UniFi authorize-guest: MAC invalide {}", macRaw);
+            return false;
         }
-        return out.toString();
-    }
-
-    private String rawGet(String url, HttpHeaders headers) {
-        try {
-            ResponseEntity<String> resp = rest.exchange(
-                    url, HttpMethod.GET, new HttpEntity<>(headers), String.class);
-            return "HTTP " + resp.getStatusCode() + "\n" + resp.getBody();
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            return "HTTP " + e.getStatusCode() + "\n" + e.getResponseBodyAsString();
-        } catch (Exception e) {
-            return e.getClass().getSimpleName() + ": " + e.getMessage();
-        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("cmd",     "authorize-guest");
+        body.put("mac",     mac);
+        body.put("minutes", minutes);
+        return postStamgr(body, "authorize-guest " + mac + " (" + minutes + " min)");
     }
 
     /**
-     * Crée un voucher hotspot WiFi à usage unique pour le membre.
-     *
-     * @param memberNote nom affiché dans le portail UniFi (ex: "Julien Reuse")
-     * @return code du voucher (ex: "12345-67890"), ou empty si erreur
+     * Révoque l'autorisation invité pour une MAC. Le client sera renvoyé
+     * sur le portail captif à sa prochaine association.
      */
-    public Optional<String> createVoucher(String memberNote) {
+    public boolean unauthorizeGuest(String macRaw) {
+        String mac = normalizeMac(macRaw);
+        if (mac == null) {
+            log.warn("UniFi unauthorize-guest: MAC invalide {}", macRaw);
+            return false;
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("cmd", "unauthorize-guest");
+        body.put("mac", mac);
+        return postStamgr(body, "unauthorize-guest " + mac);
+    }
+
+    private boolean postStamgr(Map<String, Object> body, String label) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("X-API-KEY", apiKey);
-
-            // Étape 1 : créer le voucher
-            Map<String, Object> body = new LinkedHashMap<>();
-            body.put("cmd",    "create-voucher");
-            body.put("expire", expireMinutes);
-            body.put("n",      1);
-            body.put("quota",  1);   // usage unique
-            body.put("note",   memberNote);
-
-            String createUrl = baseUrl + "/api/s/" + site + "/cmd/hotspot";
-            ResponseEntity<Map> createResp = rest.exchange(
-                    createUrl, HttpMethod.POST,
-                    new HttpEntity<>(body, headers), Map.class);
-
-            if (!createResp.getStatusCode().is2xxSuccessful() || createResp.getBody() == null) {
-                log.warn("UniFi create-voucher échoué: {}", createResp.getStatusCode());
-                return Optional.empty();
+            String url = baseUrl + "/api/s/" + site + "/cmd/stamgr";
+            ResponseEntity<String> resp = rest.exchange(
+                    url, HttpMethod.POST,
+                    new HttpEntity<>(body, headers), String.class);
+            if (resp.getStatusCode().is2xxSuccessful()) {
+                log.info("UniFi {} OK", label);
+                return true;
             }
-
-            // Récupérer le create_time pour chercher le voucher
-            List<?> data = (List<?>) createResp.getBody().get("data");
-            if (data == null || data.isEmpty()) {
-                log.warn("UniFi create-voucher: réponse vide");
-                return Optional.empty();
-            }
-            Object createTime = ((Map<?, ?>) data.get(0)).get("create_time");
-            if (createTime == null) {
-                log.warn("UniFi create-voucher: create_time manquant");
-                return Optional.empty();
-            }
-
-            // Étape 2 : récupérer le code du voucher
-            String statUrl = baseUrl + "/api/s/" + site + "/stat/voucher?create_time=" + createTime;
-            ResponseEntity<Map> statResp = rest.exchange(
-                    statUrl, HttpMethod.GET,
-                    new HttpEntity<>(headers), Map.class);
-
-            if (!statResp.getStatusCode().is2xxSuccessful() || statResp.getBody() == null) {
-                log.warn("UniFi stat/voucher échoué: {}", statResp.getStatusCode());
-                return Optional.empty();
-            }
-
-            List<?> vouchers = (List<?>) statResp.getBody().get("data");
-            if (vouchers == null || vouchers.isEmpty()) {
-                log.warn("UniFi: aucun voucher trouvé pour create_time={}", createTime);
-                return Optional.empty();
-            }
-
-            String code = (String) ((Map<?, ?>) vouchers.get(0)).get("code");
-            if (code != null && code.length() == 10) {
-                // Formater "12345-67890" si renvoyé sans tiret
-                code = code.substring(0, 5) + "-" + code.substring(5);
-            }
-            log.info("UniFi voucher créé: {} pour {}", code, memberNote);
-            return Optional.ofNullable(code);
-
+            log.warn("UniFi {} échec HTTP {}", label, resp.getStatusCode());
+            return false;
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            log.warn("UniFi {} HTTP {}: {}", label, e.getStatusCode(), e.getResponseBodyAsString());
+            return false;
         } catch (Exception e) {
-            log.warn("UniFi voucher non disponible: {}", e.getMessage());
-            return Optional.empty();
+            log.warn("UniFi {} indisponible: {}", label, e.getMessage());
+            return false;
         }
     }
 }
