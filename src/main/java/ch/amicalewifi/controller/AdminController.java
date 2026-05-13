@@ -5,7 +5,6 @@ import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -52,8 +51,6 @@ public class AdminController {
     private final IppPrintService                  ippPrintService;
     private final PrintCreditTransactionRepository printCreditTxRepo;
     private final PasswordEncoder                  passwordEncoder;
-
-    @Value("${amicale.venue.qr-token}") private String venueQrToken;
 
     private static final String CHARS = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
     private static final SecureRandom RNG = new SecureRandom();
@@ -622,13 +619,6 @@ public class AdminController {
         return "admin/wifi";
     }
 
-    @GetMapping("/qr/print")
-    public String qrPrint(Model model,
-                          @RequestHeader(value = "Host", defaultValue = "localhost:8081") String host) {
-        model.addAttribute("qrUrl", "http://" + host + "/qr/venue");
-        model.addAttribute("venueUrl", "http://" + host + "/mobile/presence?venue=" + venueQrToken);
-        return "admin/qr-print";
-    }
 
     // ── User management ──────────────────────────────────────────────────────
 

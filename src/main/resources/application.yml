@@ -137,9 +137,6 @@ amicale:
     public-host:  print.amicalewifi.ch
     queue-name:   claudine
 
-  venue:
-    qr-token: amicale-fully-2024  # Token du QR code affiché dans le coworking
-
   akuvox:
     api-key:      CHANGE_ME
     http-port:    80

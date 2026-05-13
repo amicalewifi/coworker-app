@@ -20,14 +20,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .mc-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;border:2px solid rgba(255,255,255,.2);overflow:hidden;}
 .mc-name{font-size:20px;font-weight:800;letter-spacing:-.4px;}
 .mc-formula{font-size:11px;opacity:.65;margin-top:2px;font-weight:500;}
-.scan-btn{display:block;padding:16px;background:var(--prim);color:#fff;border-radius:14px;text-align:center;font-size:15px;font-weight:700;margin-bottom:12px;border:none;cursor:pointer;font-family:var(--font);width:100%;box-shadow:0 4px 16px rgba(0,122,245,.30);transition:all .2s;}
-.scan-btn:hover{background:var(--prim-d);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,122,245,.40);}
-.type-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
-.type-opt{padding:10px 6px;border-radius:12px;border:1.5px solid var(--bdr);text-align:center;cursor:pointer;transition:all .15s;background:var(--surf);}
-.type-opt.sel{border-color:var(--prim);background:var(--prim-l);}
-.type-opt-name{font-size:12px;font-weight:700;display:block;}
-.type-opt-hours{font-size:10px;color:var(--t3);display:block;margin-top:1px;}
-.type-opt-cost{font-size:11px;font-weight:700;display:block;margin-top:3px;}
 </style>
 </head>
 <body>
@@ -88,80 +80,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
        style="background:var(--orange);color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;text-decoration:none;white-space:nowrap;">Renouveler</a>
   </div>
 
-  <!-- Présence aujourd'hui -->
-  <div th:if="${!#lists.isEmpty(todayPresences)}"
-       style="background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;padding:14px 16px;margin-bottom:14px;">
-    <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Présence aujourd'hui</div>
-    <div th:each="p : ${todayPresences}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--bdr);" class="presence-row">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span th:switch="${p.presenceType.name()}">
-          <span th:case="'FULL_DAY'" class="b b-g">Journée</span>
-          <span th:case="'HALF_AM'"  class="b b-o">½ Matin</span>
-          <span th:case="'HALF_PM'"  class="b b-o">½ AP-M</span>
-          <span th:case="*" class="b b-gr" th:text="${p.presenceType.shortLabel}"></span>
-        </span>
-        <span style="font-size:12px;color:var(--t3);"
-              th:text="'Arrivée '+${#temporals.format(p.checkedInAt,'HH:mm')}"></span>
-      </div>
-      <div style="display:flex;gap:6px;">
-        <form th:if="${p.presenceType.name() == 'HALF_AM' or p.presenceType.name() == 'HALF_PM'}"
-              th:action="@{/mobile/presence/{id}/upgrade(id=${p.id})}" method="post">
-          <button type="submit" class="btn btn-sm btn-g" style="font-size:11px;padding:5px 10px;">↑ Journée</button>
-        </form>
-        <form th:action="@{/mobile/presence/{id}/cancel(id=${p.id})}" method="post"
-              onsubmit="return confirm('Annuler cette présence ?')">
-          <button type="submit" class="btn btn-sm btn-r" style="font-size:11px;padding:5px 10px;">Annuler</button>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Scan QR du coworking -->
-  <div style="background:var(--gl);border:1.5px solid var(--gt);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-    <div style="width:42px;height:42px;border-radius:12px;background:var(--prim);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="19" width="3" height="3"/></svg>
-    </div>
-    <div style="flex:1;">
-      <div style="font-size:13px;font-weight:700;color:var(--gd);">Scanner le QR du coworking</div>
-      <div style="font-size:11px;color:var(--gd);opacity:.7;margin-top:2px;">Utilisez votre appareil photo pour scanner le QR affiché à l'entrée</div>
-    </div>
-  </div>
-
-  <!-- Enregistrement manuel -->
-  <div class="section-title">Ou enregistrer manuellement</div>
-
-  <form th:action="@{/mobile/scan}" method="post">
-    <div class="type-row" id="typeRow">
-      <label class="type-opt" onclick="selType(this)">
-        <input type="radio" name="presenceType" value="HALF_AM" style="display:none;">
-        <span class="type-opt-name">½ Matin</span>
-        <span class="type-opt-hours">07:00–12:30</span>
-        <span class="type-opt-cost" style="color:var(--od);">−0.5j</span>
-      </label>
-      <label class="type-opt sel" onclick="selType(this)">
-        <input type="radio" name="presenceType" value="FULL_DAY" checked style="display:none;">
-        <span class="type-opt-name">Journée</span>
-        <span class="type-opt-hours">07:00–19:00</span>
-        <span class="type-opt-cost" style="color:var(--gd);">−1.0j</span>
-      </label>
-      <label class="type-opt" onclick="selType(this)">
-        <input type="radio" name="presenceType" value="HALF_PM" style="display:none;">
-        <span class="type-opt-name">½ AP-M</span>
-        <span class="type-opt-hours">12:30–19:00</span>
-        <span class="type-opt-cost" style="color:var(--od);">−0.5j</span>
-      </label>
-    </div>
-
-    <div style="margin-bottom:12px;">
-      <label style="font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;">Date de présence</label>
-      <input type="date" name="date" class="field-in"
-             th:value="${#temporals.format(#temporals.createToday(),'yyyy-MM-dd')}"
-             style="width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:14px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;">
-    </div>
-
-    <button type="submit" class="scan-btn">Enregistrer ma présence</button>
-  </form>
-
   <div style="height:8px;"></div>
 </div>
 
@@ -188,13 +106,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   </a>
 </div>
 
-<script>
-function selType(el) {
-  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('sel'));
-  el.classList.add('sel');
-  el.querySelector('input[type=radio]').checked = true;
-}
-</script>
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {});

@@ -27,9 +27,6 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication auth) throws IOException {
-        boolean isCoworker = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_COWORKER"));
-
         HttpSession session = request.getSession(false);
         CaptivePortalParamFilter.CaptivePortalContext ctx = (session == null) ? null
                 : (CaptivePortalParamFilter.CaptivePortalContext)
@@ -46,7 +43,7 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String target = safeOriginalUrl(ctx);
         if (target == null) {
-            target = request.getContextPath() + (isCoworker ? "/mobile/" : "/admin/");
+            target = request.getContextPath() + "/mobile/";
         }
         response.sendRedirect(target);
     }
