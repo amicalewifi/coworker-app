@@ -147,7 +147,7 @@ public class MobileController {
     }
 
     @PostMapping("/profile")
-    public String updateProfile(Authentication auth,
+    public Object updateProfile(Authentication auth,
                                 @RequestParam(required = false) String phone,
                                 @RequestParam(required = false) String company,
                                 @RequestParam(required = false) String tvaNumber,
@@ -157,6 +157,7 @@ public class MobileController {
                                 @RequestParam(required = false) String country,
                                 @RequestParam(required = false) String website,
                                 @RequestParam(required = false) String linkedinUrl,
+                                @RequestHeader(value = "X-Requested-With", required = false) String requestedWith,
                                 RedirectAttributes ra) {
         Member m = memberRepo.findByEmail(auth.getName()).orElseThrow();
         m.setPhone(phone);
@@ -170,6 +171,10 @@ public class MobileController {
         m.setLinkedinUrl(linkedinUrl != null && !linkedinUrl.isBlank() ? linkedinUrl : null);
         m.setUpdatedAt(LocalDateTime.now());
         memberRepo.save(m);
+        // Autosave (XHR) : pas de redirection, pas de page renvoyée — juste 204.
+        if ("XMLHttpRequest".equalsIgnoreCase(requestedWith)) {
+            return ResponseEntity.noContent().build();
+        }
         ra.addFlashAttribute("success", "Profil mis à jour.");
         return "redirect:/mobile/profile";
     }
