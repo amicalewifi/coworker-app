@@ -11,21 +11,24 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Capture les paramètres du portail captif UniFi à l'arrivée sur /login.
+ * Capture les paramètres du portail captif UniFi à l'arrivée sur le serveur,
+ * peu importe la route exacte choisie par UniFi.
  *
- * UniFi redirige les clients non-authentifiés vers
- *   https://coworker.amicalewifi.ch/login?id=<MAC>&ap=<AP>&ssid=<SSID>&t=<TS>&url=<orig>
+ * UniFi redirige les clients non-authentifiés vers une URL qui dépend de la
+ * version du contrôleur — typiquement :
+ *   https://coworker.amicalewifi.ch/guest/s/<site>/?id=<MAC>&ap=<AP>&ssid=<SSID>&t=<TS>&url=<orig>
+ * mais aussi parfois directement :
+ *   https://coworker.amicalewifi.ch/login?id=<MAC>&...
  *
- * On stocke ces paramètres en session pour qu'ils survivent au POST du
- * formulaire de login, puis LoginSuccessHandler les consomme pour appeler
- * UnifiService.authorizeGuest(...) et rediriger vers l'URL d'origine.
+ * On capture les params dès qu'on en voit (id ou mac dans la query string,
+ * sur n'importe quel GET), on les stocke en session, et on renvoie l'utilisateur
+ * sur /login. Spring Security affiche le formulaire ; au login réussi,
+ * LoginSuccessHandler lit la session, appelle UnifiService.authorizeGuest(...)
+ * et redirige vers l'URL d'origine.
  *
- * Idempotent : si /login est rappelé sans ces paramètres (refresh, etc.),
- * la session conserve les valeurs précédentes.
- *
- * Diagnostic : chaque GET /login est journalisé en INFO avec l'intégralité
- * des query params reçus + headers utiles, pour pouvoir reconstituer ce
- * qu'UniFi a réellement envoyé (ou ne pas envoyé) côté serveur.
+ * Diagnostic : tout GET sur /login ou /guest/* est journalisé en INFO,
+ * ainsi que tout GET portant id/mac quelle que soit la route, pour pouvoir
+ * reconstituer ce qu'UniFi a réellement envoyé.
  */
 @Component
 @Slf4j
@@ -41,35 +44,61 @@ public class CaptivePortalParamFilter implements Filter {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
             throws IOException, ServletException {
         HttpServletRequest http = (HttpServletRequest) req;
-        if ("GET".equals(http.getMethod()) && "/login".equals(http.getRequestURI())) {
-            logLoginRequest(http);
+        HttpServletResponse out = (HttpServletResponse) res;
+        String path = http.getRequestURI();
+        boolean isGet = "GET".equals(http.getMethod());
 
-            String mac = http.getParameter("id");
-            if (mac == null) mac = http.getParameter("mac"); // tolère l'ancien nom UniFi
-            if (mac != null && !mac.isBlank()) {
-                CaptivePortalContext ctx = new CaptivePortalContext(
-                        mac.trim(),
-                        http.getParameter("ap"),
-                        http.getParameter("ssid"),
-                        http.getParameter("t"),
-                        http.getParameter("url"));
-                http.getSession(true).setAttribute(SESSION_KEY, ctx);
-                log.info("Captive portal: MAC liée à la session — mac={} ssid={} ap={} url={}",
-                        ctx.mac(), ctx.ssid(), ctx.ap(), ctx.originalUrl());
+        String mac = isGet ? extractMac(http) : null;
+        boolean hasPortalParams = mac != null && !mac.isBlank();
+        boolean isLoginPath  = "/login".equals(path);
+        boolean isGuestPath  = path != null && path.startsWith("/guest/");
+
+        if (isGet && (isLoginPath || isGuestPath || hasPortalParams)) {
+            logRequest(http);
+        }
+
+        if (hasPortalParams) {
+            CaptivePortalContext ctx = new CaptivePortalContext(
+                    mac.trim(),
+                    http.getParameter("ap"),
+                    firstNonBlank(http.getParameter("ssid"), http.getParameter("ssidName")),
+                    http.getParameter("t"),
+                    http.getParameter("url"));
+            http.getSession(true).setAttribute(SESSION_KEY, ctx);
+            log.info("Captive portal: MAC liée à la session — path={} mac={} ssid={} ap={} url={}",
+                    path, ctx.mac(), ctx.ssid(), ctx.ap(), ctx.originalUrl());
+
+            // Si UniFi a envoyé sur autre chose que /login (typiquement
+            // /guest/s/<site>/), on redirige sur /login pour montrer le formulaire.
+            if (!isLoginPath) {
+                out.sendRedirect("/login");
+                return;
             }
         }
+
         chain.doFilter(req, res);
     }
 
-    /** Journalise la requête /login en clair pour pouvoir diagnostiquer le flux UniFi. */
-    private void logLoginRequest(HttpServletRequest http) {
+    private static String extractMac(HttpServletRequest http) {
+        String mac = http.getParameter("id");
+        if (mac == null) mac = http.getParameter("mac"); // tolère l'ancien nom UniFi
+        return mac;
+    }
+
+    private static String firstNonBlank(String... candidates) {
+        for (String s : candidates) if (s != null && !s.isBlank()) return s;
+        return null;
+    }
+
+    /** Journalise la requête en clair pour diagnostiquer le flux UniFi. */
+    private void logRequest(HttpServletRequest http) {
         String params = formatParams(http.getParameterMap());
         String headers = LOGGED_HEADERS.stream()
                 .map(h -> h + "=" + Objects.toString(http.getHeader(h), ""))
                 .filter(s -> !s.endsWith("="))
                 .collect(Collectors.joining(", "));
-        log.info("GET /login from remote={} params=[{}] headers=[{}]",
-                http.getRemoteAddr(), params, headers);
+        log.info("GET {} from remote={} params=[{}] headers=[{}]",
+                http.getRequestURI(), http.getRemoteAddr(), params, headers);
     }
 
     private static String formatParams(Map<String, String[]> map) {
