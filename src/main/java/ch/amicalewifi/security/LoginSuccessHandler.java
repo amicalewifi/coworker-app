@@ -62,7 +62,8 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             if (!"http".equals(scheme) && !"https".equals(scheme)) return null;
             return u.toString();
         } catch (Exception e) {
-            log.warn("URL de redirection captive invalide: {}", ctx.originalUrl());
+            log.warn("URL de redirection captive invalide: {}",
+                    CaptivePortalParamFilter.stripQuery(ctx.originalUrl()));
             return null;
         }
     }

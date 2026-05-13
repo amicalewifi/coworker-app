@@ -52,6 +52,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.h2database:h2'
+    // Gradle 9 ne met plus junit-platform-launcher sur le classpath de runtime
+    // par défaut : il faut le déclarer explicitement.
+    testRuntimeOnly    'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') { useJUnitPlatform() }
