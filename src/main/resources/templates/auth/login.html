@@ -14,6 +14,7 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      margin: 0;
       background: radial-gradient(ellipse 80% 60% at 70% -10%, rgba(0,122,245,.07) 0%, transparent 60%),
                   radial-gradient(ellipse 60% 40% at -10% 110%, rgba(0,98,200,.05) 0%, transparent 50%),
                   var(--bg);
@@ -23,42 +24,62 @@
       from { background-position: 70% -10%, -10% 110%; }
       to   { background-position: 75% -5%, -5% 105%; }
     }
-    .login-wrap { width: 100%; max-width: 440px; padding: 24px; }
-    .logo-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 36px; }
+    .login-wrap { width: 100%; max-width: 400px; padding: 16px; box-sizing: border-box; }
+    .logo-bar  { display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+    .logo-bar img { height: 56px; width: auto; }
     .box {
       background: var(--surf);
       border: 1px solid var(--bdr);
       border-radius: var(--r-xl);
-      padding: 36px 40px;
+      padding: 20px 24px;
       box-shadow: var(--shadow-lg);
     }
-    .divider { border: none; border-top: 1px solid var(--bdr); margin: 22px 0; }
+    .box-title { font-size: 20px; font-weight: 900; letter-spacing: -.5px; margin-bottom: 2px; }
+    .box-sub   { font-size: 13px; color: var(--t2); margin-bottom: 14px; }
+    .box .form-row { margin-bottom: 10px; }
+    .box .form-in { padding: 9px 12px; }
+    .divider   { border: none; border-top: 1px solid var(--bdr); margin: 12px 0; }
+    .flash     { margin-bottom: 10px; }
+    .forgot    { text-align: center; margin-top: 10px; font-size: 12px; }
+    .signup    { text-align: center; font-size: 12px; color: var(--t2); }
+
+    /* Cas critique : popup captif Apple (souvent < 600px de haut).
+       En plus de compacter, on aligne en haut pour qu'aucun pixel du
+       formulaire ne soit coupé en haut quand le contenu dépasse. */
+    @media (max-height: 640px) {
+      body { align-items: flex-start; padding-top: 8px; padding-bottom: 8px; }
+      .logo-bar { margin-bottom: 8px; }
+      .logo-bar img { height: 40px; }
+      .box { padding: 16px 20px; }
+      .box-sub { margin-bottom: 10px; }
+      .divider { margin: 8px 0; }
+    }
   </style>
 </head>
 <body>
 <div class="login-wrap">
 
-  <div class="logo-bar" style="margin-bottom:32px; justify-content:center;">
-    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi" style="height:88px; width:auto;">
+  <div class="logo-bar">
+    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi">
   </div>
 
   <div class="box">
-    <div style="font-size:26px;font-weight:900;letter-spacing:-.7px;margin-bottom:6px;">Connexion</div>
-    <div style="font-size:14px;color:var(--t2);margin-bottom:26px;">Accédez à votre espace membre.</div>
+    <div class="box-title">Connexion</div>
+    <div class="box-sub">Accédez à votre espace membre.</div>
 
-    <div th:if="${param.error}" class="flash flash-err" style="margin-bottom:16px;">
+    <div th:if="${param.error}" class="flash flash-err">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
       <span>Email ou mot de passe incorrect.</span>
     </div>
-    <div th:if="${param.logout}" class="flash flash-ok" style="margin-bottom:16px;">
+    <div th:if="${param.logout}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
       <span>Vous avez été déconnecté.</span>
     </div>
-    <div th:if="${param.registered}" class="flash flash-ok" style="margin-bottom:16px;">
+    <div th:if="${param.registered}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
       <span>Compte créé avec succès — connectez-vous.</span>
     </div>
-    <div th:if="${success}" class="flash flash-ok" style="margin-bottom:16px;">
+    <div th:if="${success}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
       <span th:text="${success}"></span>
     </div>
@@ -69,21 +90,21 @@
         <input type="email" name="username" class="form-in"
                placeholder="votre@email.ch" autocomplete="email" required autofocus>
       </div>
-      <div class="form-row" style="margin-bottom:22px;">
+      <div class="form-row">
         <label class="form-lbl">Mot de passe</label>
         <input type="password" name="password" class="form-in"
                placeholder="••••••••" autocomplete="current-password" required>
       </div>
-      <button type="submit" class="btn btn-g btn-full">Se connecter →</button>
+      <button type="submit" class="btn btn-g btn-full" style="margin-top:6px;">Se connecter →</button>
     </form>
 
-    <div style="text-align:center;margin-top:14px;font-size:13px;">
+    <div class="forgot">
       <a th:href="@{/forgot-password}" style="color:var(--t3);">Mot de passe oublié ?</a>
     </div>
 
     <hr class="divider">
 
-    <div style="text-align:center;font-size:13px;color:var(--t2);">
+    <div class="signup">
       Pas encore membre ?
       <a th:href="@{/register}" style="color:var(--prim);font-weight:600;">Créer un compte</a>
     </div>
