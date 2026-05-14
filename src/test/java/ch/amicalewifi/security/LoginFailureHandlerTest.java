@@ -4,6 +4,7 @@ import ch.amicalewifi.model.User;
 import ch.amicalewifi.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -24,6 +25,9 @@ class LoginFailureHandlerTest {
         // DefaultRedirectStrategy passes the URL through encodeRedirectURL before
         // calling sendRedirect; stub it as identity so verify(...) sees the raw URL.
         when(resp.encodeRedirectURL(anyString())).thenAnswer(inv -> inv.getArgument(0));
+        // Spring Security's saveException() calls request.getSession() to stash the
+        // exception. Provide a real-enough HttpSession so it doesn't NPE.
+        when(req.getSession()).thenReturn(mock(HttpSession.class));
     }
 
     @Test
