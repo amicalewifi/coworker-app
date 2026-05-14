@@ -92,11 +92,16 @@ public class SecurityConfig {
         return email -> {
             var user = userRepo.findByEmail(email)
                     .orElseThrow(() -> new UsernameNotFoundException("Utilisateur introuvable: " + email));
+            // Note: we no longer block login on !emailVerified — unverified
+            // users can sign in and are nagged via a banner. Otherwise a new
+            // member sitting on the coworking WiFi would be stuck (can't reach
+            // their inbox via the captive portal until they're authorised, but
+            // can't be authorised until verified).
             return User.builder()
                     .username(user.getEmail())
                     .password(user.getPasswordHash())
                     .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
-                    .disabled(!user.isActive() || !user.isEmailVerified())
+                    .disabled(!user.isActive())
                     .build();
         };
     }
