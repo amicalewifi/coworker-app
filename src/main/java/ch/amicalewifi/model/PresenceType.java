@@ -29,6 +29,17 @@ public enum PresenceType {
     public BigDecimal getUnits()      { return units; }
     public boolean    isUnitaire()    { return this == UNIT_HALF || this == UNIT_HALF_AM || this == UNIT_HALF_PM || this == UNIT_FULL || this == TRIAL; }
 
+    /** Durée nominale de la plage en minutes (déduite de la propriété {@link #hours}). */
+    public int getDurationMinutes() {
+        String[] parts = hours.split("[–-]");
+        return toMinutes(parts[1].trim()) - toMinutes(parts[0].trim());
+    }
+
+    private static int toMinutes(String hhmm) {
+        String[] p = hhmm.split(":");
+        return Integer.parseInt(p[0]) * 60 + Integer.parseInt(p[1]);
+    }
+
     public PresenceType toUnitaire() {
         return switch (this) {
             case FULL_DAY, UNIT_FULL -> UNIT_FULL;

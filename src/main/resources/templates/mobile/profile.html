@@ -28,6 +28,21 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .autosave-toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(20px);background:#0c1222;color:#fff;font-size:13px;font-weight:600;padding:9px 16px;border-radius:999px;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;z-index:50;display:flex;align-items:center;gap:8px;}
 .autosave-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .autosave-toast.err{background:#b91c1c;}
+.legal-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;margin-top:14px;box-shadow:0 1px 6px rgba(0,0,0,.04);overflow:hidden;}
+.legal-card > summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.legal-card > summary::-webkit-details-marker{display:none;}
+.legal-card-ico{width:36px;height:36px;border-radius:10px;background:var(--surf-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.legal-card-title{flex:1;font-size:14px;font-weight:700;color:var(--text);}
+.legal-card-chev{flex-shrink:0;color:var(--t3);transition:transform .2s ease;}
+.legal-card[open] .legal-card-chev{transform:rotate(90deg);}
+.legal-body{padding:0 18px 18px;font-size:13px;line-height:1.6;color:var(--t2);}
+.legal-body h4{font-size:13px;font-weight:800;color:var(--text);margin:14px 0 6px;letter-spacing:.01em;}
+.legal-body h4:first-child{margin-top:4px;}
+.legal-body p{margin:0 0 10px;}
+.legal-body p:last-child{margin-bottom:0;}
+.legal-body ul{margin:0 0 10px;padding-left:20px;}
+.legal-body li{margin-bottom:2px;}
+.legal-body address{font-style:normal;line-height:1.55;}
 </style>
 </head>
 <body>
@@ -151,6 +166,134 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--t3)" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
   </a>
+
+  <!-- Mentions Légales -->
+  <details class="legal-card">
+    <summary>
+      <div class="legal-card-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+      </div>
+      <div class="legal-card-title">Mentions Légales</div>
+      <svg class="legal-card-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+    </summary>
+    <div class="legal-body">
+      <h4>Siège Social</h4>
+      <address>
+        Association Fully Coworking<br>
+        Rue de l'Eglise 34<br>
+        CH-1926 Fully
+      </address>
+
+      <h4>Copyright</h4>
+      <p>Les images, photos et le contenu du site sont protégés par le droit d'auteur.</p>
+
+      <h4>Politique de confidentialité</h4>
+      <p>Le site web amicalewifi.ch est détenu par Association Fully Coworking, qui est un contrôleur de données de vos données personnelles.</p>
+      <p>Nous avons adopté cette politique de confidentialité, qui détermine la manière dont nous traitons les informations collectées par amicalewifi.ch, qui fournit également les raisons pour lesquelles nous devons collecter certaines données personnelles vous concernant. Par conséquent, vous devez lire cette politique de confidentialité avant d'utiliser le site web de amicalewifi.ch.</p>
+      <p>Nous prenons soin de vos données personnelles et nous nous engageons à en garantir la confidentialité et la sécurité.</p>
+      <p>Les informations personnelles que nous collectons : Lorsque vous visitez le amicalewifi.ch, nous recueillons automatiquement certaines informations sur votre appareil, notamment des informations sur votre navigateur web, votre adresse IP, votre fuseau horaire et certains des cookies installés sur votre appareil. En outre, lorsque vous naviguez sur le site, nous recueillons des informations sur les pages web ou les produits individuels que vous consultez, sur les sites web ou les termes de recherche qui vous ont renvoyé au site et sur la manière dont vous interagissez avec le site. Nous désignons ces informations collectées automatiquement par le terme « informations sur les appareils ». En outre, nous pourrions collecter les données personnelles que vous nous fournissez (y compris, mais sans s'y limiter, le nom, le prénom, l'adresse, les informations de paiement, etc.) lors de l'inscription afin de pouvoir exécuter le contrat.</p>
+
+      <h4>Pourquoi traitons-nous vos données ?</h4>
+      <p>Notre priorité absolue est la sécurité des données des clients et, à ce titre, nous ne pouvons traiter que des données minimales sur les utilisateurs, uniquement dans la mesure où cela est absolument nécessaire pour maintenir le site web. Les informations collectées automatiquement sont utilisées uniquement pour identifier les cas potentiels d'abus et établir des informations statistiques concernant l'utilisation du site web. Ces informations statistiques ne sont pas autrement agrégées de manière à identifier un utilisateur particulier du système.</p>
+      <p>Vous pouvez visiter le site web sans nous dire qui vous êtes ni révéler d'informations, par lesquelles quelqu'un pourrait vous identifier comme un individu spécifique et identifiable. Toutefois, si vous souhaitez utiliser certaines fonctionnalités du site web, ou si vous souhaitez recevoir notre lettre d'information ou fournir d'autres détails en remplissant un formulaire, vous pouvez nous fournir des données personnelles, telles que votre e-mail, votre prénom, votre nom, votre ville de résidence, votre organisation, votre numéro de téléphone. Vous pouvez choisir de ne pas nous fournir vos données personnelles, mais il se peut alors que vous ne puissiez pas profiter de certaines fonctionnalités du site web. Par exemple, vous ne pourrez pas recevoir notre bulletin d'information ou nous contacter directement à partir du site web. Les utilisateurs qui ne savent pas quelles informations sont obligatoires sont invités à nous contacter via administration@amicalewifi.ch.</p>
+
+      <h4>Vos droits</h4>
+      <p>Si vous êtes un résident européen, vous disposez des droits suivants liés à vos données personnelles :</p>
+      <ul>
+        <li>Le droit d'être informé.</li>
+        <li>Le droit d'accès.</li>
+        <li>Le droit de rectification.</li>
+        <li>Le droit à l'effacement.</li>
+        <li>Le droit de restreindre le traitement.</li>
+        <li>Le droit à la portabilité des données.</li>
+        <li>Le droit d'opposition.</li>
+        <li>Les droits relatifs à la prise de décision automatisée et au profilage.</li>
+      </ul>
+      <p>Si vous souhaitez exercer ce droit, veuillez nous contacter via les coordonnées ci-dessous.</p>
+      <p>En outre, si vous êtes un résident européen, nous notons que nous traitons vos informations afin d'exécuter les contrats que nous pourrions avoir avec vous (par exemple, si vous passez une commande par le biais du site), ou autrement pour poursuivre nos intérêts commerciaux légitimes énumérés ci-dessus. En outre, veuillez noter que vos informations pourraient être transférées en dehors de l'Europe, y compris au Canada et aux États-Unis.</p>
+
+      <h4>Liens vers d'autres sites web</h4>
+      <p>Notre site web peut contenir des liens vers d'autres sites web qui ne sont pas détenus ou contrôlés par nous. Sachez que nous ne sommes pas responsables de ces autres sites web ou des pratiques de confidentialité des tiers. Nous vous encourageons à être attentif lorsque vous quittez notre site web et à lire les déclarations de confidentialité de chaque site web susceptible de collecter des informations personnelles.</p>
+
+      <h4>Sécurité de l'information</h4>
+      <p>Nous sécurisons les informations que vous fournissez sur des serveurs informatiques dans un environnement contrôlé et sécurisé, protégé contre tout accès, utilisation ou divulgation non autorisés. Nous conservons des garanties administratives, techniques et physiques raisonnables pour nous protéger contre tout accès, utilisation, modification et divulgation non autorisés des données personnelles sous son contrôle et sa garde. Toutefois, aucune transmission de données sur Internet ou sur un réseau sans fil ne peut être garantie.</p>
+
+      <h4>Divulgation légale</h4>
+      <p>Nous divulguerons toute information que nous collectons, utilisons ou recevons si la loi l'exige ou l'autorise, par exemple pour nous conformer à une citation à comparaître ou à une procédure judiciaire similaire, et lorsque nous pensons de bonne foi que la divulgation est nécessaire pour protéger nos droits, votre sécurité ou celle d'autrui, enquêter sur une fraude ou répondre à une demande du gouvernement.</p>
+
+      <h4>Informations de contact</h4>
+      <p>Si vous souhaitez nous contacter pour comprendre davantage la présente politique ou si vous souhaitez nous contacter concernant toute question relative aux droits individuels et à vos informations personnelles, vous pouvez envoyer un courriel à <a th:href="'mailto:administration@amicalewifi.ch'">administration@amicalewifi.ch</a>.</p>
+    </div>
+  </details>
+
+  <!-- Conditions Générales de Vente -->
+  <details class="legal-card">
+    <summary>
+      <div class="legal-card-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      </div>
+      <div class="legal-card-title">Conditions Générales de Vente</div>
+      <svg class="legal-card-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+    </summary>
+    <div class="legal-body">
+      <h4>1. Domaine d'application</h4>
+      <p>Les présentes conditions générales définissent les modalités applicables aux services fournis aux coworkers par l'association « Fully Coworking » dans l'espace de coworking « l'Amicale du Wifi » par le biais du site amicalewifi.ch.</p>
+
+      <h4>2. Préambule</h4>
+      <p>2.1 « l'Amicale du Wifi » est un espace de coworking créé et géré par l'association à but non lucratif « Fully Coworking ». L'espace de coworking est situé à la rue de l'Eglise 34 à Fully.</p>
+      <p>2.2 L'accès à l'espace de « l'Amicale du Wifi » s'acquiert par contrat d'abonnement entre l'association « Fully Coworking » et un coworker.</p>
+      <p>2.3 Les parties reconnaissent que ce contrat d'abonnement ne constitue en aucun cas un contrat de bail, de location ou de sous-location.</p>
+
+      <h4>3. Services</h4>
+      <p>3.1 Accès à un espace de bureau meublé dans un open space ou à la salle de conférence, dans les limites de la formule souscrite par le coworker.</p>
+      <p>3.2 Services optionnels payants souscrits par le coworker, tel que du placement promotionnel.</p>
+      <p>3.3 Services inclus sans supplément, tel que l'accès aux espaces communs (cafétéria, espace de détente, WC), accès aux événements réservés aux coworkers, ménage des places de travail et des parties communes.</p>
+      <p>3.4 Accès internet.</p>
+
+      <h4>4. Accès à l'espace</h4>
+      <p>4.1 Les coworkers sont autorisés à accéder à l'espace de coworking durant les jours et horaires indiqués dans leur formule.</p>
+      <p>4.2 L'association « Fully Coworking » fourni des QR Codes pour accéder à l'espace de coworking.</p>
+      <p>4.3 Les QR codes d'accès sont personnels et ne peuvent pas être utilisés par des tiers.</p>
+      <p>4.4 Les visites de tiers dans l'espace de coworking sont effectuées sous la responsabilité du coworker. Le coworker répond des actions de ses invités.</p>
+
+      <h4>5. Utilisation de l'espace et responsabilité</h4>
+      <p>5.1 Le coworker s'engage à utiliser l'espace de coworking pour l'usage mentionné dans la formule souscrite.</p>
+      <p>5.2 Le coworker s'engage à utiliser l'espace de coworking pour son propre usage. Les abonnements ne sont pas transmissibles.</p>
+      <p>5.3 L'association « Fully Coworking » décline toute responsabilité envers les coworkers et invités pour toute perte ou dommage direct ou indirect (y compris de revenu ou de bénéfice) et toute atteinte à l'intégrité corporelle en lien avec la formule souscrite.</p>
+      <p>5.4 L'association « Fully Coworking » décline toute responsabilité en cas d'interruption, défaillance ou panne du réseau internet et/ou du service Wi-Fi et ne fournit aucune garantie quant à l'accessibilité à ces services et à leur rapidité.</p>
+      <p>5.5 L'association « Fully Coworking » ne peut pas être tenue responsable pour toute perte ou dommage direct et/ou indirect subis en lien avec l'accès à internet et/ou l'infrastructure informatique.</p>
+
+      <h4>6. Assurances</h4>
+      <p>6.1 Le coworker s'engage à souscrire personnellement à toutes les assurances nécessaires à son activité et en particulier à une assurance Responsabilité Civile couvrant les dommages causés à l'espace « l'Amicale du Wifi » et à son mobilier.</p>
+
+      <h4>7. Vol et objets de valeur</h4>
+      <p>7.1 L'association « Fully Coworking » décline toute responsabilité en cas de vol. Le coworker prend les mesures nécessaires pour garantir la sécurité de son matériel et de ses valeurs.</p>
+
+      <h4>8. Ménage</h4>
+      <p>8.1 Un service de ménage hebdomadaire est assuré par l'association « Fully Coworking ».</p>
+      <p>8.2 Le coworker s'engage à garder sa place de travail, ses espaces de stockage, et les espaces communs dans un état irréprochable.</p>
+
+      <h4>9. Utilisation de l'accès à internet</h4>
+      <p>9.1 Les coworkers bénéficient d'un accès illimité à internet par Wi-Fi. L'usage est réservé aux coworkers.</p>
+      <p>9.2 Les coworkers doivent utiliser la connexion internet de manière raisonnable et dans le respect des lois et réglementations en vigueur.</p>
+
+      <h4>10. Utilisation des infrastructures informatiques</h4>
+      <p>10.1 Les coworkers utilisent leur propre ordinateur et matériel informatique pour accéder à internet et aux écrans interactifs.</p>
+      <p>10.2 Les coworkers sont responsables de la configuration et de la mise à jour de leur matériel informatique.</p>
+      <p>10.3 Les coworkers ne peuvent installer d'infrastructure informatique connectée au réseau de manière filaire sans une autorisation préalable et par écrit de l'association « Fully Coworking ».</p>
+      <p>10.4 Les coworkers ne doivent pas déployer de serveurs publics dans le réseau de l'espace.</p>
+
+      <h4>11. Modification des formules et des conditions générales</h4>
+      <p>11.1 Les tarifs et conditions générales peuvent être modifiés en tout temps. La version déterminante est celle disponible au moment de la commande.</p>
+
+      <h4>12. Paiement</h4>
+      <p>12.1 Les paiements doivent être effectués en francs suisses.</p>
+
+      <h4>13. For juridique et droit applicable</h4>
+      <p>13.1 Le for juridique est à Martigny.</p>
+      <p>13.2 Le droit applicable au présent contrat est le droit suisse.</p>
+    </div>
+  </details>
 
   <div style="height:8px;"></div>
 </div>
