@@ -3,23 +3,44 @@
 <body>
 
 <!--
-  Top bar partagé pour toutes les pages /mobile/*.
+  Top bar + bandeau « email à vérifier » partagés pour toutes les pages /mobile/*.
   Usage : <div th:replace="~{mobile/fragments/topbar :: topbar('Accueil')}"></div>
   Layout : [logo cliquable → /mobile/] [titre centré] [bouton Déconnexion].
+  Le bandeau orange n'apparaît que si l'attribut `unverified` (injecté par
+  MobileModelAdvice) vaut true.
 -->
-<div th:fragment="topbar(title)" class="app-topbar app-topbar-3col">
-  <a th:href="@{/mobile/}" class="topbar-logo" aria-label="Accueil">
-    <img th:src="@{/images/logo.svg}" alt="l'Amicale du Wifi"
-         style="height:28px;width:auto;filter:brightness(0) invert(1);">
-  </a>
-  <div class="app-title" th:text="${title}">Titre</div>
-  <form th:action="@{/logout}" method="post" class="topbar-logout">
-    <button type="submit"
-            style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:8px;white-space:nowrap;">
-      Déconnexion
-    </button>
-  </form>
-</div>
+<th:block th:fragment="topbar(title)">
+  <div class="app-topbar app-topbar-3col">
+    <a th:href="@{/mobile/}" class="topbar-logo" aria-label="Accueil">
+      <img th:src="@{/images/logo.svg}" alt="l'Amicale du Wifi"
+           style="height:28px;width:auto;filter:brightness(0) invert(1);">
+    </a>
+    <div class="app-title" th:text="${title}">Titre</div>
+    <form th:action="@{/logout}" method="post" class="topbar-logout">
+      <button type="submit"
+              style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:8px;white-space:nowrap;">
+        Déconnexion
+      </button>
+    </form>
+  </div>
+
+  <div th:if="${unverified}"
+       style="background:#fff7ed;border-bottom:1.5px solid #fdba74;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:#7c2d12;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+      <path d="M4 4h16c1 0 2 1 2 2v12c0 1-1 2-2 2H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+    <div style="flex:1;line-height:1.4;">
+      <strong>Vérifiez votre email</strong> pour activer toutes les fonctions (paiement, renouvellement de pack).
+    </div>
+    <form th:action="@{/mobile/resend-verification}" method="post" style="flex-shrink:0;">
+      <button type="submit"
+              style="background:#ea580c;color:#fff;border:none;padding:6px 12px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">
+        Renvoyer
+      </button>
+    </form>
+  </div>
+</th:block>
 
 </body>
 </html>

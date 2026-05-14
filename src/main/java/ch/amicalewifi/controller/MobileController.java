@@ -306,6 +306,7 @@ public class MobileController {
                                   @RequestParam MembershipType membership,
                                   RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if (notVerified(member, ra)) return "redirect:/mobile/renew";
         return zahlsService.createPaymentLink(member, membership)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
@@ -313,6 +314,17 @@ public class MobileController {
                             "Impossible de créer le lien de paiement zahls.ch. Contactez l'admin.");
                     return "redirect:/mobile/";
                 });
+    }
+
+    /** Bloque les paiements tant que l'email n'est pas vérifié.
+     *  Renvoie true (+ flash) si on doit interrompre l'action. */
+    private boolean notVerified(Member member, RedirectAttributes ra) {
+        boolean verified = member.getUser() != null && member.getUser().isEmailVerified();
+        if (!verified) {
+            ra.addFlashAttribute("error",
+                    "Vérifiez d'abord votre adresse email avant de procéder à un paiement.");
+        }
+        return !verified;
     }
 
     @GetMapping("/print")
@@ -420,6 +432,7 @@ public class MobileController {
                                @RequestParam PrintPackType pack,
                                RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if (notVerified(member, ra)) return "redirect:/mobile/print";
         return zahlsService.createPrintPackPaymentLink(member, pack)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
@@ -528,6 +541,7 @@ public class MobileController {
                                  @RequestParam ConfHourPackType pack,
                                  RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if (notVerified(member, ra)) return "redirect:/mobile/rooms";
         return zahlsService.createConfCreditPaymentLink(member, pack)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {

@@ -9,6 +9,7 @@ import ch.amicalewifi.repository.UserRepository;
 import ch.amicalewifi.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -53,6 +54,31 @@ public class EmailVerificationController {
         ra.addFlashAttribute("success",
                 "Votre adresse email est vérifiée. Connectez-vous pour accéder à votre espace.");
         return "redirect:/login?verified=ok";
+    }
+
+    /**
+     * Renvoyer le lien de vérification quand on est connecté (bandeau dans l'app).
+     * On déduit l'email de la session — pas besoin de form param.
+     */
+    @PostMapping("/mobile/resend-verification")
+    public String resendForCurrentUser(Authentication auth, RedirectAttributes ra) {
+        String email = auth.getName();
+        userRepo.findByEmail(email).ifPresent(user -> {
+            if (user.isEmailVerified()) return;
+            tokenRepo.deleteByUser(user);
+            EmailVerificationToken evt = tokenRepo.save(EmailVerificationToken.builder()
+                    .user(user)
+                    .token(UUID.randomUUID().toString())
+                    .expiresAt(LocalDateTime.now().plusHours(24))
+                    .build());
+            String firstName = memberRepo.findByEmail(email)
+                    .map(Member::getFirstName)
+                    .orElse("");
+            emailService.sendVerification(email, firstName, evt.getToken());
+        });
+        ra.addFlashAttribute("success",
+                "Un nouveau lien de vérification vient d'être envoyé à " + email + ".");
+        return "redirect:/mobile/";
     }
 
     @PostMapping("/resend-verification")
