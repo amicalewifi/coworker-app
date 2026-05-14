@@ -30,6 +30,10 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
+    @Column(name = "email_verified")
+    @Builder.Default
+    private boolean emailVerified = false;
+
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
