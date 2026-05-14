@@ -43,7 +43,10 @@ public class MobileController {
     private final RoomBookingRepository    bookingRepo;
     private final MemberWifiMacRepository  wifiMacRepo;
     private final WifiDailyUsageRepository wifiDailyUsageRepo;
+    private final PackTransactionRepository packTxRepo;
     private final PasswordEncoder          passwordEncoder;
+
+    public record PackGroup(PackTransaction tx, List<Presence> presences, BigDecimal unitsUsed) {}
 
     @Value("${amicale.print.public-host}") private String printPublicHost;
     @Value("${amicale.print.queue-name}")  private String printQueueName;
@@ -143,19 +146,61 @@ public class MobileController {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         List<Presence> presences = memberService.getForMember(member.getId());
 
-        long fullDays = presences.stream().filter(p -> p.getPresenceType() == PresenceType.FULL_DAY).count();
-        long halfDays = presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
-                                                    || p.getPresenceType() == PresenceType.HALF_PM).count();
         BigDecimal totalChf = presences.stream()
                 .filter(p -> p.getUnitPriceChf() != null && p.getUnitsConsumed() != null)
                 .map(p -> p.getUnitPriceChf().multiply(p.getUnitsConsumed()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        model.addAttribute("member",    member);
-        model.addAttribute("presences", presences);
-        model.addAttribute("fullDays",  fullDays);
-        model.addAttribute("halfDays",  halfDays);
-        model.addAttribute("totalChf",  totalChf);
+        // Active pack = permanent non expiré OU pack avec unités restantes.
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Europe/Zurich"));
+        BigDecimal unitsRemaining = member.getPackUnitsRemaining();
+        boolean packNotExpired = member.getPackExpires() == null
+                || !member.getPackExpires().isBefore(today);
+        boolean hasActivePack = (member.isPermanent() && packNotExpired)
+                || (unitsRemaining != null
+                    && unitsRemaining.compareTo(BigDecimal.ZERO) > 0
+                    && packNotExpired);
+
+        // Découpage des présences par pack: chaque PackTransaction délimite une période.
+        // tx desc = du plus récent au plus ancien; current = premier, previous = suivants.
+        List<PackTransaction> txsDesc = packTxRepo.findByMemberIdOrderByCreatedAtDesc(member.getId());
+
+        java.util.Map<java.util.UUID, List<Presence>> presByTx = new java.util.LinkedHashMap<>();
+        for (PackTransaction tx : txsDesc) presByTx.put(tx.getId(), new java.util.ArrayList<>());
+
+        for (Presence p : presences) {
+            LocalDateTime ref = p.getCheckedInAt() != null ? p.getCheckedInAt() : p.getDate().atStartOfDay();
+            PackTransaction matched = null;
+            for (PackTransaction tx : txsDesc) {
+                if (!tx.getCreatedAt().isAfter(ref)) { matched = tx; break; }
+            }
+            // Présences antérieures à toute transaction connue: rattacher à la plus ancienne
+            // (au pire on les laisse dans le pack actuel s'il n'y a aucune transaction).
+            if (matched == null && !txsDesc.isEmpty()) {
+                matched = txsDesc.get(txsDesc.size() - 1);
+            }
+            if (matched != null) presByTx.get(matched.getId()).add(p);
+        }
+
+        List<Presence> currentPackPresences = txsDesc.isEmpty()
+                ? presences
+                : presByTx.get(txsDesc.get(0).getId());
+
+        List<PackGroup> previousPacks = new java.util.ArrayList<>();
+        for (int i = 1; i < txsDesc.size(); i++) {
+            PackTransaction tx = txsDesc.get(i);
+            List<Presence> ps = presByTx.get(tx.getId());
+            BigDecimal used = ps.stream()
+                    .map(p -> p.getUnitsConsumed() != null ? p.getUnitsConsumed() : BigDecimal.ZERO)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            previousPacks.add(new PackGroup(tx, ps, used));
+        }
+
+        model.addAttribute("member",               member);
+        model.addAttribute("hasActivePack",        hasActivePack);
+        model.addAttribute("currentPackPresences", currentPackPresences);
+        model.addAttribute("previousPacks",        previousPacks);
+        model.addAttribute("totalChf",             totalChf);
         return "mobile/pack";
     }
 
