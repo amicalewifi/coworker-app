@@ -20,7 +20,7 @@ public class EmailService {
 
     @Async
     public void sendWelcome(String to, String firstName) {
-        String subject = "Bienvenue à l'Amicale du WiFi !";
+        String subject = "Bienvenue à l'Amicale du Wifi !";
         String html = """
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
               <h2 style="color:#0c1222;">Bienvenue %s !</h2>
@@ -30,7 +30,7 @@ public class EmailService {
                 Accéder à mon espace
               </a>
               <p style="margin-top:24px;color:#666;font-size:13px;">
-                l'Amicale du WiFi · Fully Coworking · CH-1926
+                l'Amicale du Wifi · Fully Coworking · CH-1926
               </p>
             </div>
             """.formatted(firstName, baseUrl);
@@ -53,7 +53,7 @@ public class EmailService {
                 Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
               </p>
               <p style="color:#666;font-size:13px;">
-                l'Amicale du WiFi · Fully Coworking · CH-1926
+                l'Amicale du Wifi · Fully Coworking · CH-1926
               </p>
             </div>
             """.formatted(link);

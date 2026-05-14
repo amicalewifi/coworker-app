@@ -1,6 +1,6 @@
 # coworker-app
 
-Member portal and ops console for **l'Amicale du WiFi**, a Swiss coworking
+Member portal and ops console for **l'Amicale du Wifi**, a Swiss coworking
 space. Spring Boot 3 + Thymeleaf web app that handles member accounts,
 day-pass and conference-room purchases (via Zahls payments), printer credit,
 WiFi access provisioning (UniFi + Akuvox door intercom), and admin reporting.
@@ -130,4 +130,4 @@ out of this public repo. See `ops/README.md` for a short pointer.
 
 ## License
 
-Licensed under the [Apache License, Version 2.0](LICENSE). © 2026 Amicale du WiFi.
+Licensed under the [Apache License, Version 2.0](LICENSE). © 2026 Amicale du Wifi.

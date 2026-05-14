@@ -108,10 +108,10 @@ server:
         same-site: lax
         secure:    true   # Caddy terminates TLS in front; cookie only sent over HTTPS
 
-# Règles métier Amicale du WiFi
+# Règles métier Amicale du Wifi
 amicale:
   mail:
-    from:     "l'Amicale du WiFi <noreply@amicalewifi.ch>"
+    from:     "l'Amicale du Wifi <noreply@amicalewifi.ch>"
     base-url: https://app.amicalewifi.ch
 
   venue:

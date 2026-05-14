@@ -1,4 +1,4 @@
-// Service Worker — l'Amicale du WiFi
+// Service Worker — l'Amicale du Wifi
 const CACHE = 'amicale-v1';
 const OFFLINE_URL = '/mobile/';
 
