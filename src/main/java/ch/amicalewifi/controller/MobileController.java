@@ -42,6 +42,7 @@ public class MobileController {
     private final RoomRepository           roomRepo;
     private final RoomBookingRepository    bookingRepo;
     private final MemberWifiMacRepository  wifiMacRepo;
+    private final WifiDailyUsageRepository wifiDailyUsageRepo;
     private final PasswordEncoder          passwordEncoder;
 
     @Value("${amicale.print.public-host}") private String printPublicHost;
@@ -71,18 +72,42 @@ public class MobileController {
         int deviceCount = wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()).size();
         boolean hasBadge = member.getBadgeUid() != null && !member.getBadgeUid().isBlank();
 
-        model.addAttribute("member",          member);
-        model.addAttribute("firstName",       member.getFirstName());
-        model.addAttribute("openingHour",     openingHour);
-        model.addAttribute("closingHour",     closingHour);
-        model.addAttribute("address",         venueAddress);
-        model.addAttribute("hasBadge",        hasBadge);
-        model.addAttribute("deviceCount",     deviceCount);
-        model.addAttribute("whatsappUrl",     whatsappUrl);
-        model.addAttribute("coworkersEmail",  coworkersEmail);
-        model.addAttribute("staffEmail",      staffEmail);
-        model.addAttribute("calendarViewUrl", calendarViewUrl);
-        model.addAttribute("calendarIcsUrl",  calendarIcsUrl);
+        // Pack actif : permanent non expiré OU pack avec unités > 0.
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Europe/Zurich"));
+        BigDecimal unitsRemaining = member.getPackUnitsRemaining();
+        boolean packNotExpired = member.getPackExpires() == null
+                || !member.getPackExpires().isBefore(today);
+        boolean hasActivePack = (member.isPermanent() && packNotExpired)
+                || (unitsRemaining != null
+                    && unitsRemaining.compareTo(BigDecimal.ZERO) > 0
+                    && packNotExpired);
+
+        // Temps de connexion WiFi du jour (pour la carte pack).
+        int wifiTodaySeconds = wifiDailyUsageRepo
+                .findByMemberIdAndUsageDate(member.getId(), today)
+                .map(WifiDailyUsage::getSeconds)
+                .orElse(0);
+        BigDecimal wifiTodayCharged = wifiDailyUsageRepo
+                .findByMemberIdAndUsageDate(member.getId(), today)
+                .map(WifiDailyUsage::getUnitsCharged)
+                .orElse(BigDecimal.ZERO);
+
+        model.addAttribute("member",            member);
+        model.addAttribute("firstName",         member.getFirstName());
+        model.addAttribute("openingHour",       openingHour);
+        model.addAttribute("closingHour",       closingHour);
+        model.addAttribute("address",           venueAddress);
+        model.addAttribute("hasBadge",          hasBadge);
+        model.addAttribute("deviceCount",       deviceCount);
+        model.addAttribute("hasActivePack",     hasActivePack);
+        model.addAttribute("unitsRemaining",    unitsRemaining);
+        model.addAttribute("wifiTodaySeconds",  wifiTodaySeconds);
+        model.addAttribute("wifiTodayCharged",  wifiTodayCharged);
+        model.addAttribute("whatsappUrl",       whatsappUrl);
+        model.addAttribute("coworkersEmail",    coworkersEmail);
+        model.addAttribute("staffEmail",        staffEmail);
+        model.addAttribute("calendarViewUrl",   calendarViewUrl);
+        model.addAttribute("calendarIcsUrl",    calendarIcsUrl);
         return "mobile/dashboard";
     }
 
