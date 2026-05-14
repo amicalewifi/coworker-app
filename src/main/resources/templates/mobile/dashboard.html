@@ -66,7 +66,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div class="welcome">
     <div class="welcome-greet" th:text="'Cher·ère ' + ${firstName} + ','">Cher·ère Coworker,</div>
     <div class="welcome-body">
-      <p>Bienvenue dans ton espace de coworking favori ! Tu trouveras les informations pour t'installer ci-dessous.</p>
+      <p>Bienvenue dans ton espace de coworking ! Tu trouveras les informations pour t'installer ci-dessous.</p>
       <p>Bonnes ondes !</p>
     </div>
   </div>
@@ -105,7 +105,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
           <span th:if="${wifiTodaySeconds > 0 and h == 0}" th:text="${m} + ' min'">14 min</span>
           <span th:if="${h > 0}" th:text="${h} + 'h ' + ${m} + 'min'">2h 14min</span>
           <small th:if="${!member.isPermanent() and wifiTodayCharged != null and wifiTodayCharged.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                 th:text="'· ' + ${wifiTodayCharged} + ' décompté(s)'">· 0.5 décompté</small>
+                 th:text="'· ' + ${wifiTodayCharged} + ' jour décompté'">· 0.5 jour décompté</small>
         </span>
       </div>
       <a class="info-link block" th:href="@{/mobile/pack}">
