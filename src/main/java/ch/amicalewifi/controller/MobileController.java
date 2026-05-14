@@ -46,6 +46,14 @@ public class MobileController {
 
     @Value("${amicale.print.public-host}") private String printPublicHost;
     @Value("${amicale.print.queue-name}")  private String printQueueName;
+    @Value("${amicale.business.opening-hour}") private int openingHour;
+    @Value("${amicale.business.closing-hour}") private int closingHour;
+    @Value("${amicale.venue.address}")         private String venueAddress;
+    @Value("${amicale.community.whatsapp-url}")    private String whatsappUrl;
+    @Value("${amicale.community.coworkers-email}") private String coworkersEmail;
+    @Value("${amicale.community.staff-email}")     private String staffEmail;
+    @Value("${amicale.events.calendar-view-url}") private String calendarViewUrl;
+    @Value("${amicale.events.calendar-ics-url}")  private String calendarIcsUrl;
 
     @GetMapping({"", "/"})
     public String home(Authentication auth,
@@ -60,14 +68,21 @@ public class MobileController {
                     .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
             return isAdmin ? "redirect:/admin/" : "redirect:/login";
         }
-        List<RoomBooking> todayBookings = roomService.getToday();
-        Set<UUID> bookedRoomIds = todayBookings.stream()
-                .map(b -> b.getRoom().getId())
-                .collect(Collectors.toSet());
-        model.addAttribute("member",        member);
-        model.addAttribute("rooms",         roomService.getAll());
-        model.addAttribute("bookings",      todayBookings);
-        model.addAttribute("bookedRoomIds", bookedRoomIds);
+        int deviceCount = wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()).size();
+        boolean hasBadge = member.getBadgeUid() != null && !member.getBadgeUid().isBlank();
+
+        model.addAttribute("member",          member);
+        model.addAttribute("firstName",       member.getFirstName());
+        model.addAttribute("openingHour",     openingHour);
+        model.addAttribute("closingHour",     closingHour);
+        model.addAttribute("address",         venueAddress);
+        model.addAttribute("hasBadge",        hasBadge);
+        model.addAttribute("deviceCount",     deviceCount);
+        model.addAttribute("whatsappUrl",     whatsappUrl);
+        model.addAttribute("coworkersEmail",  coworkersEmail);
+        model.addAttribute("staffEmail",      staffEmail);
+        model.addAttribute("calendarViewUrl", calendarViewUrl);
+        model.addAttribute("calendarIcsUrl",  calendarIcsUrl);
         return "mobile/dashboard";
     }
 

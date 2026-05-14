@@ -13,13 +13,32 @@
 <link rel="stylesheet" th:href="@{/css/amicale.css}">
 <style>
 body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
-.member-card{background:linear-gradient(135deg,#0c1222 0%,#1a2a50 100%);border-radius:20px;padding:22px 20px 20px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.25);}
-.member-card::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06);}
-.member-card::after{content:'';position:absolute;bottom:-40px;left:-20px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);}
-.mc-top{display:flex;align-items:flex-start;justify-content:space-between;position:relative;z-index:1;}
-.mc-avatar{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;border:2px solid rgba(255,255,255,.2);overflow:hidden;}
-.mc-name{font-size:20px;font-weight:800;letter-spacing:-.4px;}
-.mc-formula{font-size:11px;opacity:.65;margin-top:2px;font-weight:500;}
+
+.hello-card{background:linear-gradient(135deg,#0c1222 0%,#1a2a50 100%);border-radius:18px;padding:18px 18px 16px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);}
+.hello-card::before{content:'';position:absolute;top:-30px;right:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.05);}
+.hello-greet{font-size:18px;font-weight:800;letter-spacing:-.3px;position:relative;z-index:1;}
+.hello-formula{font-size:11px;opacity:.65;margin-top:2px;font-weight:500;position:relative;z-index:1;}
+
+.info-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
+.info-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.info-ico{width:30px;height:30px;border-radius:9px;background:var(--surf-2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.info-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);}
+.info-body{font-size:13px;line-height:1.5;color:var(--t2);}
+.info-body p{margin:0 0 6px;}
+.info-body p:last-child{margin-bottom:0;}
+.info-body strong{color:var(--text);}
+.info-link{display:inline-flex;align-items:center;gap:5px;color:var(--prim);font-weight:600;text-decoration:none;font-size:13px;}
+.info-link:hover{text-decoration:underline;}
+.info-link.block{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surf-2);border-radius:10px;margin-top:8px;color:var(--text);font-weight:600;}
+.info-link.block:hover{text-decoration:none;background:var(--bdr);}
+.info-link.block svg{flex-shrink:0;}
+.row-stack{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+
+.door-qr{display:flex;flex-direction:column;align-items:center;margin-top:10px;padding:12px;background:#fff;border:1px solid var(--bdr);border-radius:12px;}
+.door-qr img{width:220px;height:220px;display:block;}
+.door-qr-caption{font-size:11px;color:var(--t3);margin-top:8px;font-family:monospace;}
+
+.muted{color:var(--t3);}
 </style>
 </head>
 <body>
@@ -42,25 +61,16 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <span th:text="${error}"></span>
   </div>
 
-  <!-- Carte membre -->
-  <div class="member-card">
-    <div class="mc-top">
-      <div>
-        <div class="mc-name" th:text="${member.displayName}">Camille Berrut</div>
-        <div class="mc-formula"
-             th:text="${member.membership.name() == 'JOURNEE_ESSAI' ? 'Aucun pack actif' : member.membership.label}">Pack 10 jours</div>
-      </div>
-      <div class="mc-avatar">
-        <img th:if="${member.photo != null}" th:src="@{/mobile/profile/photo}"
-             style="width:100%;height:100%;object-fit:cover;" alt="photo">
-        <span th:unless="${member.photo != null}" th:text="${member.initials}">CB</span>
-      </div>
-    </div>
+  <!-- Greeting -->
+  <div class="hello-card">
+    <div class="hello-greet" th:text="'Bonjour, ' + ${firstName}">Bonjour, Coworker</div>
+    <div class="hello-formula"
+         th:text="${member.membership.name() == 'JOURNEE_ESSAI' ? 'Aucun pack actif' : member.membership.label}">Pack 10 jours</div>
   </div>
 
-  <!-- Bannière renouvellement si pack épuisé ou faible -->
+  <!-- Renewal banner (only when needed) -->
   <div th:if="${member.packAlert == 'empty' or member.packAlert == 'low' or member.packAlert == 'expiring'}"
-       style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+       style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;">
     <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"
          th:style="${member.packAlert == 'empty' ? 'background:rgba(239,68,68,.15)' : 'background:rgba(245,158,11,.15)'}">
       <svg th:if="${member.packAlert == 'empty'}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -78,6 +88,175 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
     <a th:href="@{/mobile/renew}"
        style="background:var(--orange);color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;text-decoration:none;white-space:nowrap;">Renouveler</a>
+  </div>
+
+  <!-- Horaires & adresse -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      </div>
+      <div class="info-title">Horaires &amp; adresse</div>
+    </div>
+    <div class="info-body">
+      <p>Ouvert tous les jours,
+        <strong><span th:text="${openingHour}">7</span>h–<span th:text="${closingHour}">19</span>h</strong>,
+        dans les plages horaires de votre formule.</p>
+      <p>
+        <a class="info-link"
+           th:href="'https://maps.apple.com/?q=' + ${#uris.escapeQueryParam(address)}"
+           th:text="${address}" target="_blank" rel="noopener">Rue de l'Eglise 34, 1926 Fully</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Accès au bâtiment -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="3" height="3"/><rect x="19" y="14" width="2" height="2"/><rect x="14" y="19" width="2" height="2"/><rect x="18" y="19" width="3" height="3"/></svg>
+      </div>
+      <div class="info-title">Accès au bâtiment</div>
+    </div>
+    <div class="info-body">
+      <p th:if="${hasBadge}">Présentez ce code QR au lecteur de la porte coulissante à l'entrée.</p>
+      <div th:if="${hasBadge}" class="door-qr">
+        <img th:src="@{/qr/door}" alt="QR code d'accès porte">
+        <div class="door-qr-caption">Valide pour toute la durée de votre contrat</div>
+      </div>
+      <p th:unless="${hasBadge}" class="muted">
+        Votre accès porte n'est pas encore activé.
+        <a class="info-link" th:href="'mailto:' + ${staffEmail}">Contacter l'équipe</a>
+        pour recevoir votre QR.
+      </p>
+    </div>
+  </div>
+
+  <!-- WiFi -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--t2)" stroke="none"/></svg>
+      </div>
+      <div class="info-title">WiFi</div>
+    </div>
+    <div class="info-body">
+      <p>Connectez-vous au réseau <strong>amicalewifi.ch</strong>. Vous serez redirigé vers cette application pour vous authentifier, puis vos appareils sont enregistrés automatiquement.</p>
+      <p th:if="${deviceCount > 0}"
+         th:text="${deviceCount == 1 ? '1 appareil enregistré.' : deviceCount + ' appareils enregistrés.'}">2 appareils enregistrés.</p>
+      <p th:if="${deviceCount == 0}" class="muted">Aucun appareil enregistré pour l'instant.</p>
+      <a class="info-link block" th:href="@{/mobile/devices}">
+        <span>Gérer mes appareils</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Réservation de salles -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 4v16M3 10h7"/></svg>
+      </div>
+      <div class="info-title">Réservation de salles</div>
+    </div>
+    <div class="info-body">
+      <p>Salle de conférence <strong>La Pièce Pensante</strong> et cabine <strong>Henry Carron 2.0</strong>.</p>
+      <p th:if="${member.isPermanent()}" class="muted">Vous avez un bureau dédié — pas besoin de réserver un poste.</p>
+      <p th:unless="${member.isPermanent()}" class="muted">Si vous avez un pack, pensez à réserver votre poste de travail le jour J.</p>
+      <a class="info-link block" th:href="@{/mobile/rooms}">
+        <span>Réserver une salle</span>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Imprimante -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="6" rx="1"/><rect x="3" y="9" width="18" height="9" rx="2"/><rect x="6" y="14" width="12" height="6" rx="1"/><circle cx="18" cy="12" r=".8" fill="var(--t2)" stroke="none"/></svg>
+      </div>
+      <div class="info-title">Imprimante &amp; scanner</div>
+    </div>
+    <div class="info-body">
+      <p>Kyocera TASKalfa 352ci A4 couleur. Imprimez via l'app ou depuis votre ordinateur (Claudine).</p>
+      <div class="row-stack">
+        <a class="info-link block" th:href="@{/mobile/print}">
+          <span>Imprimer &amp; voir mes crédits</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+        <a class="info-link block" th:href="@{/mobile/printer-setup}">
+          <span>Installer Claudine sur mon ordinateur</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Café & boissons -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v6a4 4 0 01-4 4H8a4 4 0 01-4-4V8z"/><path d="M17 10h2a2 2 0 010 4h-2"/><path d="M8 3v2M11 3v2M14 3v2"/></svg>
+      </div>
+      <div class="info-title">Café &amp; boissons</div>
+    </div>
+    <div class="info-body">
+      <p>Machine Saeco Lirika à disposition, <strong>gratuite</strong> pour votre consommation personnelle.</p>
+      <p>Offrez un café à vos invités pour <strong>Fr. 1.–</strong> via Twint. Sirop et bouilloire à disposition.</p>
+      <p class="muted">Merci de rincer vos verres et tasses après emploi.</p>
+    </div>
+  </div>
+
+  <!-- Communauté & contact -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 9a5 5 0 11-10 0 5 5 0 0110 0z" transform="translate(0,-3)"/><path d="M3 21c1-4 4-6 9-6s8 2 9 6"/></svg>
+      </div>
+      <div class="info-title">Communauté &amp; contact</div>
+    </div>
+    <div class="info-body">
+      <p>Rejoignez les autres coworkers et contactez l'équipe.</p>
+      <div class="row-stack">
+        <a class="info-link block" th:href="${whatsappUrl}" target="_blank" rel="noopener">
+          <span>Groupe WhatsApp coworkers</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+        </a>
+        <a class="info-link block" th:href="'mailto:' + ${coworkersEmail}">
+          <span th:text="'Écrire à tous : ' + ${coworkersEmail}">coworkers@…</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12v8H2zM2 4l6 5 6-5"/></svg>
+        </a>
+        <a class="info-link block" th:href="'mailto:' + ${staffEmail}">
+          <span th:text="'Contacter l\'équipe : ' + ${staffEmail}">hello@…</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 4h12v8H2zM2 4l6 5 6-5"/></svg>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Événements / agenda -->
+  <div class="info-card">
+    <div class="info-head">
+      <div class="info-ico">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+      </div>
+      <div class="info-title">Événements &amp; agenda</div>
+    </div>
+    <div class="info-body">
+      <p>Des événements sont organisés en soirée ou le week-end. L'accès à l'espace peut être restreint pendant ces moments.</p>
+      <div class="row-stack">
+        <a class="info-link block" th:href="${calendarViewUrl}" target="_blank" rel="noopener">
+          <span>Consulter l'agenda en ligne</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h7M3 3v7M3 3l10 10M10 13h3v-3"/></svg>
+        </a>
+        <a class="info-link block" th:href="${calendarIcsUrl}" target="_blank" rel="noopener">
+          <span>S'abonner (.ics)</span>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v9M4 8l4 4 4-4M3 14h10"/></svg>
+        </a>
+      </div>
+    </div>
   </div>
 
   <div style="height:8px;"></div>
