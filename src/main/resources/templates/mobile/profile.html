@@ -13,8 +13,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .profile-header::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.05);}
 .ph-avatar{width:68px;height:68px;border-radius:50%;background:rgba(255,255,255,.15);display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;border:2px solid rgba(255,255,255,.25);margin-bottom:12px;position:relative;z-index:1;}
 .ph-name{font-size:20px;font-weight:800;letter-spacing:-.4px;position:relative;z-index:1;}
-.ph-formula{font-size:12px;opacity:.65;margin-top:3px;font-weight:500;position:relative;z-index:1;}
-.ph-email{font-size:12px;opacity:.5;margin-top:4px;font-weight:500;position:relative;z-index:1;}
 .form-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
 .form-card-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:16px;}
 .field-row{margin-bottom:14px;}
@@ -64,13 +62,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
     </form>
     <div class="ph-name" th:text="${member.displayName}">Camille Berrut</div>
-    <div th:unless="${member.membership.name() == 'JOURNEE_ESSAI'}"
-         class="ph-formula" th:text="${member.membership.label}">Pack 10 jours</div>
-    <div th:if="${member.membership.name() == 'JOURNEE_ESSAI'}"
-         class="ph-formula">Aucun pack actif</div>
-    <div th:if="${member.isPermanent() and member.packExpires != null}" class="ph-formula"
-         th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}"></div>
-    <div class="ph-email" th:text="${member.email}">camille@exemple.ch</div>
   </div>
   <!-- Coordonnées · autosave : chaque champ se sauvegarde à la perte de focus -->
   <form id="profile-form" th:action="@{/mobile/profile}" method="post">
