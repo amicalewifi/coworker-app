@@ -98,7 +98,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         dans les plages horaires de votre formule.</p>
       <p>
         <a class="info-link"
-           th:href="'https://maps.apple.com/?q=' + ${#uris.escapeQueryParam(address)}"
+           th:href="'https://www.google.com/maps/search/?api=1&query=' + ${#uris.escapeQueryParam(address)}"
            th:text="${address}" target="_blank" rel="noopener">Rue de l'Eglise 34, 1926 Fully</a>
       </p>
     </div>
