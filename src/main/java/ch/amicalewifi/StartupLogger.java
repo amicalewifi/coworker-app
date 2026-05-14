@@ -24,7 +24,7 @@ public class StartupLogger {
     public void onReady() {
         String localIp = detectLocalIp();
         log.info("=======================================================");
-        log.info("  Amicale du WiFi — application démarrée");
+        log.info("  Amicale du Wifi — application démarrée");
         log.info("  IP locale : {}", localIp);
         log.info("  URL AKUVOX à configurer sur l'A05S :");
         log.info("  http://{}:{}/api/v1/akuvox/access?apiKey={}", localIp, port, akuvoxApiKey);
