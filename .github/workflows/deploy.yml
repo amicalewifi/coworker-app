@@ -72,7 +72,21 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/amicale/repo
+            OLD_SHA=$(git rev-parse HEAD)
             git pull --ff-only
+            NEW_SHA=$(git rev-parse HEAD)
+
             docker compose pull app
             docker compose up -d app
+
+            # Single-file bind-mount + git pull = stale in-container view:
+            # git replaces the file atomically (new inode) but Caddy keeps
+            # reading the old one. Restart Caddy if ops/Caddyfile changed
+            # in any commit since the last deploy.
+            if [ "$OLD_SHA" != "$NEW_SHA" ] \
+                 && git diff --name-only "$OLD_SHA".."$NEW_SHA" | grep -qx 'ops/Caddyfile'; then
+              echo "ops/Caddyfile changed — restarting caddy"
+              docker compose restart caddy
+            fi
+
             docker image prune -f
