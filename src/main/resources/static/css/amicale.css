@@ -841,6 +841,18 @@ tr.inactive-row:hover td { opacity: .72; background: var(--bg); }
 
 .app-topbar-spread { justify-content: space-between; }
 
+/* Layout 3-colonnes : logo à gauche, titre centré, bouton de déconnexion à droite.
+   Utilisé par mobile/fragments/topbar pour aligner toutes les pages. */
+.app-topbar-3col {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+.app-topbar-3col .topbar-logo   { justify-self: start;  display: inline-flex; }
+.app-topbar-3col .app-title     { justify-self: center; text-align: center; }
+.app-topbar-3col .topbar-logout { justify-self: end; }
+
 .app-title {
   font-size: 16px;
   font-weight: 800;

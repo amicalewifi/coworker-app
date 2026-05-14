@@ -43,10 +43,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 </head>
 <body>
 
-<div class="app-topbar">
-  <img th:src="@{/images/logo.svg}" alt="logo" style="height:28px;width:auto;filter:brightness(0) invert(1);">
-  <div class="app-title">Configurer Claudine</div>
-</div>
+<div th:replace="~{mobile/fragments/topbar :: topbar('Configurer Claudine')}"></div>
 
 <div class="app-content">
 

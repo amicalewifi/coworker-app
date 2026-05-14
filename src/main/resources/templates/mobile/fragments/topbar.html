@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--
+  Top bar partagé pour toutes les pages /mobile/*.
+  Usage : <div th:replace="~{mobile/fragments/topbar :: topbar('Accueil')}"></div>
+  Layout : [logo cliquable → /mobile/] [titre centré] [bouton Déconnexion].
+-->
+<div th:fragment="topbar(title)" class="app-topbar app-topbar-3col">
+  <a th:href="@{/mobile/}" class="topbar-logo" aria-label="Accueil">
+    <img th:src="@{/images/logo.svg}" alt="l'Amicale du WiFi"
+         style="height:28px;width:auto;filter:brightness(0) invert(1);">
+  </a>
+  <div class="app-title" th:text="${title}">Titre</div>
+  <form th:action="@{/logout}" method="post" class="topbar-logout">
+    <button type="submit"
+            style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;padding:6px 12px;border-radius:8px;white-space:nowrap;">
+      Déconnexion
+    </button>
+  </form>
+</div>
+
+</body>
+</html>

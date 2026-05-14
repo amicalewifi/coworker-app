@@ -114,6 +114,18 @@ amicale:
     from:     "l'Amicale du WiFi <noreply@amicalewifi.ch>"
     base-url: https://app.amicalewifi.ch
 
+  venue:
+    address: "Rue de l'Eglise 34, 1926 Fully"
+
+  community:
+    whatsapp-url:    "https://chat.whatsapp.com/LoNaowT9mG3HxJqlJ0n1Yy"
+    coworkers-email: "coworkers@amicalewifi.ch"
+    staff-email:     "hello@amicalewifi.ch"
+
+  events:
+    calendar-view-url: "https://outlook.live.com/owa/calendar/b8449308-5880-4845-bb9e-711cf41298a1/1b3521e9-4ace-4363-ae33-ee4c9d709971/cid-72200ECE4487A5C9/index.html"
+    calendar-ics-url:  "https://outlook.live.com/owa/calendar/b8449308-5880-4845-bb9e-711cf41298a1/1b3521e9-4ace-4363-ae33-ee4c9d709971/cid-72200ECE4487A5C9/calendar.ics"
+
   business:
     opening-hour:       7      # coworking ouvre à 07:00
     closing-hour:       19     # coworking ferme à 19:00
