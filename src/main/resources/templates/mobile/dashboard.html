@@ -14,10 +14,11 @@
 <style>
 body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);}
 
-.hello-card{background:linear-gradient(135deg,#0c1222 0%,#1a2a50 100%);border-radius:18px;padding:18px 18px 16px;margin-bottom:12px;color:#fff;position:relative;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.18);}
-.hello-card::before{content:'';position:absolute;top:-30px;right:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.05);}
-.hello-greet{font-size:18px;font-weight:800;letter-spacing:-.3px;position:relative;z-index:1;}
-.hello-formula{font-size:11px;opacity:.65;margin-top:2px;font-weight:500;position:relative;z-index:1;}
+.welcome{padding:6px 4px 14px;}
+.welcome-greet{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:6px;}
+.welcome-body{font-size:14px;line-height:1.55;color:var(--t2);}
+.welcome-body p{margin:0 0 6px;}
+.welcome-body p:last-child{margin-bottom:0;}
 
 .info-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,.04);}
 .info-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
@@ -55,11 +56,13 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <span th:text="${error}"></span>
   </div>
 
-  <!-- Greeting -->
-  <div class="hello-card">
-    <div class="hello-greet" th:text="'Bonjour, ' + ${firstName}">Bonjour, Coworker</div>
-    <div class="hello-formula"
-         th:text="${member.membership.name() == 'JOURNEE_ESSAI' ? 'Aucun pack actif' : member.membership.label}">Pack 10 jours</div>
+  <!-- Welcome message -->
+  <div class="welcome">
+    <div class="welcome-greet" th:text="'Cher·ère ' + ${firstName} + ','">Cher·ère Coworker,</div>
+    <div class="welcome-body">
+      <p>Bienvenue dans ton espace de coworking favori ! Tu trouveras les informations pour t'installer ci-dessous.</p>
+      <p>Bonnes ondes !</p>
+    </div>
   </div>
 
   <!-- Renewal banner (only when needed) -->
