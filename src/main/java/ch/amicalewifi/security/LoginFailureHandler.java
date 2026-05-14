@@ -1,6 +1,7 @@
 package ch.amicalewifi.security;
 
 import ch.amicalewifi.repository.UserRepository;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ public class LoginFailureHandler extends SimpleUrlAuthenticationFailureHandler {
     public void onAuthenticationFailure(HttpServletRequest request,
                                         HttpServletResponse response,
                                         AuthenticationException exception)
-            throws IOException {
+            throws IOException, ServletException {
         String target = "/login?error";
         if (exception instanceof DisabledException) {
             String email = request.getParameter("username");
