@@ -71,13 +71,34 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
       <span>Email ou mot de passe incorrect.</span>
     </div>
+    <div th:if="${param.disabled}" class="flash flash-err">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+      <span>Ce compte est désactivé. Contactez hello@amicalewifi.ch.</span>
+    </div>
+    <div th:if="${param.unverified}"
+         style="margin-bottom:10px;padding:12px 14px;background:#fff7ed;border:1.5px solid #fdba74;border-radius:10px;font-size:13px;line-height:1.5;color:#7c2d12;">
+      <div style="font-weight:700;margin-bottom:4px;">Email non vérifié</div>
+      <div style="margin-bottom:8px;">Cliquez sur le lien envoyé à votre adresse email pour activer votre compte, ou demandez un nouveau lien.</div>
+      <form th:action="@{/resend-verification}" method="post" style="display:flex;gap:6px;">
+        <input type="email" name="email" placeholder="votre@email.ch" required
+               style="flex:1;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:13px;background:#fff;outline:none;">
+        <button type="submit"
+                style="background:#ea580c;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">
+          Renvoyer
+        </button>
+      </form>
+    </div>
+    <div th:if="${param.verified}" class="flash flash-ok">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Adresse email vérifiée. Connectez-vous pour accéder à votre espace.</span>
+    </div>
     <div th:if="${param.logout}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
       <span>Vous avez été déconnecté.</span>
     </div>
     <div th:if="${param.registered}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
-      <span>Compte créé avec succès — connectez-vous.</span>
+      <span>Compte créé. Vérifiez votre boîte mail et cliquez sur le lien pour activer votre compte.</span>
     </div>
     <div th:if="${success}" class="flash flash-ok">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>

@@ -27,6 +27,7 @@ public class SecurityConfig {
 
     private final UserRepository    userRepo;
     private final LoginSuccessHandler loginSuccessHandler;
+    private final LoginFailureHandler loginFailureHandler;
     private final CaptivePortalParamFilter captivePortalParamFilter;
 
     @Bean
@@ -37,6 +38,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Ressources publiques
                 .requestMatchers("/login", "/register", "/forgot-password", "/reset-password",
+                                 "/verify-email", "/resend-verification",
                                  "/css/**", "/js/**", "/icons/**",
                                  "/images/**", "/manifest.json", "/sw.js", "/error").permitAll()
                 // Portail captif UniFi — pré-auth pour capturer les params puis rediriger sur /login
@@ -71,7 +73,7 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
                 .successHandler(loginSuccessHandler)
-                .failureUrl("/login?error")
+                .failureHandler(loginFailureHandler)
                 .permitAll()
             )
             .logout(logout -> logout
@@ -94,7 +96,7 @@ public class SecurityConfig {
                     .username(user.getEmail())
                     .password(user.getPasswordHash())
                     .authorities(List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())))
-                    .disabled(!user.isActive())
+                    .disabled(!user.isActive() || !user.isEmailVerified())
                     .build();
         };
     }

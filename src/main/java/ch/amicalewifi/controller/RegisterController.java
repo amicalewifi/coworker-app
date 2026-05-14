@@ -12,17 +12,21 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 @Controller
 @RequestMapping("/register")
 @RequiredArgsConstructor
 @Slf4j
 public class RegisterController {
 
-    private final UserRepository   userRepo;
-    private final MemberRepository memberRepo;
-    private final MemberService    memberService;
-    private final EmailService     emailService;
-    private final PasswordEncoder  passwordEncoder;
+    private final UserRepository                   userRepo;
+    private final MemberRepository                 memberRepo;
+    private final MemberService                    memberService;
+    private final EmailService                     emailService;
+    private final EmailVerificationTokenRepository verifyTokenRepo;
+    private final PasswordEncoder                  passwordEncoder;
 
     @GetMapping
     public String form() {
@@ -68,9 +72,20 @@ public class RegisterController {
                     .build());
 
             log.info("Nouvelle inscription: {} {} ({})", firstName, lastName, email);
-            emailService.sendWelcome(email, firstName);
+
+            // Génération du token de vérification + envoi de l'email.
+            // L'email de bienvenue (sendWelcome) est désormais envoyé après
+            // la vérification, dans EmailVerificationController.
+            EmailVerificationToken evt = verifyTokenRepo.save(EmailVerificationToken.builder()
+                    .user(user)
+                    .token(UUID.randomUUID().toString())
+                    .expiresAt(LocalDateTime.now().plusHours(24))
+                    .build());
+            emailService.sendVerification(email, firstName, evt.getToken());
+
             ra.addFlashAttribute("success",
-                    "Bienvenue " + firstName + " ! Votre compte a été créé. Connectez-vous pour accéder à votre espace.");
+                    "Compte créé. Vérifiez votre email à " + email
+                            + " pour l'activer (lien valable 24 h).");
             return "redirect:/login?registered";
 
         } catch (Exception e) {
