@@ -22,8 +22,10 @@ class LoginFailureHandlerTest {
     private final HttpServletResponse resp = mock(HttpServletResponse.class);
 
     LoginFailureHandlerTest() {
-        // DefaultRedirectStrategy passes the URL through encodeRedirectURL before
-        // calling sendRedirect; stub it as identity so verify(...) sees the raw URL.
+        // DefaultRedirectStrategy prepends request.getContextPath() + URL and passes
+        // the result through encodeRedirectURL before calling sendRedirect. Stub both
+        // so verify(...) sees the raw URL.
+        when(req.getContextPath()).thenReturn("");
         when(resp.encodeRedirectURL(anyString())).thenAnswer(inv -> inv.getArgument(0));
         // Spring Security's saveException() calls request.getSession() to stash the
         // exception. Provide a real-enough HttpSession so it doesn't NPE.
