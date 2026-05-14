@@ -67,6 +67,16 @@
     <div class="box-title">Connexion</div>
     <div class="box-sub">Accédez à votre espace membre.</div>
 
+    <div class="flash flash-info" style="font-size:12px;line-height:1.5;background:var(--prim-l);color:var(--prim-d);border:1px solid var(--prim-t);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v.01"/></svg>
+      <span>Gmail, Outlook, iCloud et l'app sont accessibles sans connexion.<br>Identifiez-vous pour activer Internet complet avec votre pack.</span>
+    </div>
+
+    <div th:if="${noMacWarning}" class="flash flash-err">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+      <span>Identifiant de l'appareil non détecté. Reconnectez-vous au WiFi puis réessayez pour activer Internet complet.</span>
+    </div>
+
     <div th:if="${param.error}" class="flash flash-err">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
       <span>Email ou mot de passe incorrect.</span>

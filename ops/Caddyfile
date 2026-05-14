@@ -14,6 +14,24 @@ coworker.amicalewifi.ch {
     }
 }
 
+# wifi-auth — host délibérément absent du walled-garden UniFi. RootController
+# 302 vers http://wifi-auth.amicalewifi.ch/ quand un client logged-out arrive
+# sur /login sans MAC (entrée directe sur coworker.amicalewifi.ch, qui est en
+# walled-garden et donc jamais intercepté par UniFi). UniFi intercepte alors
+# cette requête HTTP et 302 vers /login?id=<MAC>&... — on revient sur le code
+# path standard du portail captif.
+#
+# HTTP volontairement (pas de bloc HTTPS): UniFi ne 302 que les requêtes HTTP
+# vers les hôtes hors walled-garden, le HTTPS y est bloqué au niveau TCP.
+# RootController utilise donc une URL `http://` pour le rebond.
+#
+# La règle ci-dessous est le filet de sécurité: si UniFi loupe l'intercept
+# (ex: wifi-auth ajouté au walled-garden par erreur), on renvoie sur /login
+# avec nomac=1 pour casser la boucle et afficher un message d'erreur clair.
+http://wifi-auth.amicalewifi.ch, https://wifi-auth.amicalewifi.ch {
+    redir https://coworker.amicalewifi.ch/login?nomac=1 302
+}
+
 # Imprimante virtuelle Claudine — claudine-proxy (Go) tourne sur le host
 # (network_mode: host, port 8000) pour atteindre wg0 → Kyocera. Caddy termine
 # TLS et reverse-proxy vers le gateway du bridge du projet (172.18.0.1,
