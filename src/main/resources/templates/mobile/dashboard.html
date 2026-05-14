@@ -155,9 +155,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Réservation de salles</div>
     </div>
     <div class="info-body">
-      <p>Salle de conférence <strong>La Pièce Pensante</strong> et cabine <strong>Henry Carron 2.0</strong>.</p>
-      <p th:if="${member.isPermanent()}" class="muted">Vous avez un bureau dédié — pas besoin de réserver un poste.</p>
-      <p th:unless="${member.isPermanent()}" class="muted">Si vous avez un pack, pensez à réserver votre poste de travail le jour J.</p>
+      <p>Pensez à réserver la salle de conférence <strong>La Pièce Pensante</strong> et la cabine <strong>Henry Carron 2.0</strong> pour vous assurer leur disponibilité.</p>
       <a class="info-link block" th:href="@{/mobile/rooms}">
         <span>Réserver une salle</span>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
