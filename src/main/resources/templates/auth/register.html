@@ -97,12 +97,7 @@
     <div class="section">Mot de passe</div>
     <div class="form-row">
       <label class="form-lbl">Mot de passe *</label>
-      <input name="password" id="regPw" type="password" class="form-in" placeholder="••••••••" minlength="8" required
-             oninput="checkRegStrength(this.value)">
-      <div style="height:4px;border-radius:4px;background:var(--bdr);overflow:hidden;margin-top:6px;">
-        <div id="regStrengthFill" style="height:100%;border-radius:4px;width:0;transition:width .3s,background .3s;"></div>
-      </div>
-      <div id="regStrengthLbl" style="font-size:11px;font-weight:700;margin-top:4px;min-height:14px;"></div>
+      <input name="password" id="regPw" type="password" class="form-in" placeholder="••••••••" minlength="8" required>
     </div>
 
     <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Créer mon compte</button>
@@ -115,29 +110,5 @@
 
 </div>
 
-<script>
-function checkRegStrength(pw) {
-  const fill = document.getElementById('regStrengthFill');
-  const lbl  = document.getElementById('regStrengthLbl');
-  let score = 0;
-  if (pw.length >= 8)  score++;
-  if (pw.length >= 12) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  const levels = [
-    {w:'20%',bg:'#e05050',txt:'Très faible',c:'#e05050'},
-    {w:'40%',bg:'#e07b39',txt:'Faible',     c:'#e07b39'},
-    {w:'60%',bg:'#e07b39',txt:'Moyen',      c:'#e07b39'},
-    {w:'80%',bg:'#3a9e5f',txt:'Fort',       c:'#3a9e5f'},
-    {w:'100%',bg:'#3a9e5f',txt:'Très fort', c:'#3a9e5f'},
-  ];
-  const lvl = levels[Math.max(0, score - 1)] || levels[0];
-  fill.style.width      = pw.length ? lvl.w  : '0';
-  fill.style.background = lvl.bg;
-  lbl.textContent       = pw.length ? lvl.txt : '';
-  lbl.style.color       = lvl.c;
-}
-</script>
 </body>
 </html>
