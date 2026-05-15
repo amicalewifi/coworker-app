@@ -25,6 +25,12 @@ public interface PresenceRepository extends JpaRepository<Presence, UUID> {
     @Query("SELECT p FROM Presence p WHERE p.member.id = :memberId AND p.date = :date AND p.status <> 'CANCELLED' ORDER BY p.checkedInAt ASC")
     List<Presence> findActiveByMemberAndDate(@Param("memberId") UUID memberId, @Param("date") LocalDate date);
 
+    @Query("SELECT p.date, COUNT(DISTINCT p.member.id) FROM Presence p WHERE p.date >= :from AND p.date <= :to AND p.status <> 'CANCELLED' GROUP BY p.date ORDER BY p.date ASC")
+    List<Object[]> countDistinctMembersByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("SELECT p FROM Presence p JOIN FETCH p.member WHERE p.date >= :from AND p.date <= :to AND p.status <> 'CANCELLED' ORDER BY p.date DESC, p.checkedInAt ASC")
+    List<Presence> findByDateBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
     boolean existsByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);
 
     java.util.Optional<Presence> findByMemberIdAndDateAndPresenceType(UUID memberId, LocalDate date, PresenceType type);

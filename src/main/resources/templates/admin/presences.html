@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, ~{::content})}">
+<head><title>Historique des présences — l'Amicale du Wifi</title></head>
+<body>
+<th:block th:fragment="content">
+<style>
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  padding: 16px;
+}
+.cal-hdr {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--t4);
+  padding: 6px 0 10px;
+}
+.cal-hdr.weekend { color: var(--t3); }
+.cal-day {
+  border: 1px solid var(--bdr);
+  border-radius: var(--r);
+  padding: 10px 10px 8px;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  cursor: default;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  background: var(--surf);
+}
+.cal-day.has-data {
+  cursor: pointer;
+}
+.cal-day.has-data:hover {
+  border-color: var(--prim);
+  background: var(--prim-l);
+  box-shadow: var(--shadow-xs);
+}
+.cal-day.is-today {
+  border-color: var(--prim);
+  border-width: 2px;
+}
+.cal-day.is-selected {
+  background: var(--prim-l);
+  border-color: var(--prim);
+  border-width: 2px;
+  box-shadow: var(--shadow-sm);
+}
+.cal-day.is-weekend .cal-day-num { color: var(--t3); }
+.cal-day.is-today .cal-day-num   { color: var(--prim); font-weight: 900; }
+.cal-day-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.cal-day-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.cal-badge {
+  background: var(--prim-l);
+  border-radius: 4px;
+  padding: 3px 7px;
+  overflow: hidden;
+  max-width: 100%;
+}
+.cal-badge-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--prim-d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-badge-mem {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--t3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-empty {
+  border: none;
+  background: transparent;
+  min-height: 70px;
+}
+.day-panel {
+  animation: fadeIn .2s ease;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Historique des présences</div>
+    <div class="topbar-sub" style="text-transform:capitalize;"
+         th:text="${#temporals.format(firstOfMonth,'MMMM yyyy',#locale)}"></div>
+  </div>
+  <div class="topbar-r">
+    <a th:href="@{/admin/presences(month=${prevMonth})}" class="btn btn-sm">← Préc.</a>
+    <a th:unless="${isCurrentMonth}" th:href="@{/admin/presences}" class="btn btn-sm">Ce mois</a>
+    <a th:href="@{/admin/presences(month=${nextMonth})}" class="btn btn-sm">Suiv. →</a>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- Monthly summary stats -->
+  <div class="stats" style="grid-template-columns:repeat(3,minmax(160px,1fr));margin-bottom:20px;">
+    <div class="stat">
+      <div class="stat-lbl">Présences totales</div>
+      <div class="stat-val" th:text="${totalPresences}">0</div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--prim)"></span>passages ce mois</div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Jours actifs</div>
+      <div class="stat-val" th:text="${activeDays}">0</div>
+      <div class="stat-meta">
+        <span class="sdot" style="background:var(--green)"></span>
+        <span th:text="${daysInMonth}+' jours dans le mois'"></span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-lbl">Moy. par jour actif</div>
+      <div class="stat-val" th:text="${activeDays > 0 ? #numbers.formatDecimal(totalPresences / activeDays, 1, 1) : '—'}">—</div>
+      <div class="stat-meta"><span class="sdot" style="background:var(--orange)"></span>personnes/jour</div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="cal-grid">
+      <!-- Day headers -->
+      <div class="cal-hdr">Lun</div>
+      <div class="cal-hdr">Mar</div>
+      <div class="cal-hdr">Mer</div>
+      <div class="cal-hdr">Jeu</div>
+      <div class="cal-hdr">Ven</div>
+      <div class="cal-hdr weekend">Sam</div>
+      <div class="cal-hdr weekend">Dim</div>
+
+      <!-- Blank offset cells -->
+      <div class="cal-empty" th:each="i : ${#numbers.sequence(1, firstDayOffset)}"></div>
+
+      <!-- Day cells -->
+      <div th:each="d : ${#numbers.sequence(1, daysInMonth)}"
+           th:with="date=${firstOfMonth.plusDays(d - 1)},
+                    dayPresences=${presencesByDay.get(date)},
+                    dow=${firstOfMonth.plusDays(d - 1).dayOfWeek.value}"
+           class="cal-day"
+           th:classappend="(${dayPresences != null} ? 'has-data ' : '') +
+                           (${date.equals(todayDate)} ? 'is-today ' : '') +
+                           (${dow >= 6} ? 'is-weekend' : '')"
+           th:attr="data-date=${date},id=${'day-'+date}"
+           th:onclick="${dayPresences != null} ? 'selectDay(this)' : null">
+        <div class="cal-day-num" th:text="${d}"></div>
+        <div class="cal-day-bottom" th:if="${dayPresences != null}">
+          <div th:each="p : ${dayPresences}" class="cal-badge">
+            <div class="cal-badge-name" th:text="${p.member.displayName}"></div>
+            <div class="cal-badge-mem" th:text="${p.member.membership.label}"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Day detail panels (shown on click) -->
+  <div th:each="entry : ${presencesByDay.entrySet()}"
+       th:id="'panel-'+${entry.key}"
+       class="card day-panel"
+       style="display:none;margin-bottom:16px;">
+    <div class="card-hdr">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="background:var(--prim);color:#fff;border-radius:var(--r);padding:4px 10px;font-size:11px;font-weight:700;text-transform:uppercase;"
+             th:text="${#temporals.format(entry.key,'EEE',#locale)}"></div>
+        <span class="card-ttl" style="text-transform:capitalize;"
+              th:text="${#temporals.format(entry.key,'d MMMM yyyy',#locale)}"></span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="b b-g" th:text="${#lists.size(entry.value)}+' présent'+(${#lists.size(entry.value)!=1?'s':''})"></span>
+        <button class="btn btn-sm" th:attr="data-date=${entry.key}" onclick="closePanel(this.dataset.date)">✕ Fermer</button>
+      </div>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th>Type</th>
+          <th>Arrivée</th>
+          <th>Départ</th>
+          <th>Décompte</th>
+          <th style="text-align:right;">Unités</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="p : ${entry.value}">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av" style="background:var(--gl);color:var(--gd);" th:text="${p.member.initials}"></div>
+              <div>
+                <a th:href="@{/admin/members/{id}(id=${p.member.id})}"
+                   style="font-weight:600;color:inherit;text-decoration:none;"
+                   th:text="${p.member.displayName}"></a>
+                <div style="font-size:11px;color:var(--t3);" th:text="${p.member.membership.label}"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span th:switch="${p.presenceType.name()}">
+              <span th:case="'FULL_DAY'" class="b b-g">Journée</span>
+              <span th:case="'HALF_AM'"  class="b b-o">½ Matin</span>
+              <span th:case="'HALF_PM'"  class="b b-o">½ AP-M</span>
+              <span th:case="'TRIAL'"    class="b b-a">Essai</span>
+              <span th:case="*" class="b b-gr" th:text="${p.presenceType.shortLabel}"></span>
+            </span>
+          </td>
+          <td style="color:var(--t3);" th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></td>
+          <td style="color:var(--t3);">
+            <span th:if="${p.checkedOutAt != null}"  th:text="${#temporals.format(p.checkedOutAt,'HH:mm')}"></span>
+            <span th:if="${p.member.permanent}"       style="font-size:18px;">∞</span>
+            <span th:unless="${p.checkedOutAt != null or p.member.permanent}" style="color:var(--t4);">—</span>
+          </td>
+          <td>
+            <span th:if="${p.unitaire}"                               class="cons cons-half">Unitaire</span>
+            <span th:unless="${p.unitaire}">
+              <span th:if="${p.presenceType.name()=='FULL_DAY'}"     class="cons cons-full">−1.0j</span>
+              <span th:unless="${p.presenceType.name()=='FULL_DAY'}" class="cons cons-half">−0.5j</span>
+            </span>
+          </td>
+          <td style="text-align:right;font-size:12px;color:var(--t3);"
+              th:text="${p.unitsConsumed != null ? #numbers.formatDecimal(p.unitsConsumed,1,1) : '—'}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty state -->
+  <div th:if="${totalPresences == 0}"
+       style="text-align:center;padding:40px 20px;color:var(--t3);font-size:14px;">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+         style="display:block;margin:0 auto 12px;opacity:.35"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    Aucune présence pour <strong th:text="${#temporals.format(firstOfMonth,'MMMM yyyy',#locale)}"></strong>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var selected = null;
+
+  function scrollToPanel(panel) {
+    setTimeout(function () {
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 30);
+  }
+
+  window.selectDay = function (cell) {
+    var date = cell.dataset.date;
+    var panel = document.getElementById('panel-' + date);
+    if (!panel) return;
+
+    if (selected === date) {
+      // toggle off
+      panel.style.display = 'none';
+      cell.classList.remove('is-selected');
+      selected = null;
+      return;
+    }
+
+    // hide previous
+    if (selected) {
+      var prev = document.getElementById('panel-' + selected);
+      if (prev) prev.style.display = 'none';
+      var prevCell = document.querySelector('[data-date="' + selected + '"]');
+      if (prevCell) prevCell.classList.remove('is-selected');
+    }
+
+    panel.style.display = 'block';
+    cell.classList.add('is-selected');
+    selected = date;
+    scrollToPanel(panel);
+  };
+
+  window.closePanel = function (date) {
+    var panel = document.getElementById('panel-' + date);
+    if (panel) panel.style.display = 'none';
+    var cell = document.querySelector('[data-date="' + date + '"]');
+    if (cell) cell.classList.remove('is-selected');
+    if (selected === date) selected = null;
+  };
+
+  // Auto-open today if current month and has data
+  var todayCell = document.querySelector('.cal-day.is-today.has-data');
+  if (todayCell) window.selectDay(todayCell);
+})();
+</script>
+
+</th:block>
+</body>
+</html>

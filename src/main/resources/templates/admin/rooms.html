@@ -4,6 +4,32 @@
 <head><title>Salles — l'Amicale du Wifi</title></head>
 <body>
 <th:block th:fragment="content">
+<style>
+.cal-badge {
+  background: var(--prim-l);
+  border-radius: 4px;
+  padding: 3px 7px;
+  overflow: hidden;
+  max-width: 100%;
+  margin-bottom: 2px;
+}
+.cal-badge-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--prim-d);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cal-badge-mem {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--t3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
 <div class="topbar">
   <div>
     <div class="topbar-title">Salles de réunion</div>
@@ -109,18 +135,20 @@
         <div th:each="day : ${#numbers.sequence(1, daysInMonth)}"
              th:with="hasBookings=${monthBookingsByDay.containsKey(day)},
                       isToday=${monthYear.atDay(day).equals(#temporals.createToday())}"
-             style="min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;"
-             th:style="'min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:5px;font-size:11px;'
-                       + (${isToday} ? 'border-color:var(--prim);background:var(--prim-l);' : '')
+             style="min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:6px;display:flex;flex-direction:column;justify-content:flex-start;"
+             th:style="'min-height:70px;border:1px solid var(--bdr);border-radius:6px;padding:6px;display:flex;flex-direction:column;justify-content:flex-start;'
+                       + (${isToday} ? 'border-color:var(--prim);border-width:2px;' : '')
                        + (${hasBookings and !isToday} ? 'border-color:var(--orange);' : '')">
-          <div style="font-weight:700;margin-bottom:3px;"
-               th:style="'font-weight:700;margin-bottom:3px;color:'+(${isToday} ? 'var(--gd)' : 'var(--text)')"
+          <div style="font-size:13px;font-weight:700;margin-bottom:5px;line-height:1;"
+               th:style="'font-size:13px;font-weight:700;margin-bottom:5px;line-height:1;color:'+(${isToday} ? 'var(--prim)' : 'var(--text)')"
                th:text="${day}"></div>
-          <div th:if="${hasBookings}"
-               th:each="b : ${monthBookingsByDay.get(day)}"
-               style="background:var(--ol);border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--od);">
-            <span th:text="${#temporals.format(b.startTime,'HH:mm')}"></span>
-            <span th:text="${b.room.name}" style="font-weight:600;"></span>
+          <div th:if="${hasBookings}" th:each="b : ${monthBookingsByDay.get(day)}" class="cal-badge">
+            <div class="cal-badge-name"
+                 th:text="${b.member != null ? b.member.displayName : (b.organizerName != null ? b.organizerName : 'Externe')}"></div>
+            <div class="cal-badge-mem" th:if="${b.member != null}"
+                 th:text="${b.member.membership.label}+' · '+${b.room.name}+' '+${#temporals.format(b.startTime,'HH:mm')}"></div>
+            <div class="cal-badge-mem" th:unless="${b.member != null}"
+                 th:text="${b.room.name}+' · '+${#temporals.format(b.startTime,'HH:mm')}"></div>
           </div>
         </div>
 

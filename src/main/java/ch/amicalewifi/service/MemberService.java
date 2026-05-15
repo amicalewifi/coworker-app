@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,6 +39,7 @@ public class MemberService {
         return d.equals(LocalDate.now()) ? presenceRepo.findTodayActive(d) : presenceRepo.findByDate(d);
     }
     public List<Presence> getForMember(UUID id)    { return presenceRepo.findByMemberIdOrderByDateDescCheckedInAtDesc(id); }
+    public List<Presence> getForMonth(YearMonth m) { return presenceRepo.findByDateBetween(m.atDay(1), m.atEndOfMonth()); }
     public long           countToday()             { return presenceRepo.countTodayActive(LocalDate.now()); }
 
     public Member create(Member m) {

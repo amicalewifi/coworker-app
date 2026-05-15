@@ -279,6 +279,116 @@ document.addEventListener('click', function(e) {
       </tbody>
     </table>
   </div>
+
+  <!-- Historique des réservations de salles -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Historique des réservations de salles</span>
+      <span class="b b-gr" th:text="${#lists.size(roomBookings)}+' réservation(s)'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Salle</th>
+          <th>Horaire</th>
+          <th>Durée</th>
+          <th>Participants</th>
+          <th>Objet</th>
+          <th>Facturation</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="b : ${roomBookings}">
+          <td style="white-space:nowrap;">
+            <div style="font-weight:600;" th:text="${#temporals.format(b.date,'dd.MM.yyyy')}"></div>
+            <div style="font-size:11px;color:var(--t3);text-transform:capitalize;"
+                 th:text="${#temporals.format(b.date,'EEEE',#locale)}"></div>
+          </td>
+          <td><span class="b b-gr" th:text="${b.room.name}"></span></td>
+          <td style="white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--t2);"
+              th:text="${#temporals.format(b.startTime,'HH:mm')}+' – '+${#temporals.format(b.endTime,'HH:mm')}"></td>
+          <td style="color:var(--t3);font-size:12px;"
+              th:text="${#numbers.formatDecimal(b.durationHours,1,1)}+'h'"></td>
+          <td style="color:var(--t3);" th:text="${b.participants}+' pers.'"></td>
+          <td style="color:var(--t3);font-size:13px;" th:text="${b.title?:'—'}"></td>
+          <td>
+            <span th:if="${b.billedFromCredits}"  class="b b-g">Crédits</span>
+            <span th:unless="${b.billedFromCredits}" class="b b-o">Comptant</span>
+          </td>
+          <td>
+            <span th:switch="${b.status.name()}">
+              <span th:case="'CONFIRMED'" class="b b-g">Confirmée</span>
+              <span th:case="'CANCELLED'" class="b b-r">Annulée</span>
+              <span th:case="*"           class="b b-gr" th:text="${b.status.name()}"></span>
+            </span>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(roomBookings)}">
+          <td colspan="8" style="text-align:center;color:var(--t3);padding:20px;">Aucune réservation de salle</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Historique des impressions -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-hdr">
+      <span class="card-ttl">Historique des impressions</span>
+      <span class="b b-gr" th:text="${#lists.size(printJobs)}+' travaux'"></span>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fichier</th>
+          <th>Pages</th>
+          <th>Copies</th>
+          <th>Total</th>
+          <th>Type</th>
+          <th>Recto/verso</th>
+          <th>Statut</th>
+          <th style="text-align:right;">Coût</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="j : ${printJobs}">
+          <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+              th:title="${j.filename}" th:text="${j.filename}"></td>
+          <td th:text="${j.pages}"></td>
+          <td th:text="${j.copies}"></td>
+          <td style="font-weight:600;" th:text="${j.totalPages}"></td>
+          <td>
+            <span th:if="${j.color}"  class="b b-o">Couleur</span>
+            <span th:unless="${j.color}" class="b b-gr">N&amp;B</span>
+          </td>
+          <td>
+            <span th:if="${j.duplex}"  style="color:var(--t3);font-size:12px;">R/V</span>
+            <span th:unless="${j.duplex}" style="color:var(--t4);font-size:12px;">Simple</span>
+          </td>
+          <td>
+            <span th:switch="${j.status.name()}">
+              <span th:case="'COMPLETED'" class="b b-g">Imprimé</span>
+              <span th:case="'QUEUED'"    class="b b-gr">En attente</span>
+              <span th:case="'PRINTING'"  class="b b-o">En cours</span>
+              <span th:case="'CANCELLED'" class="b b-gr">Annulé</span>
+              <span th:case="'ERROR'"     class="b b-r">Erreur</span>
+              <span th:case="*"           class="b b-gr" th:text="${j.status.name()}"></span>
+            </span>
+          </td>
+          <td style="text-align:right;font-size:12px;color:var(--t3);"
+              th:text="'Fr. '+${#numbers.formatDecimal(j.totalCost,1,2)}"></td>
+          <td style="color:var(--t3);font-size:12px;white-space:nowrap;"
+              th:text="${#temporals.format(j.createdAt,'dd.MM.yyyy HH:mm')}"></td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(printJobs)}">
+          <td colspan="9" style="text-align:center;color:var(--t3);padding:20px;">Aucune impression</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
 
 <!-- Modal modification membre -->

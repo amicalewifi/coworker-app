@@ -61,6 +61,11 @@
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5"/></svg>
         Utilisateurs
       </a>
+      <a th:href="@{/admin/presences}" class="nav-item"
+         th:classappend="${currentUri.startsWith('/admin/presences')} ? 'active'">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M5 1v2M11 1v2M1 6h14"/><path d="M4 9h2M7 9h2M10 9h2M4 12h2M7 12h2"/></svg>
+        Historique présences
+      </a>
 
       <div class="nav-sec">Terminaux</div>
       <a th:href="@{/mobile/}" class="nav-item" target="_blank">
