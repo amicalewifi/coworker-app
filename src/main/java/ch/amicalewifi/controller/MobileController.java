@@ -44,6 +44,8 @@ public class MobileController {
     private final MemberWifiMacRepository  wifiMacRepo;
     private final WifiDailyUsageRepository wifiDailyUsageRepo;
     private final PackTransactionRepository packTxRepo;
+    private final WifiAccessService        wifiAccess;
+    private final UnifiService             unifi;
     private final PasswordEncoder          passwordEncoder;
 
     public record PackGroup(PackTransaction tx, List<Presence> presences, BigDecimal unitsUsed) {}
@@ -58,6 +60,7 @@ public class MobileController {
     @Value("${amicale.community.staff-email}")     private String staffEmail;
     @Value("${amicale.events.calendar-view-url}") private String calendarViewUrl;
     @Value("${amicale.events.calendar-ics-url}")  private String calendarIcsUrl;
+    @Value("${amicale.wifi.trampoline-url}")      private String wifiTrampolineUrl;
 
     @GetMapping({"", "/"})
     public String home(Authentication auth,
@@ -138,6 +141,42 @@ public class MobileController {
             return ResponseEntity.noContent().build();
         }
         ra.addFlashAttribute("success", "Nom de l'appareil mis à jour.");
+        return "redirect:/mobile/devices";
+    }
+
+    /**
+     * "Ajouter cet appareil" — redirige le navigateur vers une URL hors
+     * walled-garden (le tunnel WireGuard du VPS, configuré dans
+     * application.yml). UniFi intercepte la requête HTTP et 302 vers
+     * /guest/s/default/?id=<MAC>&... qui capture la MAC. CaptivePortalParamFilter
+     * la pose en session, l'utilisateur arrive sur /login déjà authentifié,
+     * et RootController y déclenche bindMacToMember + tryAuthorize.
+     *
+     * Ne fonctionne que depuis le WiFi du coworking : l'IP du tunnel n'est
+     * pas joignable depuis l'extérieur. Côté template, on affiche un message
+     * d'info pour rappeler ce prérequis.
+     */
+    @GetMapping("/devices/add-current")
+    public String addCurrentDevice() {
+        return "redirect:" + wifiTrampolineUrl;
+    }
+
+    /**
+     * Retire un appareil : désautorise la MAC auprès d'UniFi puis supprime
+     * le binding en base. Le membre peut toujours réajouter l'appareil en
+     * cliquant sur "Ajouter cet appareil" depuis ce même appareil.
+     */
+    @PostMapping("/devices/{id}/revoke")
+    public String revokeDevice(@PathVariable UUID id,
+                               Authentication auth, RedirectAttributes ra) {
+        Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        wifiMacRepo.findById(id).ifPresent(mac -> {
+            if (!mac.getMember().getId().equals(member.getId())) return;
+            unifi.unauthorizeGuest(mac.getMac());
+            wifiAccess.audit(member, mac.getMac(), "REVOKED", "self-service");
+            wifiMacRepo.delete(mac);
+        });
+        ra.addFlashAttribute("success", "Appareil retiré.");
         return "redirect:/mobile/devices";
     }
 

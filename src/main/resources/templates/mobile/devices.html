@@ -33,15 +33,33 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 <div th:replace="~{mobile/fragments/topbar :: topbar('Mes appareils')}"></div>
 
 <div class="app-content">
+  <div th:if="${success}" class="flash flash-ok" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+    <span th:text="${success}"></span>
+  </div>
+
   <div class="intro">
-    Chaque appareil que vous connectez au WiFi du coworking est ajouté ici automatiquement
-    après votre première connexion via le portail. Vous pouvez renommer un appareil pour
-    le retrouver plus facilement.
+    Cliquez sur <strong>Ajouter cet appareil</strong> depuis chaque appareil sur lequel
+    vous voulez utiliser le WiFi du coworking. L'autorisation reste active tant que
+    votre pack est valide. Vous pouvez renommer chaque appareil pour le retrouver.
+  </div>
+
+  <div style="padding:0 16px 14px;">
+    <a th:href="@{/mobile/devices/add-current}"
+       style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--prim);color:#fff;font-size:14px;font-weight:700;padding:12px 16px;border-radius:12px;text-decoration:none;box-shadow:0 2px 8px rgba(0,122,245,.25);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Ajouter cet appareil
+    </a>
+    <div style="font-size:11px;color:var(--t3);text-align:center;margin-top:6px;line-height:1.4;">
+      Disponible depuis le WiFi du coworking uniquement.<br>
+      Depuis l'extérieur, le bouton ne pourra pas joindre la borne.
+    </div>
   </div>
 
   <div th:if="${#lists.isEmpty(devices)}" class="empty">
     Aucun appareil enregistré pour l'instant.<br>
-    Connectez-vous au WiFi du coworking pour ajouter votre premier appareil.
+    Connectez-vous au WiFi du coworking et cliquez sur "Ajouter cet appareil"
+    ci-dessus.
   </div>
 
   <div th:each="d : ${devices}" class="dev-card">
@@ -65,6 +83,14 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
              placeholder="Nom (ex. iPhone, MacBook…)"
              th:attr="data-device-id=${d.id}, data-initial=${d.label != null ? d.label : ''}">
     </div>
+    <form th:action="@{'/mobile/devices/' + ${d.id} + '/revoke'}" method="post"
+          style="margin-top:8px;text-align:right;"
+          onsubmit="return confirm('Retirer cet appareil de votre liste ? Il faudra le réajouter pour utiliser le WiFi.');">
+      <button type="submit"
+              style="background:none;border:none;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;padding:4px 8px;">
+        Retirer
+      </button>
+    </form>
   </div>
 </div>
 

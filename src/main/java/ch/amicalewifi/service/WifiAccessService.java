@@ -90,6 +90,38 @@ public class WifiAccessService {
     }
 
     /**
+     * Autorise (ou ré-autorise) toutes les MAC liées au membre. Appelé après
+     * un renouvellement de pack: sans cela, les appareils déjà enregistrés
+     * resteraient désautorisés à UniFi jusqu'à ce que le membre clique
+     * manuellement sur "Ajouter cet appareil" depuis chaque appareil.
+     *
+     * Pour chaque MAC, on délègue à {@link #tryAuthorize(Member, String)} —
+     * qui gère le gating hasAccess() et écrit AUTHORIZED ou DENIED_NO_PACK
+     * dans wifi_audit.
+     */
+    public void authorizeAllDevices(Member member) {
+        if (member == null) return;
+        for (MemberWifiMac mac : macRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId())) {
+            tryAuthorize(member, mac.getMac());
+        }
+    }
+
+    /**
+     * Désautorise toutes les MAC liées au membre auprès d'UniFi. Appelé quand
+     * un appareil est retiré (revoke explicite) ou quand le pack expire.
+     * On ne supprime pas les bindings ici — la table {@code member_wifi_macs}
+     * reste la liste persistante des appareils du membre.
+     */
+    public void unauthorizeAllDevices(Member member) {
+        if (member == null) return;
+        for (MemberWifiMac mac : macRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId())) {
+            if (unifi.unauthorizeGuest(mac.getMac())) {
+                audit(member, mac.getMac(), "REVOKED", null);
+            }
+        }
+    }
+
+    /**
      * Vrai si le membre a actuellement droit au WiFi.
      * Note : on accepte aussi le cas « déjà décompté aujourd'hui » : si le
      * pack est tombé à 0 en cours de journée, on laisse finir la journée.
