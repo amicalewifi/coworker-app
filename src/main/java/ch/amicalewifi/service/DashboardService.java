@@ -9,9 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,6 +26,12 @@ public class DashboardService {
     private final AccessEventRepository            eventRepo;
     private final PackTransactionRepository        packTxRepo;
     private final PrintCreditTransactionRepository printCreditTxRepo;
+    private final PrinterJobRepository             printerJobRepo;
+    private final PresenceRepository               presenceRepo;
+
+    public record PrintSummary(Member member, long jobs, int bwPages, int colorPages, BigDecimal cost) {
+        public int totalPages() { return bwPages + colorPages; }
+    }
 
     public record Stats(
             long presentToday,
@@ -38,7 +46,10 @@ public class DashboardService {
             Map<Integer, BigDecimal> monthlyIncome,
             List<PackTransaction> monthlyTransactions,
             List<PrintCreditTransaction> monthlyPrintTransactions,
-            BigDecimal monthlyTotal
+            BigDecimal monthlyTotal,
+            List<PrintSummary> todayPrintSummaries,
+            Map<LocalDate, Long> last30DaysPresence,
+            long maxPresence30Days
     ) {}
 
     public Stats getStats() {
@@ -82,13 +93,36 @@ public class DashboardService {
             monthlyTotal = monthlyTotal.add(tx.getAmountChf());
         }
 
+        List<PrinterJob> todayJobs = printerJobRepo.findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
+                today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+        Map<Member, List<PrinterJob>> jobsByMember = todayJobs.stream()
+                .filter(j -> j.getStatus() == PrintJobStatus.COMPLETED)
+                .collect(Collectors.groupingBy(PrinterJob::getMember, LinkedHashMap::new, Collectors.toList()));
+        List<PrintSummary> todayPrintSummaries = jobsByMember.entrySet().stream()
+                .map(e -> {
+                    List<PrinterJob> mJobs = e.getValue();
+                    int bw    = mJobs.stream().mapToInt(j -> j.isColor() ? 0 : j.getTotalPages()).sum();
+                    int color = mJobs.stream().mapToInt(j -> j.isColor() ? j.getTotalPages() : 0).sum();
+                    BigDecimal cost = mJobs.stream().map(PrinterJob::getTotalCost).reduce(BigDecimal.ZERO, BigDecimal::add);
+                    return new PrintSummary(e.getKey(), mJobs.size(), bw, color, cost);
+                })
+                .collect(Collectors.toList());
+
+        LocalDate thirtyDaysAgo = today.minusDays(29);
+        Map<LocalDate, Long> last30DaysPresence = new LinkedHashMap<>();
+        for (int i = 0; i < 30; i++) last30DaysPresence.put(thirtyDaysAgo.plusDays(i), 0L);
+        for (Object[] row : presenceRepo.countDistinctMembersByDateRange(thirtyDaysAgo, today))
+            last30DaysPresence.put((LocalDate) row[0], (Long) row[1]);
+        long maxPresence30Days = last30DaysPresence.values().stream().mapToLong(Long::longValue).max().orElse(1L);
+
         return new Stats(
                 memberService.countToday(),
                 (int) presences.stream().filter(p -> p.getPresenceType() == PresenceType.FULL_DAY).count(),
                 (int) presences.stream().filter(p -> p.getPresenceType() == PresenceType.HALF_AM
                                                   || p.getPresenceType() == PresenceType.HALF_PM).count(),
                 occupied, rooms.size(), packs, permanents.size(), alerts, events,
-                monthlyIncome, monthTxs, monthPrintTxs, monthlyTotal
+                monthlyIncome, monthTxs, monthPrintTxs, monthlyTotal, todayPrintSummaries,
+                last30DaysPresence, maxPresence30Days
         );
     }
 }

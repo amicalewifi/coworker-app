@@ -21,4 +21,8 @@ public interface PrinterJobRepository extends JpaRepository<PrinterJob, UUID> {
     @EntityGraph(attributePaths = {"member"})
     List<PrinterJob> findByStatusAndCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
             PrintJobStatus status, LocalDateTime from, LocalDateTime to);
+
+    @EntityGraph(attributePaths = {"member"})
+    List<PrinterJob> findByCreatedAtBetweenOrderByMemberLastNameAscCreatedAtDesc(
+            LocalDateTime from, LocalDateTime to);
 }

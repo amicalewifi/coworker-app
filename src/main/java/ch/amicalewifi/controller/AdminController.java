@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -97,6 +98,26 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    @GetMapping("/presences")
+    public String presences(@RequestParam(required = false) String month, Model model) {
+        YearMonth selectedMonth = (month != null && !month.isBlank()) ? YearMonth.parse(month) : YearMonth.now();
+        Map<LocalDate, List<Presence>> byDay = memberService.getForMonth(selectedMonth).stream()
+                .collect(Collectors.groupingBy(Presence::getDate, TreeMap::new, Collectors.toList()));
+        LocalDate firstOfMonth = selectedMonth.atDay(1);
+        model.addAttribute("selectedMonth",  selectedMonth);
+        model.addAttribute("firstOfMonth",   firstOfMonth);
+        model.addAttribute("presencesByDay", byDay);
+        model.addAttribute("prevMonth",      selectedMonth.minusMonths(1).toString());
+        model.addAttribute("nextMonth",      selectedMonth.plusMonths(1).toString());
+        model.addAttribute("isCurrentMonth", selectedMonth.equals(YearMonth.now()));
+        model.addAttribute("daysInMonth",    selectedMonth.lengthOfMonth());
+        model.addAttribute("firstDayOffset", firstOfMonth.getDayOfWeek().getValue() - 1);
+        model.addAttribute("todayDate",      LocalDate.now());
+        model.addAttribute("totalPresences", byDay.values().stream().mapToInt(List::size).sum());
+        model.addAttribute("activeDays",     byDay.size());
+        return "admin/presences";
+    }
+
     @GetMapping("/members")
     public String members(@RequestParam(required = false) String filter, Model model) {
         List<Member> members;
@@ -122,9 +143,11 @@ public class AdminController {
 
     @GetMapping("/members/{id}")
     public String memberDetail(@PathVariable UUID id, Model model) {
-        model.addAttribute("member",      memberService.getById(id));
-        model.addAttribute("presences",   memberService.getForMember(id));
-        model.addAttribute("memberships", MembershipType.values());
+        model.addAttribute("member",       memberService.getById(id));
+        model.addAttribute("presences",    memberService.getForMember(id));
+        model.addAttribute("roomBookings", roomService.getForMember(id));
+        model.addAttribute("printJobs",    printerRepo.findByMemberIdOrderByCreatedAtDesc(id));
+        model.addAttribute("memberships",  MembershipType.values());
         return "admin/member-detail";
     }
 

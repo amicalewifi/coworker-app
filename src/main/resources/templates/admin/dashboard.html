@@ -35,7 +35,7 @@
 
   <!-- Stats -->
   <div class="stats">
-    <a th:href="@{/admin/members(filter='present')}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
+    <a th:href="@{/admin/presences}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
       <div class="stat-lbl">Présents aujourd'hui</div>
       <div class="stat-val" th:text="${stats.presentToday}">0</div>
       <div class="stat-meta">
@@ -43,11 +43,11 @@
         <span th:text="${stats.fullDayCount}+' journées · '+${stats.halfDayCount}+' demi-j.'"></span>
       </div>
     </a>
-    <div class="stat">
+    <a th:href="@{/admin/rooms}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
       <div class="stat-lbl">Salles réservées</div>
       <div class="stat-val" th:text="${stats.roomsOccupied}+'/'+${stats.roomsTotal}">0/2</div>
       <div class="stat-meta"><span class="sdot" style="background:var(--orange)"></span>Fr. 19.-/h · 8h–21h</div>
-    </div>
+    </a>
     <a th:href="@{/admin/members(filter='packs')}" class="stat" style="text-decoration:none;color:inherit;cursor:pointer;">
       <div class="stat-lbl">Packs actifs</div>
       <div class="stat-val" th:text="${stats.activePacks}">0</div>
@@ -66,70 +66,30 @@
       <div class="stat-val" style="font-size:22px;" th:text="'Fr. '+${#numbers.formatDecimal(stats.monthlyTotal,1,2)}">Fr. 0.00</div>
       <div class="stat-meta"><span class="sdot" style="background:var(--green-m)"></span>Voir le détail →</div>
     </a>
-  </div>
-
-  <!-- Présences actives -->
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-ttl" th:text="${isToday} ? 'Présents maintenant' : 'Présents — '+${#temporals.format(selectedDate,'EEEE d MMMM',#locale)}"></span>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <a th:href="@{/admin(date=${prevDay})}" class="btn btn-sm">← Préc.</a>
-        <form method="get" action="/admin" style="display:inline;margin:0;">
-          <input type="date" name="date" class="form-in"
-                 style="font-size:12px;padding:4px 8px;height:auto;width:auto;"
-                 th:value="${#temporals.format(selectedDate,'yyyy-MM-dd')}"
-                 onchange="this.form.submit()">
-        </form>
-        <a th:href="@{/admin(date=${nextDay})}" class="btn btn-sm">Suiv. →</a>
-        <a th:unless="${isToday}" th:href="@{/admin}" class="btn btn-sm">Aujourd'hui</a>
-        <span class="b b-g" th:text="${#lists.size(presences)}"></span>
+    <a th:href="@{/admin/presences}" class="stat" style="grid-column: 6 / -1; min-width: 0; text-decoration:none; color:inherit; cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
+        <div class="stat-lbl" style="margin-bottom:0;">Présences — 30 derniers jours</div>
+        <div style="font-size:11px;color:var(--t3);">max <strong style="color:var(--text);" th:text="${stats.maxPresence30Days}"></strong></div>
       </div>
-    </div>
-      <table class="table">
-        <thead><tr><th>Membre</th><th>Arrivée</th><th>Type</th><th>Décompte</th><th th:text="${isToday} ? '' : 'Départ'"></th></tr></thead>
-        <tbody>
-          <tr th:each="p : ${presences}">
-            <td>
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div class="av" style="background:var(--gl);color:var(--gd);" th:text="${p.member.initials}"></div>
-                <span style="font-weight:600;" th:text="${p.member.displayName}"></span>
-              </div>
-            </td>
-            <td style="color:var(--t3);" th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></td>
-            <td>
-              <span th:switch="${p.presenceType.name()}">
-                <span th:case="'FULL_DAY'" class="b b-g">Journée</span>
-                <span th:case="'HALF_AM'"  class="b b-o">½ Matin</span>
-                <span th:case="'HALF_PM'"  class="b b-o">½ AP-M</span>
-                <span th:case="'TRIAL'"    class="b b-a">Essai</span>
-                <span th:case="*" class="b b-gr" th:text="${p.presenceType.shortLabel}"></span>
-              </span>
-            </td>
-            <td>
-              <span th:if="${p.unitaire}"                                   class="cons cons-half">Unitaire</span>
-              <span th:unless="${p.unitaire}">
-                <span th:if="${p.presenceType.name()=='FULL_DAY'}"         class="cons cons-full">−1.0j</span>
-                <span th:unless="${p.presenceType.name()=='FULL_DAY'}"     class="cons cons-half">−0.5j</span>
-              </span>
-            </td>
-            <td style="text-align:center;">
-              <form th:if="${p.status.name() == 'ACTIVE' and !p.member.permanent}" th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
-                <label class="sw" title="Cliquer pour enregistrer le départ">
-                  <input type="checkbox" checked onchange="this.closest('form').submit()">
-                  <span class="sw-k"></span>
-                </label>
-              </form>
-              <span th:if="${p.status.name() == 'COMPLETED'}" style="font-size:12px;color:var(--t3);"
-                    th:text="${p.checkedOutAt != null ? #temporals.format(p.checkedOutAt,'HH:mm') : '—'}"></span>
-              <span th:if="${p.member.permanent}" title="Membre permanent — présent toute la journée" style="color:var(--t3);font-size:18px;">∞</span>
-            </td>
-          </tr>
-          <tr th:if="${#lists.isEmpty(presences)}">
-            <td colspan="5" style="text-align:center;color:var(--t3);padding:20px;">Aucun membre présent</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <div style="display:flex;align-items:flex-end;gap:3px;height:80px;">
+        <div th:each="entry,iter : ${stats.last30DaysPresence.entrySet()}"
+             th:with="h=${entry.value > 0 ? entry.value * 76 / stats.maxPresence30Days + 4 : 0},
+                      isToday=${entry.key.equals(todayDate)}"
+             style="flex:1;border-radius:3px 3px 0 0;min-width:0;cursor:default;transition:opacity .15s;"
+             th:style="'flex:1;border-radius:3px 3px 0 0;min-width:0;height:'+${h}+'px;background:'+( ${isToday} ? 'var(--prim)' : (${entry.value > 0} ? 'var(--blue-l)' : 'var(--surf-2)'))"
+             th:title="${#temporals.format(entry.key,'EEE d MMM',#locale)+' · '+entry.value+' présent'+(entry.value != 1 ? 's' : '')}">
+        </div>
+      </div>
+      <div style="display:flex;gap:3px;border-top:1px solid var(--bdr);padding-top:5px;margin-top:3px;">
+        <div th:each="entry,iter : ${stats.last30DaysPresence.entrySet()}"
+             style="flex:1;min-width:0;text-align:center;overflow:hidden;white-space:nowrap;"
+             th:style="'flex:1;min-width:0;text-align:center;overflow:hidden;white-space:nowrap;font-size:'+( ${entry.key.equals(todayDate)} ? '10' : '9')+'px;font-weight:'+( ${entry.key.equals(todayDate)} ? '700' : '400')+';color:'+( ${entry.key.equals(todayDate)} ? 'var(--prim)' : 'var(--t4)')">
+          <span th:if="${iter.index % 5 == 0 or iter.index == 29}"
+                th:text="${#temporals.format(entry.key,'d/M')}"></span>
+        </div>
+      </div>
+    </a>
+  </div>
 
   <!-- Salles du jour -->
   <div class="card">
@@ -162,6 +122,147 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Présences actives -->
+  <div class="card">
+    <div class="card-hdr">
+      <a th:href="@{/admin/presences}" class="card-ttl" style="text-decoration:none;color:inherit;">Présents maintenant</a>
+      <span class="b b-g" th:text="${#lists.size(presences)}"></span>
+    </div>
+    <table class="table">
+      <thead><tr><th>Membre</th><th>Arrivée</th><th>Type</th><th>Décompte</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="p : ${presences}">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av" style="background:var(--gl);color:var(--gd);" th:text="${p.member.initials}"></div>
+              <span style="font-weight:600;" th:text="${p.member.displayName}"></span>
+            </div>
+          </td>
+          <td style="color:var(--t3);" th:text="${#temporals.format(p.checkedInAt,'HH:mm')}"></td>
+          <td>
+            <span th:switch="${p.presenceType.name()}">
+              <span th:case="'FULL_DAY'" class="b b-g">Journée</span>
+              <span th:case="'HALF_AM'"  class="b b-o">½ Matin</span>
+              <span th:case="'HALF_PM'"  class="b b-o">½ AP-M</span>
+              <span th:case="'TRIAL'"    class="b b-a">Essai</span>
+              <span th:case="*" class="b b-gr" th:text="${p.presenceType.shortLabel}"></span>
+            </span>
+          </td>
+          <td>
+            <span th:if="${p.unitaire}"                                   class="cons cons-half">Unitaire</span>
+            <span th:unless="${p.unitaire}">
+              <span th:if="${p.presenceType.name()=='FULL_DAY'}"         class="cons cons-full">−1.0j</span>
+              <span th:unless="${p.presenceType.name()=='FULL_DAY'}"     class="cons cons-half">−0.5j</span>
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <form th:if="${p.status.name() == 'ACTIVE' and !p.member.permanent}" th:action="@{/admin/presences/{id}/checkout(id=${p.id})}" method="post" style="display:inline;">
+              <label class="sw" title="Cliquer pour enregistrer le départ">
+                <input type="checkbox" checked onchange="this.closest('form').submit()">
+                <span class="sw-k"></span>
+              </label>
+            </form>
+            <span th:if="${p.status.name() == 'COMPLETED'}" style="font-size:12px;color:var(--t3);"
+                  th:text="${p.checkedOutAt != null ? #temporals.format(p.checkedOutAt,'HH:mm') : '—'}"></span>
+            <span th:if="${p.member.permanent}" title="Membre permanent — présent toute la journée" style="color:var(--t3);font-size:18px;">∞</span>
+          </td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(presences)}">
+          <td colspan="5" style="text-align:center;color:var(--t3);padding:20px;">Aucun membre présent</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Journal d'accès AKUVOX -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-ttl">Entrées du jour — badge AKUVOX</span>
+      <span id="entries-count" class="b b-g" style="font-size:11px;"></span>
+    </div>
+    <div id="entries-list" style="padding:0 16px;max-height:320px;overflow-y:auto;">
+      <div th:each="e : ${stats.todayEvents}"
+           th:if="${e.eventType.name()=='ENTRY_GRANTED'}"
+           class="tl-item">
+        <div class="tl-time" th:text="${#temporals.format(e.occurredAt,'HH:mm')}"></div>
+        <div class="tl-dot" style="background:var(--green)"></div>
+        <div class="tl-body">
+          <div class="tl-name">
+            <span th:if="${e.member!=null}"    th:text="${e.member.displayName}"></span>
+            <span th:unless="${e.member!=null}" th:text="'Badge '+${e.badgeUid}"></span>
+          </div>
+          <div class="tl-desc" th:text="${e.badgeUid}"></div>
+        </div>
+      </div>
+      <div th:if="${#lists.isEmpty(stats.todayEvents)}"
+           style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">
+        Aucune entrée aujourd'hui
+      </div>
+    </div>
+  </div>
+
+  <!-- Impressions du jour -->
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-ttl">Impressions du jour</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="b b-g" th:text="${#lists.size(stats.todayPrintSummaries)}+' personne'+(${#lists.size(stats.todayPrintSummaries)!=1?'s':''})"></span>
+        <a th:href="@{/admin/printer}" class="btn btn-sm">Voir tout →</a>
+      </div>
+    </div>
+    <div th:if="${#lists.isEmpty(stats.todayPrintSummaries)}"
+         style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">
+      Aucune impression aujourd'hui
+    </div>
+    <table class="table" th:unless="${#lists.isEmpty(stats.todayPrintSummaries)}">
+      <thead>
+        <tr>
+          <th>Membre</th>
+          <th style="text-align:right;">Jobs</th>
+          <th style="text-align:right;">Pages N&amp;B</th>
+          <th style="text-align:right;">Pages couleur</th>
+          <th style="text-align:right;">Total pages</th>
+          <th style="text-align:right;">Coût</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="s : ${stats.todayPrintSummaries}">
+          <td>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="av" style="background:var(--pl);color:var(--purple);" th:text="${s.member.initials}"></div>
+              <a th:href="@{/admin/members/{id}(id=${s.member.id})}" style="font-weight:600;color:inherit;text-decoration:none;"
+                 th:text="${s.member.displayName}"></a>
+            </div>
+          </td>
+          <td style="text-align:right;color:var(--t3);" th:text="${s.jobs}"></td>
+          <td style="text-align:right;" th:text="${s.bwPages > 0 ? s.bwPages : '—'}"></td>
+          <td style="text-align:right;">
+            <span th:if="${s.colorPages > 0}" class="b b-a" style="font-size:11px;" th:text="${s.colorPages}"></span>
+            <span th:unless="${s.colorPages > 0}" style="color:var(--t3);">—</span>
+          </td>
+          <td style="text-align:right;font-weight:600;" th:text="${s.totalPages}"></td>
+          <td style="text-align:right;color:var(--t3);font-size:12px;"
+              th:text="'Fr. '+${#numbers.formatDecimal(s.cost,1,2)}"></td>
+        </tr>
+      </tbody>
+      <tfoot th:if="${#lists.size(stats.todayPrintSummaries) > 1}">
+        <tr style="font-weight:600;border-top:2px solid var(--bdr);">
+          <td>Total</td>
+          <td style="text-align:right;color:var(--t3);"
+              th:text="${#aggregates.sum(stats.todayPrintSummaries.![jobs])}"></td>
+          <td style="text-align:right;"
+              th:text="${#aggregates.sum(stats.todayPrintSummaries.![bwPages])}"></td>
+          <td style="text-align:right;"
+              th:text="${#aggregates.sum(stats.todayPrintSummaries.![colorPages])}"></td>
+          <td style="text-align:right;"
+              th:text="${#aggregates.sum(stats.todayPrintSummaries.![totalPages])}"></td>
+          <td style="text-align:right;font-size:12px;"
+              th:text="'Fr. '+${#numbers.formatDecimal(#aggregates.sum(stats.todayPrintSummaries.![cost]),1,2)}"></td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
 
   <!-- Alertes packs -->
@@ -214,33 +315,6 @@
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- Journal d'accès AKUVOX -->
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-ttl">Entrées du jour — badge AKUVOX</span>
-      <span id="entries-count" class="b b-g" style="font-size:11px;"></span>
-    </div>
-    <div id="entries-list" style="padding:0 16px;max-height:320px;overflow-y:auto;">
-      <div th:each="e : ${stats.todayEvents}"
-           th:if="${e.eventType.name()=='ENTRY_GRANTED'}"
-           class="tl-item">
-        <div class="tl-time" th:text="${#temporals.format(e.occurredAt,'HH:mm')}"></div>
-        <div class="tl-dot" style="background:var(--green)"></div>
-        <div class="tl-body">
-          <div class="tl-name">
-            <span th:if="${e.member!=null}"    th:text="${e.member.displayName}"></span>
-            <span th:unless="${e.member!=null}" th:text="'Badge '+${e.badgeUid}"></span>
-          </div>
-          <div class="tl-desc" th:text="${e.badgeUid}"></div>
-        </div>
-      </div>
-      <div th:if="${#lists.isEmpty(stats.todayEvents)}"
-           style="padding:20px;color:var(--t3);text-align:center;font-size:13px;">
-        Aucune entrée aujourd'hui
-      </div>
-    </div>
   </div>
 
 </div>
@@ -301,6 +375,17 @@
             <div style="font-weight:700;font-size:13px;">½ AP-M seule</div>
             <div style="font-size:11px;color:var(--t3);">12:30–19:00</div>
             <div style="font-size:12px;font-weight:700;color:var(--blue);margin-top:4px;">Unitaire</div>
+          </label>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Découverte (gratuit)</label>
+        <div class="type-grid">
+          <label class="type-card">
+            <input type="radio" name="presenceType" value="TRIAL" style="display:none;">
+            <div style="font-weight:700;font-size:13px;">Journée d'essai</div>
+            <div style="font-size:11px;color:var(--t3);">07:00–19:00</div>
+            <div style="font-size:12px;font-weight:700;color:var(--green);margin-top:4px;">Gratuit</div>
           </label>
         </div>
       </div>
