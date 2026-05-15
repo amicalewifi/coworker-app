@@ -177,7 +177,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         <div>
           <div class="pack-name" th:text="${pack.label}">Pack 50 crédits</div>
           <div class="pack-sub"
-               th:text="${pack.credits / 2} + ' pages couleur · ' + ${pack.credits} + ' pages N&B'"></div>
+               th:text="${pack.credits / 2} + ' pages couleur ou ' + ${pack.credits} + ' pages N&B'"></div>
         </div>
         <div class="pack-price" th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 5.–</div>
       </label>
