@@ -12,7 +12,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .pack-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px;}
 .pack-card{border:1px solid var(--bdr);border-radius:16px;padding:16px;background:var(--surf);cursor:pointer;transition:all .15s;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.04);}
 .pack-card:has(input:checked){border-color:var(--prim);background:var(--prim-l);}
+.pack-card:has(input:disabled){opacity:.5;cursor:not-allowed;background:var(--surf-2);}
+.pack-card:has(input:disabled) .pack-price{color:var(--t3);}
 .pack-card input[type=radio]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.pack-card input[type=radio]:disabled{cursor:not-allowed;}
 .pack-name{font-size:15px;font-weight:800;color:var(--text);}
 .pack-desc{font-size:12px;color:var(--t2);margin-top:3px;}
 .pack-price{font-size:22px;font-weight:900;color:var(--prim-d);margin-top:6px;font-variant-numeric:tabular-nums;}
@@ -57,12 +60,35 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
   </div>
 
+  <!-- Flash error (ex: tentative d'achat alors qu'un pack est déjà actif) -->
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:16px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
+
+  <!-- Avertissement : pack déjà actif → options grisées. On évite la double
+       dépense (acheter un nouveau pack par-dessus un pack en cours, qui
+       écraserait les unités restantes ou empilerait la date d'expiration de
+       façon ambigüe). -->
+  <div th:if="${hasActivePack}"
+       style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px;">
+    <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.18);display:flex;align-items:center;justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange-d)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </div>
+    <div style="flex:1;">
+      <div style="font-size:13px;font-weight:700;color:var(--od);">Tu as déjà un pack actif</div>
+      <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
+        Tu pourras acheter un nouveau pack une fois celui en cours épuisé ou expiré.
+      </div>
+    </div>
+  </div>
+
   <!-- Sélection du pack -->
   <form th:action="@{/mobile/renew}" method="post" id="renewForm">
     <div class="pack-grid">
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_MATIN" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_MATIN" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack matin</div>
         <div class="pack-desc">07:00–12:30 · 1 demi-journée</div>
         <div class="pack-price">Fr. 15.–</div>
@@ -70,7 +96,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_APMIDI" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_APMIDI" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack après-midi</div>
         <div class="pack-desc">12:30–19:00 · 1 demi-journée</div>
         <div class="pack-price">Fr. 15.–</div>
@@ -78,7 +104,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_1J" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_1J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack 1 jour</div>
         <div class="pack-desc">1 journée · ou 2 demi-journées</div>
         <div class="pack-price">Fr. 29.–</div>
@@ -86,7 +112,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_5J" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_5J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack 5 jours</div>
         <div class="pack-desc">5 journées · ou 10 demi-journées</div>
         <div class="pack-price">Fr. 109.–</div>
@@ -94,7 +120,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_10J" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_10J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack 10 jours</div>
         <div class="pack-desc">10 journées · ou 20 demi-journées</div>
         <div class="pack-price">Fr. 199.–</div>
@@ -102,7 +128,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_15J" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PACK_15J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Pack 15 jours</div>
         <div class="pack-desc">15 journées · ou 30 demi-journées</div>
         <div class="pack-price">Fr. 279.–</div>
@@ -110,7 +136,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </label>
 
       <label class="pack-card">
-        <input type="radio" name="membership" value="PERMANENT" onchange="updateBtn(this)">
+        <input type="radio" name="membership" value="PERMANENT" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
         <div class="pack-name">Permanent</div>
         <div class="pack-desc">Accès illimité 24h/7j</div>
         <div class="pack-price">Fr. 329.–<span style="font-size:13px;font-weight:500;color:var(--t2);">/mois</span></div>
@@ -119,7 +145,8 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 
     </div>
 
-    <button type="submit" class="pay-btn" id="payBtn" disabled>Sélectionnez un pack</button>
+    <button type="submit" class="pay-btn" id="payBtn" disabled
+            th:text="${hasActivePack ? 'Pack actif — achat indisponible' : 'Sélectionnez un pack'}">Sélectionnez un pack</button>
     <div class="pay-methods">
       <span class="pay-m">TWINT</span>
       <span class="pay-m">Visa / Mastercard</span>
