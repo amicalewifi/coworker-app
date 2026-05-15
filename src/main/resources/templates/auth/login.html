@@ -67,69 +67,54 @@
     <div class="box-title">Connexion</div>
     <div class="box-sub">Accédez à votre espace membre.</div>
 
-    <div class="flash flash-info" style="font-size:12px;line-height:1.5;background:var(--prim-l);color:var(--prim-d);border:1px solid var(--prim-t);border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;gap:8px;align-items:flex-start;">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5v.01"/></svg>
-      <span>Gmail, Outlook, iCloud et l'app sont accessibles sans connexion.<br>Identifiez-vous pour activer Internet complet avec votre pack.</span>
-    </div>
-
-    <!-- Pas de MAC en session: filet de sécurité Caddy a renvoyé avec ?tried=1.
-         On affiche un message d'erreur explicite et on n'expose PAS le
-         formulaire (sans MAC, le login ne peut pas autoriser le pack). -->
-    <div th:if="${noMacWarning}" class="flash flash-err">
+    <div th:if="${param.error}" class="flash flash-err">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
-      <span>Identifiant de l'appareil non détecté. Reconnectez-vous au WiFi puis réessayez.</span>
+      <span>Email ou mot de passe incorrect.</span>
+    </div>
+    <div th:if="${param.disabled}" class="flash flash-err">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+      <span>Ce compte est désactivé. Contactez hello@amicalewifi.ch.</span>
+    </div>
+    <div th:if="${param.verified}" class="flash flash-ok">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Adresse email vérifiée. Connectez-vous pour accéder à votre espace.</span>
+    </div>
+    <div th:if="${param.logout}" class="flash flash-ok">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Vous avez été déconnecté.</span>
+    </div>
+    <div th:if="${param.registered}" class="flash flash-ok">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span>Compte créé. Connectez-vous puis vérifiez votre email pour débloquer les paiements.</span>
+    </div>
+    <div th:if="${success}" class="flash flash-ok">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
+      <span th:text="${success}"></span>
     </div>
 
-    <div th:unless="${noMacWarning}">
-      <div th:if="${param.error}" class="flash flash-err">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
-        <span>Email ou mot de passe incorrect.</span>
+    <form th:action="@{/login}" method="post">
+      <div class="form-row">
+        <label class="form-lbl">Adresse email</label>
+        <input type="email" name="username" class="form-in"
+               placeholder="votre@email.ch" autocomplete="email" required autofocus>
       </div>
-      <div th:if="${param.disabled}" class="flash flash-err">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
-        <span>Ce compte est désactivé. Contactez hello@amicalewifi.ch.</span>
+      <div class="form-row">
+        <label class="form-lbl">Mot de passe</label>
+        <input type="password" name="password" class="form-in"
+               placeholder="••••••••" autocomplete="current-password" required>
       </div>
-      <div th:if="${param.verified}" class="flash flash-ok">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
-        <span>Adresse email vérifiée. Connectez-vous pour accéder à votre espace.</span>
-      </div>
-      <div th:if="${param.logout}" class="flash flash-ok">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
-        <span>Vous avez été déconnecté.</span>
-      </div>
-      <div th:if="${param.registered}" class="flash flash-ok">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
-        <span>Compte créé. Connectez-vous puis vérifiez votre email pour débloquer les paiements.</span>
-      </div>
-      <div th:if="${success}" class="flash flash-ok">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
-        <span th:text="${success}"></span>
-      </div>
+      <button type="submit" class="btn btn-g btn-full" style="margin-top:6px;">Se connecter →</button>
+    </form>
 
-      <form th:action="@{/login}" method="post">
-        <div class="form-row">
-          <label class="form-lbl">Adresse email</label>
-          <input type="email" name="username" class="form-in"
-                 placeholder="votre@email.ch" autocomplete="email" required autofocus>
-        </div>
-        <div class="form-row">
-          <label class="form-lbl">Mot de passe</label>
-          <input type="password" name="password" class="form-in"
-                 placeholder="••••••••" autocomplete="current-password" required>
-        </div>
-        <button type="submit" class="btn btn-g btn-full" style="margin-top:6px;">Se connecter →</button>
-      </form>
+    <div class="forgot">
+      <a th:href="@{/forgot-password}" style="color:var(--t3);">Mot de passe oublié ?</a>
+    </div>
 
-      <div class="forgot">
-        <a th:href="@{/forgot-password}" style="color:var(--t3);">Mot de passe oublié ?</a>
-      </div>
+    <hr class="divider">
 
-      <hr class="divider">
-
-      <div class="signup">
-        Pas encore membre ?
-        <a th:href="@{/register}" style="color:var(--prim);font-weight:600;">Créer un compte</a>
-      </div>
+    <div class="signup">
+      Pas encore membre ?
+      <a th:href="@{/register}" style="color:var(--prim);font-weight:600;">Créer un compte</a>
     </div>
   </div>
 </div>
