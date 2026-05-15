@@ -14,8 +14,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -121,11 +119,9 @@ public class ZahlsService {
             params.put("successRedirectUrl", successRedirect);
             params.put("vatRate",            "0");
 
-            params.put("ApiSignature", buildSignature(params, key));
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.setBasicAuth(instance.trim(), key);
+            headers.set("x-api-key", key);
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             params.forEach(body::add);
@@ -158,24 +154,5 @@ public class ZahlsService {
     private void appendIfNotBlank(StringBuilder url, String param, String value) throws Exception {
         if (value != null && !value.isBlank())
             url.append("&").append(param).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
-    }
-
-    private String buildQueryString(TreeMap<String, String> sorted) {
-        StringBuilder qs = new StringBuilder();
-        for (Map.Entry<String, String> e : sorted.entrySet()) {
-            if (qs.length() > 0) qs.append("&");
-            qs.append(URLEncoder.encode(e.getKey(),   StandardCharsets.UTF_8))
-              .append("=")
-              .append(URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8));
-        }
-        return qs.toString();
-    }
-
-    private String buildSignature(Map<String, String> params, String key) throws Exception {
-        String qs = buildQueryString(new TreeMap<>(params));
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-        byte[] hash = mac.doFinal(qs.getBytes(StandardCharsets.UTF_8));
-        return Base64.getEncoder().encodeToString(hash);
     }
 }
