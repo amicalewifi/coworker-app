@@ -98,24 +98,17 @@ public class MobileController {
                 .map(WifiDailyUsage::getUnitsCharged)
                 .orElse(BigDecimal.ZERO);
 
-        // Alerte "appareil non enregistré" : on ne sait pas détecter de manière
-        // fiable si l'utilisateur est physiquement sur le LAN coworking (CGN
-        // Swisscom rend `request.getRemoteAddr()` inutilisable, et aucun probe
-        // browser-side n'est viable). On se rabat sur le seul signal solide :
-        // est-ce qu'au moins une MAC du membre est actuellement autorisée chez
-        // UniFi ? Si non, soit il n'a aucun device enregistré, soit il est sur
-        // un device non enregistré (potentiellement au coworking). Le texte du
-        // banner précise "si tu es à l'Amicale du Wifi…" pour rendre l'UX
-        // correcte aussi quand le user est en remote.
+        // Bannière "Enregistre ton appareil" : affichée uniquement quand le
+        // membre n'a aucune MAC bound. Badge en ligne/hors ligne : reflète si
+        // au moins une de ses MACs est actuellement authorized chez UniFi.
         java.util.List<MemberWifiMac> myMacs =
                 wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
         boolean hasBoundMacs = !myMacs.isEmpty();
-        boolean showRegisterDevicePrompt = !hasBoundMacs
-                || !anyBoundMacAuthorizedNow(myMacs);
+        boolean wifiOnline = hasBoundMacs && anyBoundMacAuthorizedNow(myMacs);
 
         model.addAttribute("member",                member);
-        model.addAttribute("showRegisterDevicePrompt", showRegisterDevicePrompt);
         model.addAttribute("hasBoundMacs",          hasBoundMacs);
+        model.addAttribute("wifiOnline",            wifiOnline);
         model.addAttribute("firstName",             member.getFirstName());
         model.addAttribute("openingHour",       openingHour);
         model.addAttribute("closingHour",       closingHour);
@@ -138,8 +131,10 @@ public class MobileController {
     public String devicesPage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         var devices = wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
+        java.util.Set<String> onlineMacs = currentlyOnlineMacs(devices);
         model.addAttribute("member", member);
         model.addAttribute("devices", devices);
+        model.addAttribute("onlineMacs", onlineMacs);
         // "Probablement déjà enregistré" : si au moins une MAC du membre est
         // actuellement authorized chez UniFi, on suppose que c'est celle du
         // device courant (cas commun : un seul device, return visit). On
@@ -147,8 +142,7 @@ public class MobileController {
         // positif possible si l'user a un device A bound+connecté et regarde
         // depuis un nouveau device B unbound — il devra repérer lui-même que
         // la note ne correspond pas à son device courant et naviguer.
-        model.addAttribute("currentDeviceLikelyBound",
-                !devices.isEmpty() && anyBoundMacAuthorizedNow(devices));
+        model.addAttribute("currentDeviceLikelyBound", !onlineMacs.isEmpty());
         return "mobile/devices";
     }
 
@@ -157,7 +151,12 @@ public class MobileController {
      *  qu'un device du membre est en train d'utiliser le réseau — utile pour
      *  inférer la situation sans détection LAN fiable. */
     private boolean anyBoundMacAuthorizedNow(java.util.List<MemberWifiMac> myMacs) {
-        if (myMacs.isEmpty()) return false;
+        return !currentlyOnlineMacs(myMacs).isEmpty();
+    }
+
+    /** Sous-ensemble des MACs bound actuellement authorized chez UniFi. */
+    private java.util.Set<String> currentlyOnlineMacs(java.util.List<MemberWifiMac> myMacs) {
+        if (myMacs.isEmpty()) return java.util.Set.of();
         java.util.Set<String> myMacSet = myMacs.stream()
                 .map(MemberWifiMac::getMac)
                 .collect(java.util.stream.Collectors.toSet());
@@ -165,7 +164,8 @@ public class MobileController {
                 .filter(c -> Boolean.TRUE.equals(c.get("authorized")))
                 .map(c -> (String) c.get("mac"))
                 .filter(java.util.Objects::nonNull)
-                .anyMatch(myMacSet::contains);
+                .filter(myMacSet::contains)
+                .collect(java.util.stream.Collectors.toSet());
     }
 
     @PostMapping("/devices/{id}/label")

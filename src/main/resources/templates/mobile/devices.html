@@ -16,6 +16,8 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .dev-label{font-size:14px;font-weight:700;line-height:1.2;}
 .dev-mac{font-size:11px;color:var(--t3);font-family:monospace;margin-top:2px;}
 .dev-seen{font-size:10px;color:var(--t3);margin-top:3px;}
+.dev-online{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#16a34a;margin-top:3px;text-transform:uppercase;letter-spacing:.04em;}
+.dev-online::before{content:"";width:6px;height:6px;border-radius:50%;background:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.18);}
 .dev-rename{margin-top:10px;}
 .dev-rename input{width:100%;padding:8px 10px;border:1.5px solid var(--bdr);border-radius:8px;font-size:12px;font-family:var(--font);background:var(--surf-2);color:var(--text);outline:none;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;}
 .dev-rename input:focus{border-color:var(--prim);box-shadow:0 0 0 3px rgba(0,122,245,.1);}
@@ -88,7 +90,8 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="dev-body">
         <div class="dev-label" th:text="${d.label != null ? d.label : 'Appareil sans nom'}">MacBook</div>
         <div class="dev-mac" th:text="${d.mac}">aa:bb:cc:dd:ee:ff</div>
-        <div class="dev-seen" th:if="${d.lastSeenAt != null}"
+        <div class="dev-online" th:if="${onlineMacs.contains(d.mac)}">En ligne</div>
+        <div class="dev-seen" th:if="${!onlineMacs.contains(d.mac) and d.lastSeenAt != null}"
              th:text="'Vu pour la dernière fois ' + ${#temporals.format(d.lastSeenAt, 'd MMM HH:mm', #locale)}"></div>
       </div>
     </div>
