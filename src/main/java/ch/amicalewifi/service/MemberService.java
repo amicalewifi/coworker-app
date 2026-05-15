@@ -74,8 +74,7 @@ public class MemberService {
         m.setMembership(membership);
         m.setPackUnitsTotal(membership.getPackUnits());
         m.setPackUnitsUsed(BigDecimal.ZERO);
-        boolean singleSession = membership == MembershipType.PACK_MATIN
-                            || membership == MembershipType.PACK_APMIDI;
+        boolean singleSession = membership == MembershipType.PACK_DEMIJ;
         m.setPackExpires(validUntil != null ? validUntil :
                 membership == MembershipType.PERMANENT ? LocalDate.now().plusMonths(1) :
                 singleSession ? null :

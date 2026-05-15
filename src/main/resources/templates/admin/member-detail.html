@@ -81,7 +81,7 @@
 
 <script>
 function toggleValidUntil(val) {
-  const noExpiry = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
+  const noExpiry = val === 'PACK_DEMIJ';
   document.getElementById('renewValidUntilRow').style.display = noExpiry ? 'none' : '';
 }
 function toggleAddUnitaire(val) {
@@ -89,7 +89,7 @@ function toggleAddUnitaire(val) {
 }
 function toggleAdjustFields(val) {
   const noUnits   = val === 'PERMANENT' || val === 'UNITAIRE' || val === 'DOMICILIATION';
-  const noExpiry  = val === 'PACK_MATIN' || val === 'PACK_APMIDI';
+  const noExpiry  = val === 'PACK_DEMIJ';
   document.getElementById('adjustUnitsRow').style.display  = noUnits  ? 'none' : '';
   document.getElementById('adjustExpiryRow').style.display = noExpiry ? 'none' : '';
 }
@@ -572,7 +572,7 @@ document.addEventListener('click', function(e) {
                th:value="${member.packUnitsRemaining}">
       </div>
       <div class="form-row" id="adjustExpiryRow"
-           th:style="${member.membership.name()=='PACK_MATIN' or member.membership.name()=='PACK_APMIDI' ? 'display:none' : ''}">
+           th:style="${member.membership.name()=='PACK_DEMIJ' ? 'display:none' : ''}">
         <label class="form-lbl">Date d'expiration</label>
         <input type="date" name="packExpires" class="form-in"
                th:value="${member.packExpires != null ? #temporals.format(member.packExpires,'yyyy-MM-dd') : ''}">
@@ -621,17 +621,12 @@ document.addEventListener('click', function(e) {
       <div class="form-row">
         <label class="form-lbl">Nouvelle formule</label>
         <select name="membership" class="form-sel" id="renewMembership" onchange="toggleValidUntil(this.value)">
-          <option value="PACK_MATIN"  th:selected="${member.membership.name()=='PACK_MATIN'}">Pack matin — Fr. 15.-</option>
-          <option value="PACK_APMIDI" th:selected="${member.membership.name()=='PACK_APMIDI'}">Pack après-midi — Fr. 15.-</option>
-          <option value="PACK_1J"     th:selected="${member.membership.name()=='PACK_1J'}">Pack 1 jour — Fr. 29.-</option>
-          <option value="PACK_5J"     th:selected="${member.membership.name()=='PACK_5J'}">Pack 5 jours — Fr. 109.-</option>
-          <option value="PACK_10J"    th:selected="${member.membership.name()=='PACK_10J'}">Pack 10 jours — Fr. 199.-</option>
-          <option value="PACK_15J"    th:selected="${member.membership.name()=='PACK_15J'}">Pack 15 jours — Fr. 279.-</option>
-          <option value="PERMANENT"   th:selected="${member.membership.name()=='PERMANENT'}">Permanent — Fr. 329.-/mois</option>
+          <option th:each="t : ${memberships}" th:value="${t.name()}"
+                  th:selected="${member.membership.name()==t.name()}" th:text="${t.label}">Pack</option>
         </select>
       </div>
       <div class="form-row" id="renewValidUntilRow"
-           th:style="${member.membership.name()=='PACK_MATIN' or member.membership.name()=='PACK_APMIDI' ? 'display:none' : ''}">
+           th:style="${member.membership.name()=='PACK_DEMIJ' ? 'display:none' : ''}">
         <label class="form-lbl">Valide jusqu'au <span style="font-weight:400;color:var(--t3);">(facultatif — auto si vide)</span></label>
         <input type="date" name="validUntil" class="form-in"
                th:value="${member.packExpires != null and member.packExpires.isAfter(#temporals.createToday()) ? #temporals.format(member.packExpires,'yyyy-MM-dd') : ''}">
