@@ -413,14 +413,7 @@
       <div class="form-row">
         <label class="form-lbl">Formule</label>
         <select name="membership" class="form-sel">
-          <option value="PACK_MATIN">Pack matin — Fr. 15.- (1 demi-j. matin)</option>
-          <option value="PACK_APMIDI">Pack après-midi — Fr. 15.- (1 demi-j. AP-M)</option>
-          <option value="PACK_1J">Pack 1 jour — Fr. 29.- (1j ou 2 demi-j.)</option>
-          <option value="PACK_5J">Pack 5 jours — Fr. 109.- (5j ou 10 demi-j.)</option>
-          <option value="PACK_10J">Pack 10 jours — Fr. 199.- (10j ou 20 demi-j.)</option>
-          <option value="PACK_15J">Pack 15 jours — Fr. 279.- (15j ou 30 demi-j.)</option>
-          <option value="PERMANENT">Permanent — Fr. 329.-/mois · 24/7</option>
-          <option value="JOURNEE_ESSAI">Journée d'essai — Gratuit</option>
+          <option th:each="t : ${memberships}" th:value="${t.name()}" th:text="${t.label}">Pack</option>
         </select>
       </div>
       <div class="modal-footer">
@@ -441,13 +434,7 @@
       <div class="form-row">
         <label class="form-lbl">Nouvelle formule</label>
         <select name="membership" class="form-sel">
-          <option value="PACK_MATIN">Pack matin — Fr. 15.-</option>
-          <option value="PACK_APMIDI">Pack après-midi — Fr. 15.-</option>
-          <option value="PACK_1J">Pack 1 jour — Fr. 29.-</option>
-          <option value="PACK_5J">Pack 5 jours — Fr. 109.-</option>
-          <option value="PACK_10J">Pack 10 jours — Fr. 199.-</option>
-          <option value="PACK_15J">Pack 15 jours — Fr. 279.-</option>
-          <option value="PERMANENT">Permanent — Fr. 329.-/mois</option>
+          <option th:each="t : ${memberships}" th:value="${t.name()}" th:text="${t.label}">Pack</option>
         </select>
       </div>
       <div class="modal-footer">

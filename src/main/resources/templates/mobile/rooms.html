@@ -217,12 +217,14 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <form th:action="@{/mobile/rooms/buy-credits}" method="post">
       <div class="pack-grid">
         <label class="pack-card" th:each="pack : ${confPacks}">
-          <input type="radio" name="pack" th:value="${pack.name()}" onchange="updateBuyBtn(this)">
+          <input type="radio" name="pack" th:value="${pack.name()}"
+                 th:attr="data-price-amount=${pack.priceChf}" onchange="updateBuyBtn(this)">
           <div>
             <div class="pack-name" th:text="${pack.label}">2 heures</div>
-            <div class="pack-sub">19 CHF / heure</div>
+            <div class="pack-sub"
+                 th:text="'Fr. ' + ${#numbers.formatDecimal(pack.pricePerHour, 1, 2)} + ' / heure'">Fr. 18.00 / heure</div>
           </div>
-          <div class="pack-price" th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 38.–</div>
+          <div class="pack-price" th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 36.–</div>
         </label>
       </div>
       <button type="submit" class="btn-primary" id="buyBtn" disabled>Sélectionnez un pack</button>
@@ -282,12 +284,9 @@ function updateCost(el, isStart) {
 }
 
 function updateBuyBtn(radio) {
-  const prices = {
-    H1:'Fr. 19.–', H2:'Fr. 38.–', H3:'Fr. 57.–', H4:'Fr. 76.–',
-    H5:'Fr. 95.–', H6:'Fr. 114.–', H8:'Fr. 152.–', H10:'Fr. 190.–'
-  };
+  const amount = Number(radio.dataset.priceAmount || 0).toFixed(0);
   const btn = document.getElementById('buyBtn');
-  btn.textContent = 'Payer ' + (prices[radio.value] || '') + ' avec zahls.ch →';
+  btn.textContent = 'Payer Fr. ' + amount + '.– avec zahls.ch →';
   btn.disabled = false;
 }
 </script>

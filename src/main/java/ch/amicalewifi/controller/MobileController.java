@@ -417,13 +417,7 @@ public class MobileController {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         model.addAttribute("member", member);
         model.addAttribute("hasActivePack", hasActivePack(member));
-        // Proposer uniquement les packs avec un prix (pas essai, unitaire, domiciliation)
-        List<MembershipType> packs = List.of(
-                MembershipType.PACK_MATIN, MembershipType.PACK_APMIDI,
-                MembershipType.PACK_1J, MembershipType.PACK_5J,
-                MembershipType.PACK_10J, MembershipType.PACK_15J,
-                MembershipType.PERMANENT);
-        model.addAttribute("memberships", packs);
+        model.addAttribute("memberships", MembershipType.purchasable());
         return "mobile/renew";
     }
 
@@ -621,7 +615,7 @@ public class MobileController {
         model.addAttribute("bookingsByRoom",  bookingsByRoom);
         model.addAttribute("busyHoursByRoom", busyHoursByRoom);
         model.addAttribute("myBookings",      myBookings);
-        model.addAttribute("confPacks",       List.of(ConfHourPackType.values()));
+        model.addAttribute("confPacks",       ConfHourPackType.purchasable());
         return "mobile/rooms";
     }
 

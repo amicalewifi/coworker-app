@@ -83,66 +83,23 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
   </div>
 
-  <!-- Sélection du pack -->
+  <!-- Sélection du pack — boucle sur MembershipType.purchasable() côté serveur,
+       source unique de vérité (cf. model/MembershipType.java). -->
   <form th:action="@{/mobile/renew}" method="post" id="renewForm">
     <div class="pack-grid">
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_MATIN" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack matin</div>
-        <div class="pack-desc">07:00–12:30 · 1 demi-journée</div>
-        <div class="pack-price">Fr. 15.–</div>
-        <span class="pack-badge">½ j</span>
+      <label class="pack-card" th:each="pack : ${memberships}">
+        <input type="radio" name="membership" th:value="${pack.name()}"
+               th:attr="data-price-amount=${pack.priceChf},data-price-suffix=${pack.priceSuffix}"
+               onchange="updateBtn(this)" th:disabled="${hasActivePack}">
+        <div class="pack-name" th:text="${pack.shortName}">Pack matin</div>
+        <div class="pack-desc" th:text="${pack.description}">07:00–12:30 · 1 demi-journée</div>
+        <div class="pack-price">
+          <span th:text="'Fr. ' + ${#numbers.formatDecimal(pack.priceChf, 1, 0)} + '.–'">Fr. 15.–</span>
+          <span th:if="${pack.priceSuffix}" th:text="${pack.priceSuffix}"
+                style="font-size:13px;font-weight:500;color:var(--t2);">/mois</span>
+        </div>
+        <span class="pack-badge" th:text="${pack.badge}">½ j</span>
       </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_APMIDI" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack après-midi</div>
-        <div class="pack-desc">12:30–19:00 · 1 demi-journée</div>
-        <div class="pack-price">Fr. 15.–</div>
-        <span class="pack-badge">½ j</span>
-      </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_1J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack 1 jour</div>
-        <div class="pack-desc">1 journée · ou 2 demi-journées</div>
-        <div class="pack-price">Fr. 29.–</div>
-        <span class="pack-badge">1 j</span>
-      </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_5J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack 5 jours</div>
-        <div class="pack-desc">5 journées · ou 10 demi-journées</div>
-        <div class="pack-price">Fr. 109.–</div>
-        <span class="pack-badge">5 j</span>
-      </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_10J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack 10 jours</div>
-        <div class="pack-desc">10 journées · ou 20 demi-journées</div>
-        <div class="pack-price">Fr. 199.–</div>
-        <span class="pack-badge">10 j</span>
-      </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PACK_15J" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Pack 15 jours</div>
-        <div class="pack-desc">15 journées · ou 30 demi-journées</div>
-        <div class="pack-price">Fr. 279.–</div>
-        <span class="pack-badge">15 j</span>
-      </label>
-
-      <label class="pack-card">
-        <input type="radio" name="membership" value="PERMANENT" onchange="updateBtn(this)" th:disabled="${hasActivePack}">
-        <div class="pack-name">Permanent</div>
-        <div class="pack-desc">Accès illimité 24h/7j</div>
-        <div class="pack-price">Fr. 329.–<span style="font-size:13px;font-weight:500;color:var(--t2);">/mois</span></div>
-        <span class="pack-badge">∞</span>
-      </label>
-
     </div>
 
     <button type="submit" class="pay-btn" id="payBtn" disabled
@@ -187,15 +144,11 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 </div>
 
 <script>
-const prices = {
-  PACK_MATIN: 'Fr. 15.–', PACK_APMIDI: 'Fr. 15.–', PACK_1J: 'Fr. 29.–',
-  PACK_5J: 'Fr. 109.–', PACK_10J: 'Fr. 199.–', PACK_15J: 'Fr. 279.–',
-  PERMANENT: 'Fr. 329.–/mois'
-};
 function updateBtn(radio) {
   const btn = document.getElementById('payBtn');
-  const p = prices[radio.value] || '';
-  btn.textContent = 'Payer ' + p + ' avec zahls.ch →';
+  const amount = Number(radio.dataset.priceAmount || 0).toFixed(0);
+  const suffix = radio.dataset.priceSuffix || '';
+  btn.textContent = 'Payer Fr. ' + amount + '.–' + suffix + ' avec zahls.ch →';
   btn.disabled = false;
 }
 </script>

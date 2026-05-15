@@ -95,6 +95,7 @@ public class AdminController {
         model.addAttribute("bookedRoomIds",          bookedRoomIds);
         model.addAttribute("currentlyBookedRoomIds", currentlyBookedRoomIds);
         model.addAttribute("bookedHoursByRoom",      bookedHoursByRoom);
+        model.addAttribute("memberships",            MembershipType.values());
         return "admin/dashboard";
     }
 
