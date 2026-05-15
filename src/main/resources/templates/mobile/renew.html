@@ -40,7 +40,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <div class="cp-lbl">Formule actuelle</div>
     <div th:if="${member.membership.name() == 'JOURNEE_ESSAI'}">
       <div class="cp-name">Aucun pack actif</div>
-      <div class="cp-remaining">Choisissez votre première formule ci-dessous</div>
+      <div class="cp-remaining">Choisis ta première formule ci-dessous</div>
     </div>
     <div th:unless="${member.membership.name() == 'JOURNEE_ESSAI'}">
       <div class="cp-name" th:text="${member.membership.label}">Pack 5 jours</div>

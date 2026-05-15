@@ -87,7 +87,7 @@ public class PasswordResetController {
         userRepo.save(user);
         prt.setUsed(true);
         tokenRepo.save(prt);
-        ra.addFlashAttribute("success", "Mot de passe réinitialisé. Connectez-vous.");
+        ra.addFlashAttribute("success", "Mot de passe réinitialisé. Connecte-toi.");
         return "redirect:/login";
     }
 }

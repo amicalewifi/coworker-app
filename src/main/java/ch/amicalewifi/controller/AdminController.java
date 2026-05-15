@@ -664,7 +664,7 @@ public class AdminController {
                               RedirectAttributes ra) {
         User u = userRepo.findById(id).orElseThrow();
         if (u.getEmail().equals(auth.getName()) && role != UserRole.ADMIN) {
-            ra.addFlashAttribute("error", "Vous ne pouvez pas retirer votre propre rôle admin");
+            ra.addFlashAttribute("error", "Tu ne peux pas retirer ton propre rôle admin");
             return "redirect:/admin/users";
         }
         u.setRole(role);
@@ -690,7 +690,7 @@ public class AdminController {
     public String deleteUser(@PathVariable UUID id, Authentication auth, RedirectAttributes ra) {
         User u = userRepo.findById(id).orElseThrow();
         if (u.getEmail().equals(auth.getName())) {
-            ra.addFlashAttribute("error", "Vous ne pouvez pas supprimer votre propre compte");
+            ra.addFlashAttribute("error", "Tu ne peux pas supprimer ton propre compte");
             return "redirect:/admin/users";
         }
         memberRepo.findAll().stream()

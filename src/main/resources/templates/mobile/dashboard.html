@@ -73,7 +73,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <div style="flex:1;">
       <div style="font-size:13px;font-weight:700;color:var(--od);">Cet appareil n'est pas encore enregistré</div>
       <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
-        Pour utiliser Internet complet, ajoutez cet appareil à votre liste depuis
+        Pour utiliser Internet complet, ajoute cet appareil à ta liste depuis
         <strong>Mes appareils</strong>.
       </div>
       <a th:href="@{/mobile/devices}"
@@ -147,10 +147,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
            th:text="${member.isPermanent() ? 'Abonnement expiré' : (member.membership.name() == 'JOURNEE_ESSAI' ? 'Aucun pack actif' : 'Pack épuisé')}">Pack épuisé</div>
       <div style="font-size:11px;color:var(--od);opacity:.8;margin-top:2px;"
            th:text="${member.isPermanent()
-                       ? 'Renouvelez votre abonnement mensuel pour continuer'
+                       ? 'Renouvelle ton abonnement mensuel pour continuer'
                        : (member.membership.name() == 'JOURNEE_ESSAI'
-                           ? 'Choisissez un pack pour accéder au coworking'
-                           : 'Renouvelez votre pack pour continuer à accéder au coworking')}"></div>
+                           ? 'Choisis un pack pour accéder au coworking'
+                           : 'Renouvelle ton pack pour continuer à accéder au coworking')}"></div>
     </div>
     <a th:href="@{/mobile/renew}"
        style="background:var(--orange);color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:10px;text-decoration:none;white-space:nowrap;">Renouveler</a>
@@ -167,7 +167,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <div class="info-body">
       <p>Ouvert tous les jours,
         <strong><span th:text="${openingHour}">7</span>h–<span th:text="${closingHour}">19</span>h</strong>,
-        dans les plages horaires de votre formule.</p>
+        dans les plages horaires de ta formule.</p>
       <p>
         <a class="info-link"
            th:href="'https://www.google.com/maps/search/?api=1&query=' + ${#uris.escapeQueryParam(address)}"
@@ -185,15 +185,15 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Accès au bâtiment</div>
     </div>
     <div class="info-body">
-      <p th:if="${hasBadge}">Présentez ce code QR au lecteur de la porte coulissante à l'entrée.</p>
+      <p th:if="${hasBadge}">Présente ce code QR au lecteur de la porte coulissante à l'entrée.</p>
       <div th:if="${hasBadge}" class="door-qr">
         <img th:src="@{/qr/door}" alt="QR code d'accès porte">
-        <div class="door-qr-caption">Valide pour toute la durée de votre contrat</div>
+        <div class="door-qr-caption">Valide pour toute la durée de ton contrat</div>
       </div>
       <p th:unless="${hasBadge}" class="muted">
-        Votre accès porte n'est pas encore activé.
+        Ton accès porte n'est pas encore activé.
         <a class="info-link" th:href="'mailto:' + ${staffEmail}">Contacter l'équipe</a>
-        pour recevoir votre QR.
+        pour recevoir ton QR.
       </p>
     </div>
   </div>
@@ -207,7 +207,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">WiFi</div>
     </div>
     <div class="info-body">
-      <p>Connectez-vous au réseau <strong>coworker.amicalewifi.ch</strong>. Vous serez redirigé vers cette application pour vous authentifier, puis vos appareils sont enregistrés automatiquement.</p>
+      <p>Connecte-toi au réseau <strong>coworker.amicalewifi.ch</strong>. Tu seras redirigé vers cette application pour t'authentifier, puis tes appareils sont enregistrés automatiquement.</p>
       <p th:if="${deviceCount > 0}"
          th:text="${deviceCount == 1 ? '1 appareil enregistré.' : deviceCount + ' appareils enregistrés.'}">2 appareils enregistrés.</p>
       <p th:if="${deviceCount == 0}" class="muted">Aucun appareil enregistré pour l'instant.</p>
@@ -227,7 +227,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Réservation de salles</div>
     </div>
     <div class="info-body">
-      <p>Pensez à réserver la salle de conférence <strong>La Pièce Pensante</strong> et la cabine <strong>Henry Carron 2.0</strong> pour vous assurer leur disponibilité.</p>
+      <p>Pense à réserver la salle de conférence <strong>La Pièce Pensante</strong> et la cabine <strong>Henry Carron 2.0</strong> pour t'assurer leur disponibilité.</p>
       <a class="info-link block" th:href="@{/mobile/rooms}">
         <span>Réserver une salle</span>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
@@ -244,7 +244,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Imprimante &amp; scanner</div>
     </div>
     <div class="info-body">
-      <p>Notre imprimante Claudine vous permet d'imprimer en A4 couleur depuis cette application ou depuis votre ordinateur.</p>
+      <p>Notre imprimante Claudine te permet d'imprimer en A4 couleur depuis cette application ou depuis ton ordinateur.</p>
       <div class="row-stack">
         <a class="info-link block" th:href="@{/mobile/print}">
           <span>Imprimer &amp; voir mes crédits</span>
@@ -267,9 +267,9 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Café &amp; boissons</div>
     </div>
     <div class="info-body">
-      <p>Servez-vous <strong>gratuitement</strong> en café et en sirops à volonté dans notre kitchenette, pour votre consommation personnelle.</p>
-      <p>Vous pouvez également offrir un café à vos invités pour <strong>Fr. 1.–</strong> via Twint.</p>
-      <p class="muted">Merci de rincer vos verres et tasses après utilisation.</p>
+      <p>Sers-toi <strong>gratuitement</strong> en café et en sirops à volonté dans notre kitchenette, pour ta consommation personnelle.</p>
+      <p>Tu peux également offrir un café à tes invités pour <strong>Fr. 1.–</strong> via Twint.</p>
+      <p class="muted">Merci de rincer tes verres et tasses après utilisation.</p>
     </div>
   </div>
 

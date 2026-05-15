@@ -24,8 +24,8 @@ public class EmailService {
         String html = """
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
               <h2 style="color:#0c1222;">Bienvenue %s !</h2>
-              <p>Votre compte membre a été créé avec succès.</p>
-              <p>Vous pouvez maintenant vous connecter et acheter votre pack dans votre espace membre.</p>
+              <p>Ton compte membre a été créé avec succès.</p>
+              <p>Tu peux maintenant te connecter et acheter ton pack dans ton espace membre.</p>
               <a href="%s/mobile/" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#007af5;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">
                 Accéder à mon espace
               </a>
@@ -40,11 +40,11 @@ public class EmailService {
     @Async
     public void sendVerification(String to, String firstName, String token) {
         String link = baseUrl + "/verify-email?token=" + token;
-        String subject = "Confirmez votre adresse email — l'Amicale du Wifi";
+        String subject = "Confirme ton adresse email — l'Amicale du Wifi";
         String html = """
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
               <h2 style="color:#0c1222;">Bienvenue %s !</h2>
-              <p>Pour activer votre compte, cliquez sur le bouton ci-dessous pour confirmer votre adresse email.</p>
+              <p>Pour activer ton compte, clique sur le bouton ci-dessous pour confirmer ton adresse email.</p>
               <a href="%s" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#007af5;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">
                 Confirmer mon email
               </a>
@@ -52,7 +52,7 @@ public class EmailService {
                 Ce lien est valable <strong>24 heures</strong>.
               </p>
               <p style="color:#666;font-size:12px;">
-                Si vous n'êtes pas à l'origine de cette inscription, ignorez cet email.
+                Si tu n'es pas à l'origine de cette inscription, ignore cet email.
               </p>
               <p style="color:#666;font-size:13px;">
                 l'Amicale du Wifi · Fully Coworking · CH-1926
@@ -65,17 +65,17 @@ public class EmailService {
     @Async
     public void sendPasswordReset(String to, String token) {
         String link = baseUrl + "/reset-password?token=" + token;
-        String subject = "Réinitialisation de votre mot de passe";
+        String subject = "Réinitialisation de ton mot de passe";
         String html = """
             <div style="font-family:sans-serif;max-width:520px;margin:0 auto;">
               <h2 style="color:#0c1222;">Réinitialisation du mot de passe</h2>
-              <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+              <p>Tu as demandé la réinitialisation de ton mot de passe.</p>
               <p>Ce lien est valable <strong>1 heure</strong>.</p>
               <a href="%s" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#007af5;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">
                 Réinitialiser mon mot de passe
               </a>
               <p style="margin-top:16px;color:#666;font-size:12px;">
-                Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.
+                Si tu n'es pas à l'origine de cette demande, ignore cet email.
               </p>
               <p style="color:#666;font-size:13px;">
                 l'Amicale du Wifi · Fully Coworking · CH-1926

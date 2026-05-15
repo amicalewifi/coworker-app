@@ -84,7 +84,7 @@ public class RegisterController {
             emailService.sendVerification(email, firstName, evt.getToken());
 
             ra.addFlashAttribute("success",
-                    "Compte créé. Vérifiez votre email à " + email
+                    "Compte créé. Vérifie ton email à " + email
                             + " pour l'activer (lien valable 24 h).");
             return "redirect:/login?registered";
 
