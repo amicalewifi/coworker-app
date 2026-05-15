@@ -46,6 +46,13 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .pack-row-val small{font-size:11px;font-weight:500;color:var(--t3);margin-left:4px;}
 
 .muted{color:var(--t3);}
+
+.wifi-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;margin-left:auto;}
+.wifi-badge::before{content:"";width:6px;height:6px;border-radius:50%;}
+.wifi-badge.online{color:#16a34a;background:rgba(22,163,74,.10);}
+.wifi-badge.online::before{background:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.18);}
+.wifi-badge.offline{color:var(--t3);background:var(--surf-2);}
+.wifi-badge.offline::before{background:var(--t3);}
 </style>
 </head>
 <body>
@@ -62,28 +69,18 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <span th:text="${error}"></span>
   </div>
 
-  <!-- Alerte "appareil non enregistré". Affichée quand aucune MAC du membre
-       n'est actuellement authorized chez UniFi (soit il n'a aucun device
-       enregistré, soit ses devices ne sont pas sur le WiFi maintenant).
-       On ne sait pas distinguer LAN vs remote (CGN Swisscom), donc le texte
-       précise "Si tu es à l'Amicale du Wifi…". -->
-  <div th:if="${showRegisterDevicePrompt}"
+  <!-- Bannière "Enregistre ton appareil" : affichée uniquement quand le membre
+       n'a encore aucun device bound. Une fois au moins un device enregistré,
+       le statut en/hors ligne est porté par le badge sur la carte WiFi. -->
+  <div th:unless="${hasBoundMacs}"
        style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;">
     <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.18);display:flex;align-items:center;justify-content:center;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange-d)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
     </div>
     <div style="flex:1;">
-      <div th:unless="${hasBoundMacs}">
-        <div style="font-size:13px;font-weight:700;color:var(--od);">Tu n'as pas encore d'appareil enregistré</div>
-        <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
-          À l'Amicale du Wifi, va dans <strong>Mes appareils</strong> pour ajouter cet appareil au réseau et profiter d'Internet complet.
-        </div>
-      </div>
-      <div th:if="${hasBoundMacs}">
-        <div style="font-size:13px;font-weight:700;color:var(--od);">Cet appareil n'est pas connecté au WiFi</div>
-        <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
-          Si tu es à l'Amicale du Wifi, va dans <strong>Mes appareils</strong> pour enregistrer celui-ci. Sinon, reviens depuis le coworking.
-        </div>
+      <div style="font-size:13px;font-weight:700;color:var(--od);">Enregistre ton appareil</div>
+      <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
+        Si tu es à l'Amicale du Wifi, va dans <strong>Mes appareils</strong> pour enregistrer celui-ci et accéder à tous les services d'internet.
       </div>
       <a th:href="@{/mobile/devices}"
          style="display:inline-block;margin-top:8px;background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;text-decoration:none;">
@@ -194,6 +191,8 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--t2)" stroke="none"/></svg>
       </div>
       <div class="info-title">WiFi</div>
+      <div th:if="${hasBoundMacs and wifiOnline}" class="wifi-badge online">En ligne</div>
+      <div th:if="${hasBoundMacs and !wifiOnline}" class="wifi-badge offline">Hors ligne</div>
     </div>
     <div class="info-body">
       <p>Au coworking, connecte-toi au WiFi <strong>coworker.amicalewifi.ch</strong> puis ajoute chaque appareil que tu utilises depuis <strong>Mes appareils</strong> pour avoir Internet complet. L'autorisation reste active tant que ton pack est valide.</p>
