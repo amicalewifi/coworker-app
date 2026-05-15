@@ -110,20 +110,8 @@ public class MobileController {
         java.util.List<MemberWifiMac> myMacs =
                 wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
         boolean hasBoundMacs = !myMacs.isEmpty();
-        boolean showRegisterDevicePrompt;
-        if (!hasBoundMacs) {
-            showRegisterDevicePrompt = true;
-        } else {
-            java.util.Set<String> myMacSet = myMacs.stream()
-                    .map(MemberWifiMac::getMac)
-                    .collect(java.util.stream.Collectors.toSet());
-            boolean anyAuthorized = unifi.getConnectedClients().stream()
-                    .filter(c -> Boolean.TRUE.equals(c.get("authorized")))
-                    .map(c -> (String) c.get("mac"))
-                    .filter(java.util.Objects::nonNull)
-                    .anyMatch(myMacSet::contains);
-            showRegisterDevicePrompt = !anyAuthorized;
-        }
+        boolean showRegisterDevicePrompt = !hasBoundMacs
+                || !anyBoundMacAuthorizedNow(myMacs);
 
         model.addAttribute("member",                member);
         model.addAttribute("showRegisterDevicePrompt", showRegisterDevicePrompt);
@@ -149,10 +137,35 @@ public class MobileController {
     @GetMapping("/devices")
     public String devicesPage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        var devices = wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
         model.addAttribute("member", member);
-        model.addAttribute("devices",
-                wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+        model.addAttribute("devices", devices);
+        // "Probablement déjà enregistré" : si au moins une MAC du membre est
+        // actuellement authorized chez UniFi, on suppose que c'est celle du
+        // device courant (cas commun : un seul device, return visit). On
+        // remplace alors le bouton "Ajouter" par une note rassurante. Faux
+        // positif possible si l'user a un device A bound+connecté et regarde
+        // depuis un nouveau device B unbound — il devra repérer lui-même que
+        // la note ne correspond pas à son device courant et naviguer.
+        model.addAttribute("currentDeviceLikelyBound",
+                !devices.isEmpty() && anyBoundMacAuthorizedNow(devices));
         return "mobile/devices";
+    }
+
+    /** True si au moins une des MACs bound est actuellement authorized chez
+     *  UniFi (donc connectée sur le WiFi coworking en ce moment). Indique
+     *  qu'un device du membre est en train d'utiliser le réseau — utile pour
+     *  inférer la situation sans détection LAN fiable. */
+    private boolean anyBoundMacAuthorizedNow(java.util.List<MemberWifiMac> myMacs) {
+        if (myMacs.isEmpty()) return false;
+        java.util.Set<String> myMacSet = myMacs.stream()
+                .map(MemberWifiMac::getMac)
+                .collect(java.util.stream.Collectors.toSet());
+        return unifi.getConnectedClients().stream()
+                .filter(c -> Boolean.TRUE.equals(c.get("authorized")))
+                .map(c -> (String) c.get("mac"))
+                .filter(java.util.Objects::nonNull)
+                .anyMatch(myMacSet::contains);
     }
 
     @PostMapping("/devices/{id}/label")
@@ -403,6 +416,7 @@ public class MobileController {
     public String renewPage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         model.addAttribute("member", member);
+        model.addAttribute("hasActivePack", hasActivePack(member));
         // Proposer uniquement les packs avec un prix (pas essai, unitaire, domiciliation)
         List<MembershipType> packs = List.of(
                 MembershipType.PACK_MATIN, MembershipType.PACK_APMIDI,
@@ -420,6 +434,11 @@ public class MobileController {
                                   RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if (notVerified(member, ra)) return "redirect:/mobile/renew";
+        if (hasActivePack(member)) {
+            ra.addFlashAttribute("error",
+                    "Tu as déjà un pack actif. Attends qu'il soit épuisé ou expiré avant d'en acheter un nouveau.");
+            return "redirect:/mobile/renew";
+        }
         return zahlsService.createPaymentLink(member, membership)
                 .map(url -> "redirect:" + url)
                 .orElseGet(() -> {
@@ -427,6 +446,19 @@ public class MobileController {
                             "Impossible de créer le lien de paiement zahls.ch. Contactez l'admin.");
                     return "redirect:/mobile/";
                 });
+    }
+
+    /** Pack actif = permanent non expiré OU pack avec unités restantes non expiré.
+     *  Tant qu'un pack est actif on bloque l'achat d'un nouveau (évite la double dépense). */
+    private boolean hasActivePack(Member member) {
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Europe/Zurich"));
+        BigDecimal unitsRemaining = member.getPackUnitsRemaining();
+        boolean packNotExpired = member.getPackExpires() == null
+                || !member.getPackExpires().isBefore(today);
+        return (member.isPermanent() && packNotExpired)
+                || (unitsRemaining != null
+                    && unitsRemaining.compareTo(BigDecimal.ZERO) > 0
+                    && packNotExpired);
     }
 
     /** Bloque les paiements tant que l'email n'est pas vérifié.
