@@ -28,6 +28,7 @@ public class MemberService {
     private final PrintCreditTransactionRepository printCreditTxRepo;
     private final PrintDeclarationRepository       printDeclarationRepo;
     private final ConfCreditTransactionRepository  confCreditTxRepo;
+    private final WifiAccessService                wifiAccess;
 
     public List<Member>   getAll()                 { return memberRepo.findByActiveTrueOrderByLastNameAsc(); }
     public List<Member>   getAllIncludingInactive() { return memberRepo.findAllOrderByActiveDescLastNameAsc(); }
@@ -91,6 +92,11 @@ public class MemberService {
                 .amountChf(membership.getPriceChf())
                 .kind("renew")
                 .build());
+        // Réautoriser auprès d'UniFi tous les appareils déjà enregistrés du
+        // membre. Sinon ils resteraient bloqués sur le walled-garden jusqu'à
+        // ce que le membre clique manuellement sur "Ajouter cet appareil"
+        // depuis chacun d'eux.
+        wifiAccess.authorizeAllDevices(saved);
         return saved;
     }
 
