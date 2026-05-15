@@ -52,7 +52,7 @@ public class EmailVerificationController {
 
         log.info("Email vérifié pour {}", user.getEmail());
         ra.addFlashAttribute("success",
-                "Votre adresse email est vérifiée. Connectez-vous pour accéder à votre espace.");
+                "Ton adresse email est vérifiée. Connecte-toi pour accéder à ton espace.");
         return "redirect:/login?verified=ok";
     }
 

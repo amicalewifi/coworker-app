@@ -180,7 +180,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         <div class="cost-preview" th:id="'cost-' + ${room.id}">
           Durée : <span id="dur">1h00</span> →
           <span th:if="${member.confCreditsRemaining != null and member.confCreditsRemaining >= 1}"
-                style="color:var(--green)">déduit de vos crédits</span>
+                style="color:var(--green)">déduit de tes crédits</span>
           <span th:unless="${member.confCreditsRemaining != null and member.confCreditsRemaining >= 1}"
                 style="color:var(--red)">payant (19 CHF/h)</span>
         </div>

@@ -70,7 +70,7 @@ public class MobileController {
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if ("ok".equals(renewed)) {
-            model.addAttribute("success", "Paiement reçu — votre pack a été renouvelé !");
+            model.addAttribute("success", "Paiement reçu — ton pack a été renouvelé !");
         }
         if (member == null) {
             boolean isAdmin = auth.getAuthorities().stream()
@@ -144,11 +144,17 @@ public class MobileController {
     }
 
     @GetMapping("/devices")
-    public String devicesPage(Authentication auth, Model model) {
+    public String devicesPage(Authentication auth,
+                              jakarta.servlet.http.HttpServletRequest request,
+                              Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         model.addAttribute("member", member);
         model.addAttribute("devices",
                 wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
+        // Le bouton "Ajouter cet appareil" ne fonctionne que depuis le WiFi
+        // du coworking (la trampoline pointe sur l'IP du tunnel WG, non
+        // routable depuis l'extérieur). On le cache pour les requêtes distantes.
+        model.addAttribute("isLanRequest", lanDetection.isLanRequest(request));
         return "mobile/devices";
     }
 
@@ -432,7 +438,7 @@ public class MobileController {
         boolean verified = member.getUser() != null && member.getUser().isEmailVerified();
         if (!verified) {
             ra.addFlashAttribute("error",
-                    "Vérifiez d'abord votre adresse email avant de procéder à un paiement.");
+                    "Vérifie d'abord ton adresse email avant de procéder à un paiement.");
         }
         return !verified;
     }
@@ -443,7 +449,7 @@ public class MobileController {
                             Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if ("ok".equals(bought)) {
-            model.addAttribute("success", "Paiement reçu — vos crédits d'impression ont été ajoutés !");
+            model.addAttribute("success", "Paiement reçu — tes crédits d'impression ont été ajoutés !");
         }
         model.addAttribute("member",       member);
         model.addAttribute("declarations", memberService.getPrintDeclarations(member.getId()).stream().limit(10).toList());
@@ -560,7 +566,7 @@ public class MobileController {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         LocalDate selectedDate = date != null ? date : LocalDate.now();
         if ("ok".equals(bought)) {
-            model.addAttribute("success", "Paiement reçu — vos crédits de salle ont été ajoutés !");
+            model.addAttribute("success", "Paiement reçu — tes crédits de salle ont été ajoutés !");
         }
         List<Room> rooms = roomService.getAll();
         java.util.Map<UUID, List<RoomBooking>> bookingsByRoom = new java.util.HashMap<>();
@@ -611,8 +617,8 @@ public class MobileController {
             if (remaining.compareTo(hours) < 0) {
                 ra.addFlashAttribute("error",
                     remaining.compareTo(BigDecimal.ZERO) > 0
-                        ? "Crédits insuffisants — " + remaining + "h disponibles, " + hours + "h requises. Achetez des crédits ci-dessous."
-                        : "Vous n'avez pas de crédits de salle. Achetez un pack ci-dessous ou directement à l'Amicale (19 CHF/h).");
+                        ? "Crédits insuffisants — " + remaining + "h disponibles, " + hours + "h requises. Achète des crédits ci-dessous."
+                        : "Tu n'as pas de crédits de salle. Achète un pack ci-dessous ou directement à l'Amicale (19 CHF/h).");
                 ra.addFlashAttribute("neededHours", hours.subtract(remaining).max(BigDecimal.ZERO));
                 return "redirect:/mobile/rooms?date=" + date;
             }
