@@ -62,19 +62,28 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <span th:text="${error}"></span>
   </div>
 
-  <!-- Appareil pas enregistré: déduit côté serveur depuis (a) requête venant
-       du LAN coworking ET (b) aucune MAC du membre actuellement autorisée
-       chez UniFi. Affiche une alerte qui pointe vers /mobile/devices. -->
+  <!-- Alerte "appareil non enregistré". Affichée quand aucune MAC du membre
+       n'est actuellement authorized chez UniFi (soit il n'a aucun device
+       enregistré, soit ses devices ne sont pas sur le WiFi maintenant).
+       On ne sait pas distinguer LAN vs remote (CGN Swisscom), donc le texte
+       précise "Si tu es à l'Amicale du Wifi…". -->
   <div th:if="${showRegisterDevicePrompt}"
        style="background:var(--ol);border:1.5px solid var(--orange);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:flex-start;gap:12px;">
     <div style="flex-shrink:0;width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.18);display:flex;align-items:center;justify-content:center;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--orange-d)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
     </div>
     <div style="flex:1;">
-      <div style="font-size:13px;font-weight:700;color:var(--od);">Cet appareil n'est pas encore enregistré</div>
-      <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
-        Pour utiliser Internet complet, ajoute cet appareil à ta liste depuis
-        <strong>Mes appareils</strong>.
+      <div th:unless="${hasBoundMacs}">
+        <div style="font-size:13px;font-weight:700;color:var(--od);">Tu n'as pas encore d'appareil enregistré</div>
+        <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
+          À l'Amicale du Wifi, va dans <strong>Mes appareils</strong> pour ajouter cet appareil au réseau et profiter d'Internet complet.
+        </div>
+      </div>
+      <div th:if="${hasBoundMacs}">
+        <div style="font-size:13px;font-weight:700;color:var(--od);">Cet appareil n'est pas connecté au WiFi</div>
+        <div style="font-size:12px;color:var(--od);opacity:.85;margin-top:3px;line-height:1.45;">
+          Si tu es à l'Amicale du Wifi, va dans <strong>Mes appareils</strong> pour enregistrer celui-ci. Sinon, reviens depuis le coworking.
+        </div>
       </div>
       <a th:href="@{/mobile/devices}"
          style="display:inline-block;margin-top:8px;background:var(--orange);color:#fff;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;text-decoration:none;">
