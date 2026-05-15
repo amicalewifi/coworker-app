@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,9 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final MemberRepository  memberRepo;
     private final WifiAccessService wifiAccess;
+
+    @Value("${amicale.wifi.trampoline-url}")
+    private String trampolineUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
@@ -51,15 +55,21 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
     /**
      * URL de redirection post-login fournie par UniFi (paramètre "url" du
      * portail captif). On l'accepte uniquement si c'est une URL http(s)
-     * absolue — sinon on retombe sur le dashboard par défaut.
+     * absolue. Si l'URL pointe sur notre trampoline (l'utilisateur a été
+     * rebondi via RootController pour capturer sa MAC, pas via un vrai
+     * destinataire externe), on retombe sur le dashboard par défaut au lieu
+     * de renvoyer le navigateur sur l'IP du tunnel.
      */
-    private static String safeOriginalUrl(CaptivePortalParamFilter.CaptivePortalContext ctx) {
+    private String safeOriginalUrl(CaptivePortalParamFilter.CaptivePortalContext ctx) {
         if (ctx == null || ctx.originalUrl() == null || ctx.originalUrl().isBlank()) return null;
         try {
             URI u = URI.create(ctx.originalUrl());
             if (u.getScheme() == null || u.getHost() == null) return null;
             String scheme = u.getScheme().toLowerCase();
             if (!"http".equals(scheme) && !"https".equals(scheme)) return null;
+            if (trampolineUrl != null && ctx.originalUrl().startsWith(trampolineUrl)) {
+                return null;
+            }
             return u.toString();
         } catch (Exception e) {
             log.warn("URL de redirection captive invalide: {}",

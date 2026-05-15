@@ -166,6 +166,15 @@ amicale:
     poll-interval-ms:          120000   # Polling stat/sta toutes les 2 min
     half-day-threshold-seconds: 1800    # 30 min de connexion → 0.5 unité
     full-day-threshold-seconds: 18000   # 5 h de connexion   → 1.0 unité
+    # URL HTTP vers laquelle on redirige depuis /login quand on n'a pas encore
+    # la MAC du client (entrée directe sur coworker.amicalewifi.ch). UniFi
+    # intercepte cette requête HTTP et 302 vers /guest/s/default/?id=<MAC>&...
+    # qui capture la MAC. La cible n'a pas besoin d'héberger quoi que ce soit
+    # pour le happy path (UniFi 302 avant que le paquet n'arrive). Pour le
+    # filet de sécurité (si UniFi rate l'intercept), Caddy sur le VPS écoute
+    # sur cette adresse côté tunnel WireGuard et sert une 302 vers
+    # /login?tried=1, qui rend une page d'erreur explicite.
+    trampoline-url: http://10.0.1.2/coworker
 
   zahls:
     instance:    CHANGE_ME

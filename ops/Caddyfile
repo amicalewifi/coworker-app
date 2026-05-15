@@ -14,22 +14,27 @@ coworker.amicalewifi.ch {
     }
 }
 
-# wifi-auth — host délibérément absent du walled-garden UniFi. RootController
-# 302 vers http://wifi-auth.amicalewifi.ch/ quand un client logged-out arrive
-# sur /login sans MAC (entrée directe sur coworker.amicalewifi.ch, qui est en
-# walled-garden et donc jamais intercepté par UniFi). UniFi intercepte alors
-# cette requête HTTP et 302 vers /login?id=<MAC>&... — on revient sur le code
-# path standard du portail captif.
+# Trampoline pour la capture de MAC du portail captif UniFi.
 #
-# HTTP volontairement (pas de bloc HTTPS): UniFi ne 302 que les requêtes HTTP
-# vers les hôtes hors walled-garden, le HTTPS y est bloqué au niveau TCP.
-# RootController utilise donc une URL `http://` pour le rebond.
+# Quand un client logged-out arrive directement sur coworker.amicalewifi.ch
+# (qui est dans le walled-garden, donc jamais intercepté par UniFi),
+# RootController 302 le navigateur vers http://10.0.1.2/coworker. 10.0.1.2 est
+# l'IP côté tunnel WireGuard de ce VPS, joignable depuis le LAN coworking via
+# le routeur Swisscom + WG. UniFi voit alors un client non autorisé essayer
+# d'atteindre une IP hors walled-garden et 302 vers
+# /guest/s/default/?id=<MAC>&... — on capture la MAC via CaptivePortalParamFilter.
 #
-# La règle ci-dessous est le filet de sécurité: si UniFi loupe l'intercept
-# (ex: wifi-auth ajouté au walled-garden par erreur), on renvoie sur /login
-# avec nomac=1 pour casser la boucle et afficher un message d'erreur clair.
-http://wifi-auth.amicalewifi.ch, https://wifi-auth.amicalewifi.ch {
-    redir https://coworker.amicalewifi.ch/login?nomac=1 302
+# HTTP volontairement : UniFi n'intercepte pas le HTTPS vers les hôtes hors
+# walled-garden (il bloquerait au niveau TCP). Le 302 HTTP est le seul
+# mécanisme d'interception fiable côté UniFi.
+#
+# Filet de sécurité : si UniFi rate l'intercept (très rare), le paquet flue
+# via le tunnel WG jusqu'ici. Caddy sert alors une 302 vers /login?tried=1,
+# qui rend une page d'erreur explicite ("appareil non détecté") plutôt
+# qu'une connexion refusée.
+http://10.0.1.2 {
+    redir /coworker https://coworker.amicalewifi.ch/login?tried=1 302
+    respond 404
 }
 
 # Imprimante virtuelle Claudine — claudine-proxy (Go) tourne sur le host
