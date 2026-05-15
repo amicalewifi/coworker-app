@@ -46,7 +46,6 @@ public class MobileController {
     private final PackTransactionRepository packTxRepo;
     private final WifiAccessService        wifiAccess;
     private final UnifiService             unifi;
-    private final LanDetectionService      lanDetection;
     private final PasswordEncoder          passwordEncoder;
 
     public record PackGroup(PackTransaction tx, List<Presence> presences, BigDecimal unitsUsed) {}
@@ -66,7 +65,6 @@ public class MobileController {
     @GetMapping({"", "/"})
     public String home(Authentication auth,
                        @RequestParam(required = false) String renewed,
-                       jakarta.servlet.http.HttpServletRequest request,
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if ("ok".equals(renewed)) {
@@ -100,31 +98,36 @@ public class MobileController {
                 .map(WifiDailyUsage::getUnitsCharged)
                 .orElse(BigDecimal.ZERO);
 
-        // Alerte "appareil non enregistré": affichée uniquement si le membre
-        // est sur le LAN coworking ET qu'aucune de ses MAC enregistrées n'est
-        // actuellement autorisée chez UniFi. Indication forte que la session
-        // actuelle se fait depuis un appareil non ajouté à sa liste.
-        boolean showRegisterDevicePrompt = false;
-        if (lanDetection.isLanRequest(request)) {
-            java.util.List<MemberWifiMac> myMacs =
-                    wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
-            if (myMacs.isEmpty()) {
-                showRegisterDevicePrompt = true;
-            } else {
-                java.util.Set<String> myMacSet = myMacs.stream()
-                        .map(MemberWifiMac::getMac)
-                        .collect(java.util.stream.Collectors.toSet());
-                boolean anyAuthorized = unifi.getConnectedClients().stream()
-                        .filter(c -> Boolean.TRUE.equals(c.get("authorized")))
-                        .map(c -> (String) c.get("mac"))
-                        .filter(java.util.Objects::nonNull)
-                        .anyMatch(myMacSet::contains);
-                showRegisterDevicePrompt = !anyAuthorized;
-            }
+        // Alerte "appareil non enregistré" : on ne sait pas détecter de manière
+        // fiable si l'utilisateur est physiquement sur le LAN coworking (CGN
+        // Swisscom rend `request.getRemoteAddr()` inutilisable, et aucun probe
+        // browser-side n'est viable). On se rabat sur le seul signal solide :
+        // est-ce qu'au moins une MAC du membre est actuellement autorisée chez
+        // UniFi ? Si non, soit il n'a aucun device enregistré, soit il est sur
+        // un device non enregistré (potentiellement au coworking). Le texte du
+        // banner précise "si tu es à l'Amicale du Wifi…" pour rendre l'UX
+        // correcte aussi quand le user est en remote.
+        java.util.List<MemberWifiMac> myMacs =
+                wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
+        boolean hasBoundMacs = !myMacs.isEmpty();
+        boolean showRegisterDevicePrompt;
+        if (!hasBoundMacs) {
+            showRegisterDevicePrompt = true;
+        } else {
+            java.util.Set<String> myMacSet = myMacs.stream()
+                    .map(MemberWifiMac::getMac)
+                    .collect(java.util.stream.Collectors.toSet());
+            boolean anyAuthorized = unifi.getConnectedClients().stream()
+                    .filter(c -> Boolean.TRUE.equals(c.get("authorized")))
+                    .map(c -> (String) c.get("mac"))
+                    .filter(java.util.Objects::nonNull)
+                    .anyMatch(myMacSet::contains);
+            showRegisterDevicePrompt = !anyAuthorized;
         }
 
         model.addAttribute("member",                member);
         model.addAttribute("showRegisterDevicePrompt", showRegisterDevicePrompt);
+        model.addAttribute("hasBoundMacs",          hasBoundMacs);
         model.addAttribute("firstName",             member.getFirstName());
         model.addAttribute("openingHour",       openingHour);
         model.addAttribute("closingHour",       closingHour);
@@ -144,17 +147,11 @@ public class MobileController {
     }
 
     @GetMapping("/devices")
-    public String devicesPage(Authentication auth,
-                              jakarta.servlet.http.HttpServletRequest request,
-                              Model model) {
+    public String devicesPage(Authentication auth, Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         model.addAttribute("member", member);
         model.addAttribute("devices",
                 wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId()));
-        // Le bouton "Ajouter cet appareil" ne fonctionne que depuis le WiFi
-        // du coworking (la trampoline pointe sur l'IP du tunnel WG, non
-        // routable depuis l'extérieur). On le cache pour les requêtes distantes.
-        model.addAttribute("isLanRequest", lanDetection.isLanRequest(request));
         return "mobile/devices";
     }
 
