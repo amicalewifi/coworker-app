@@ -21,6 +21,19 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .input-group label{font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;}
 .input-group input[type=number]{width:100%;padding:10px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:20px;font-weight:700;text-align:center;background:var(--surf-2);color:var(--text);font-family:var(--font);box-sizing:border-box;}
 .input-group input[type=number]:focus{outline:none;border-color:var(--prim);}
+.input-group input[type=number][readonly]{background:var(--bg);color:var(--t2);cursor:default;}
+.input-group input[type=number][readonly]:focus{border-color:var(--bdr);}
+.file-picker{position:relative;display:flex;align-items:center;gap:12px;padding:14px;border:1.5px dashed var(--prim-t);border-radius:12px;background:var(--prim-l);cursor:pointer;transition:all .15s;margin-bottom:12px;}
+.file-picker:hover{border-color:var(--prim);background:#e3eeff;}
+.file-picker.has-file{border-style:solid;border-color:var(--prim);background:var(--surf-2);}
+.file-picker input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
+.fp-icon{font-size:22px;flex-shrink:0;}
+.fp-body{flex:1;min-width:0;}
+.fp-title{font-size:14px;font-weight:800;color:var(--prim-d);}
+.file-picker.has-file .fp-title{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fp-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.fp-arrow{font-size:18px;color:var(--prim);opacity:.6;flex-shrink:0;}
+.file-picker.has-file .fp-arrow{display:none;}
 .credit-preview{background:var(--gl);border:1px solid var(--prim);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--prim-d);font-weight:600;display:flex;align-items:center;gap:8px;}
 .credit-preview .big{font-size:20px;font-weight:900;}
 .input-hint{font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.5;}
@@ -100,20 +113,27 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div class="section-title">Imprimer un fichier</div>
   <div class="declare-card">
     <form th:action="@{/mobile/print/upload}" method="post" enctype="multipart/form-data" id="uploadForm">
-      <div style="margin-bottom:12px;">
-        <label style="font-size:11px;font-weight:700;color:var(--t2);display:block;margin-bottom:5px;">Fichier (PDF)</label>
-        <input type="file" name="file" accept=".pdf,.ps" required style="width:100%;font-size:13px;box-sizing:border-box;"
-               onchange="updateUploadPreview()">
-      </div>
+      <label class="file-picker" id="filePicker">
+        <input type="file" name="file" accept=".pdf,.ps" required onchange="onFileChosen(this)">
+        <div class="fp-icon">📄</div>
+        <div class="fp-body">
+          <div class="fp-title" id="fpTitle">Choisir un fichier PDF</div>
+          <div class="fp-sub"  id="fpSub">Touchez pour parcourir</div>
+        </div>
+        <div class="fp-arrow">→</div>
+      </label>
       <div class="input-row">
         <div class="input-group">
-          <label>Pages</label>
-          <input type="number" name="pages" id="uploadPages" min="1" value="1" oninput="updateUploadPreview()">
+          <label>Pages estimées</label>
+          <input type="number" name="pages" id="uploadPages" min="1" value="1" readonly>
         </div>
         <div class="input-group">
           <label>Copies</label>
           <input type="number" name="copies" id="uploadCopies" min="1" value="1" oninput="updateUploadPreview()">
         </div>
+      </div>
+      <div id="uploadPagesHint" class="input-hint" style="display:none;margin-top:-6px;margin-bottom:10px;color:var(--t3);">
+        Nombre de pages non détecté — facturation calculée à l'impression.
       </div>
       <div style="display:flex;gap:16px;margin-bottom:12px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
@@ -127,8 +147,9 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </div>
       <div class="input-hint">N&B : 1 crédit/page · Couleur : 2 crédits/page (× copies)</div>
       <div class="credit-preview" id="uploadPreview">
+        <span>≈</span>
         <span class="big" id="uploadCredits">1</span>
-        <span>crédit(s) seront déduits</span>
+        <span>crédit(s) — estimation</span>
       </div>
       <button type="submit" class="btn-primary" id="uploadBtn">
         Envoyer à l'imprimante →
@@ -234,13 +255,63 @@ function updateUploadPreview() {
   const btn = document.getElementById('uploadBtn');
   if (total <= remaining && total > 0) {
     btn.disabled = false;
-    btn.textContent = 'Envoyer à l\'imprimante → ' + total + ' crédit(s)';
+    btn.textContent = 'Envoyer à l\'imprimante → ≈ ' + total + ' crédit(s)';
   } else if (total > remaining) {
     btn.disabled = true;
     btn.textContent = 'Crédits insuffisants (' + remaining + ' disponibles)';
   }
 }
 updateUploadPreview();
+
+async function onFileChosen(input) {
+  const picker = document.getElementById('filePicker');
+  const file = input.files && input.files[0];
+  const hint = document.getElementById('uploadPagesHint');
+  if (!file) {
+    picker.classList.remove('has-file');
+    document.getElementById('fpTitle').textContent = 'Choisir un fichier PDF';
+    document.getElementById('fpSub').textContent = 'Touchez pour parcourir';
+    document.getElementById('uploadPages').value = 1;
+    hint.style.display = 'none';
+    updateUploadPreview();
+    return;
+  }
+  picker.classList.add('has-file');
+  document.getElementById('fpTitle').textContent = file.name;
+  document.getElementById('fpSub').textContent = humanSize(file.size);
+
+  const pages = await detectPdfPages(file);
+  if (pages && pages > 0) {
+    document.getElementById('uploadPages').value = pages;
+    hint.style.display = 'none';
+  } else {
+    document.getElementById('uploadPages').value = 1;
+    hint.style.display = 'block';
+  }
+  updateUploadPreview();
+}
+
+function humanSize(n) {
+  if (n < 1024) return n + ' o';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' Ko';
+  return (n / 1024 / 1024).toFixed(1) + ' Mo';
+}
+
+async function detectPdfPages(file) {
+  try {
+    const head = await file.slice(0, 262144).arrayBuffer();
+    const tail = await file.slice(Math.max(0, file.size - 65536)).arrayBuffer();
+    const dec  = new TextDecoder('latin1');
+    const txt  = dec.decode(head) + dec.decode(tail);
+    const lin = txt.match(/\/Linearized[\s\S]{0,300}?\/N\s+(\d+)/);
+    if (lin) return parseInt(lin[1], 10);
+    const counts = [...txt.matchAll(/\/Count\s+(\d+)/g)].map(x => parseInt(x[1], 10));
+    if (counts.length) return Math.max(...counts);
+    const pageMatches = txt.match(/\/Type\s*\/Page(?!s)\b/g);
+    if (pageMatches) return pageMatches.length;
+  } catch (_) {}
+  return null;
+}
 
 function updateBuyBtn(radio) {
   const labels = {
