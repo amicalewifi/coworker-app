@@ -22,9 +22,19 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 )
+
+// printerMu sérialise les jobs réseau pour que les compteurs SNMP
+// "before" et "after" (lus dans handler.go + poll.go) ne soient pas
+// pollués par un job concurrent. Walk-up (USB / Copier) ne touche pas ce
+// mutex — son compteur est sur une autre ligne du tableau SNMP, isolé par
+// construction (cf. plan Path B). Acquis dans handler.go après
+// spring.Submit, libéré par pollAndComplete via defer (ou par
+// ippParseReader.Close si le job-uri n'a jamais été parsé).
+var printerMu sync.Mutex
 
 // Package-level vars peuplés depuis l'environnement, mais sans fatal au
 // chargement du package : les tests doivent pouvoir importer sans que la

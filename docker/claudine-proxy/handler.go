@@ -141,10 +141,26 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			return
 		}
 
+		// Acquiert le mutex avant la soumission. Le compteur SNMP "before"
+		// est figé sous le lock, et reste valide jusqu'à ce que
+		// pollAndComplete relâche le lock après l'after-read (cf. defer
+		// dans poll.go). Si pollAndComplete n'est jamais lancée (e.g.
+		// Kyocera réponse sans job-uri), ippParseReader.Close relâche.
+		printerMu.Lock()
+
+		beforeColor, snmpErr := ReadImprimanteCouleur(r.Context())
+		if snmpErr != nil {
+			log.Printf("[claudine-proxy] SNMP before read failed (job=%s): %v — counter-delta will be skipped",
+				jobID, snmpErr)
+			beforeColor = -1
+		}
+
 		// Seed le store d'attributs. Pour Linux/Windows (Print-Job 0x0002),
 		// c'est la valeur finale. Pour macOS (Create-Job 0x0005), le
-		// Send-Document qui suit overrira ces valeurs avec les vraies.
-		attrStore.Set(jobID, JobAttrs{Color: color, Duplex: duplex})
+		// Send-Document qui suit overrira Color/Duplex avec les vraies.
+		// BeforeColor reste figé : c'est le snapshot du compteur lifetime
+		// au moment du submit.
+		attrStore.Set(jobID, JobAttrs{Color: color, Duplex: duplex, BeforeColor: beforeColor})
 
 		ctx := context.WithValue(r.Context(), ctxJobID, jobID)
 		ctx = context.WithValue(ctx, ctxEmail, email)
@@ -212,6 +228,10 @@ type ippParseReader struct {
 	duplex   bool
 	accum    []byte
 	done     bool
+	// launched : pollAndComplete a été démarrée → c'est elle qui libère
+	// printerMu via defer. Sinon (Kyocera réponse sans job-uri, EOF, etc.),
+	// Close() doit libérer le lock pour ne pas le perdre.
+	launched bool
 }
 
 const ippParseAccumCap = 64 * 1024
@@ -240,6 +260,7 @@ func (r *ippParseReader) Read(p []byte) (int, error) {
 					go reportDispatched(r.jobID, jobURI)
 					go pollAndComplete(r.jobID, jobURI, r.color, r.duplex)
 					r.done = true
+					r.launched = true
 					r.accum = nil // free
 				}
 			}
@@ -258,6 +279,13 @@ func (r *ippParseReader) Read(p []byte) (int, error) {
 func (r *ippParseReader) Close() error {
 	if !r.done && r.jobID != "" {
 		log.Printf("[claudine-proxy] Print-Job response closed without job-uri (spring-id=%s)", r.jobID)
+	}
+	// Si pollAndComplete n'a pas été lancée (job-uri introuvable, EOF
+	// précoce, etc.), libère le printerMu pour ne pas bloquer les jobs
+	// suivants. Si elle a été lancée, c'est elle qui libère via defer.
+	if !r.launched && r.jobID != "" {
+		printerMu.Unlock()
+		log.Printf("[claudine-proxy] released printerMu in Close() (spring-id=%s, pollAndComplete not launched)", r.jobID)
 	}
 	return r.upstream.Close()
 }
