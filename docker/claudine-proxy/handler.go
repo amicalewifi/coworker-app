@@ -68,14 +68,26 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			opID = binary.BigEndian.Uint16(peek[2:4])
 		}
 
-		// DEBUG TEMPORAIRE — Send-Document (op 0x0006) : on l'observe
-		// passer pour voir si macOS AirPrint y envoie print-color-mode et
-		// sides (cas où Create-Job précédent ne les avait pas). On ne change
-		// rien d'autre — pas de Submit (le job a déjà été créé via Create-
-		// Job qui a fait le Submit), juste log + pass-through.
+		// Send-Document (op 0x0006) : macOS AirPrint y envoie les attributs
+		// print-color-mode et sides (absents du Create-Job précédent). On
+		// peek pour extraire ces attrs + le job-id, on remonte au springID
+		// via attrStore.KyoceraToSpring, et on écrase l'entrée du store
+		// avec les vraies valeurs. Pas de Submit côté Spring — le job a
+		// déjà été créé via Create-Job. Puis pass-through transparent.
 		if opID == opSendDocument {
-			log.Printf("[claudine-proxy] DEBUG Send-Document (op=0x0006, %d bytes peek):\n%s",
-				len(peek), DumpAttrs(peek))
+			sdColor, sdDuplex := ExtractPrintJobAttrs(peek)
+			kyoceraID, ok := ExtractJobID(peek)
+			if ok && kyoceraID > 0 {
+				if springID := attrStore.KyoceraToSpring(kyoceraID); springID != "" {
+					attrStore.Set(springID, JobAttrs{Color: sdColor, Duplex: sdDuplex})
+					log.Printf("[claudine-proxy] Send-Document overrode attrs spring-id=%s kyocera-id=%d color=%v duplex=%v",
+						springID, kyoceraID, sdColor, sdDuplex)
+				} else {
+					log.Printf("[claudine-proxy] Send-Document kyocera-id=%d unknown to attrStore (Create-Job response not yet parsed?)", kyoceraID)
+				}
+			} else {
+				log.Printf("[claudine-proxy] Send-Document without parseable job-id (%d bytes peek)", len(peek))
+			}
 			proxy.ServeHTTP(w, r)
 			return
 		}
@@ -128,6 +140,11 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			}
 			return
 		}
+
+		// Seed le store d'attributs. Pour Linux/Windows (Print-Job 0x0002),
+		// c'est la valeur finale. Pour macOS (Create-Job 0x0005), le
+		// Send-Document qui suit overrira ces valeurs avec les vraies.
+		attrStore.Set(jobID, JobAttrs{Color: color, Duplex: duplex})
 
 		ctx := context.WithValue(r.Context(), ctxJobID, jobID)
 		ctx = context.WithValue(ctx, ctxEmail, email)
@@ -212,6 +229,10 @@ func (r *ippParseReader) Read(p []byte) (int, error) {
 				if jobURI, kyoceraJobID, perr := ExtractJobURI(r.accum); perr == nil && jobURI != "" {
 					log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s color=%v duplex=%v",
 						r.jobID, kyoceraJobID, jobURI, r.color, r.duplex)
+					// Lien kyoceraID → springID : indispensable pour que le
+					// Send-Document qui suit (macOS) puisse retrouver le
+					// springID et écraser les attrs avec les vraies valeurs.
+					attrStore.LinkKyocera(kyoceraJobID, r.jobID)
 					// Best-effort : pousser l'URI à Spring pour le sweeper.
 					// Échec → on continue : pollAndComplete fera l'essentiel et
 					// le job ne sera orphelin que si CE proxy crashe avant que

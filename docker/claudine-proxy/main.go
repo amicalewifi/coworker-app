@@ -26,10 +26,14 @@ import (
 	"time"
 )
 
+// Package-level vars peuplés depuis l'environnement, mais sans fatal au
+// chargement du package : les tests doivent pouvoir importer sans que la
+// JVM des env vars soit configurée. La validation se fait dans main() via
+// requireEnv (et tue le process avec un message clair si manquant).
 var (
-	appURL      = mustEnv("AMICALE_APP_URL")
-	brokerKey   = mustEnv("AMICALE_PRINT_BROKER_KEY")
-	printerHost = mustEnv("AMICALE_PRINTER_HOST")
+	appURL      = os.Getenv("AMICALE_APP_URL")
+	brokerKey   = os.Getenv("AMICALE_PRINT_BROKER_KEY")
+	printerHost = os.Getenv("AMICALE_PRINTER_HOST")
 	printerPort = envOr("AMICALE_PRINTER_PORT", "443")
 	listenAddr  = envOr("AMICALE_LISTEN_ADDR", "0.0.0.0:8000")
 	kyoceraUser = os.Getenv("KYOCERA_USER")
@@ -63,6 +67,10 @@ var spring = &SpringClient{
 }
 
 func main() {
+	requireEnv("AMICALE_APP_URL", appURL)
+	requireEnv("AMICALE_PRINT_BROKER_KEY", brokerKey)
+	requireEnv("AMICALE_PRINTER_HOST", printerHost)
+
 	target, err := url.Parse("https://" + printerHost + ":" + printerPort)
 	if err != nil {
 		log.Fatalf("invalid printer URL: %v", err)
@@ -107,12 +115,10 @@ func main() {
 	_ = srv.Shutdown(ctx)
 }
 
-func mustEnv(key string) string {
-	v := os.Getenv(key)
-	if v == "" {
+func requireEnv(key, val string) {
+	if val == "" {
 		log.Fatalf("env %s required", key)
 	}
-	return v
 }
 
 func envOr(key, def string) string {

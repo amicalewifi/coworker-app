@@ -86,6 +86,7 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 			reportError(jobID, fmt.Sprintf(
 				"polling Kyocera timeout après 10 min, état job inconnu (kyocera-uri=%s)",
 				kyoceraJobURI))
+			attrStore.Delete(jobID)
 			return
 		case <-ticker.C:
 			state, impressions, sheets, kColor, kDuplex, err := fetchJobState(ctx, kyoceraJobURI)
@@ -96,27 +97,33 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 
 			switch state {
 			case jobStateCompleted:
-				// Source de vérité pour color/duplex : la Kyocera (kColor /
-				// kDuplex) prime sur ce qu'on a peeké côté handler — celui-ci
-				// peut être faux pour les flows Create-Job + Send-Document
-				// (macOS AirPrint) où les attributs sont dans le
-				// Send-Document qu'on n'intercepte pas. On garde le OR pour
-				// le cas inverse théorique (peek a vu, Kyocera n'expose pas).
-				color = color || kColor
-				duplex = duplex || kDuplex
+				// Source de vérité pour color/duplex : le request-side peek
+				// stocké dans attrStore. Pour Linux/Windows, ces valeurs
+				// viennent du Print-Job inline. Pour macOS, Send-Document
+				// les a overridées avec les vraies. On ne fait PLUS de OR
+				// avec kColor/kDuplex (per-job IPP attrs Kyocera) : la
+				// Kyocera renvoie ses valeurs DEFAULT-machine pour ces
+				// attrs au lieu des actual-job (cf. ipp.go autour de
+				// BuildGetJobAttributes), donc OR'er inflate à tort.
+				finalColor, finalDuplex := color, duplex
+				if stored, ok := attrStore.Get(jobID); ok {
+					finalColor, finalDuplex = stored.Color, stored.Duplex
+				}
 
-				billUnit, unitLabel := computeBillUnit(sheets, impressions, duplex)
+				billUnit, unitLabel := computeBillUnit(sheets, impressions, finalDuplex)
 				if unitLabel == "fallback" {
 					log.Printf("[claudine-proxy] job=%s completed but no count reported (impressions=%d sheets=%d), defaulting to 1",
 						jobID, impressions, sheets)
 				}
-				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v impressions=%d sheets=%d)",
-					jobID, billUnit, unitLabel, color, duplex, impressions, sheets)
-				reportComplete(jobID, billUnit, color, duplex)
+				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v impressions=%d sheets=%d kyocera-color=%v kyocera-duplex=%v)",
+					jobID, billUnit, unitLabel, finalColor, finalDuplex, impressions, sheets, kColor, kDuplex)
+				reportComplete(jobID, billUnit, finalColor, finalDuplex)
+				attrStore.Delete(jobID)
 				return
 			case jobStateCanceled, jobStateAborted:
 				log.Printf("[claudine-proxy] job=%s ended state=%d", jobID, state)
 				reportError(jobID, fmt.Sprintf("Kyocera returned job-state=%d", state))
+				attrStore.Delete(jobID)
 				return
 			default:
 				// pending/processing/etc. : on continue à poll

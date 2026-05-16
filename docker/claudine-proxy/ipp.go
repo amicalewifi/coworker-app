@@ -146,6 +146,22 @@ func attrString(attrs []attribute, name string) (string, bool) {
 	return "", false
 }
 
+// ExtractJobID lit la requête IPP d'un Send-Document pour récupérer le
+// job-id IPP auquel la requête se rapporte. macOS AirPrint utilise le
+// pattern Create-Job + Send-Document : le PDF et les attributs de format
+// (print-color-mode, sides) sont dans le Send-Document, qui pointe vers
+// le job-id retourné par le Create-Job précédent.
+//
+// Retourne (id, true) si trouvé, (0, false) sinon. N'échoue pas sur header
+// invalide — c'est appelé depuis un peek best-effort.
+func ExtractJobID(body []byte) (int, bool) {
+	_, _, _, attrs, err := ParseHeader(body)
+	if err != nil {
+		return 0, false
+	}
+	return attrInt(parseAttributes(attrs), "job-id")
+}
+
 // ExtractJobURI lit la réponse IPP d'un Print-Job pour récupérer le job-uri
 // que la Kyocera a assigné, ainsi que le job-id (id IPP, pas le UUID Spring).
 func ExtractJobURI(body []byte) (string, int, error) {
