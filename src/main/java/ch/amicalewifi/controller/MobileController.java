@@ -229,10 +229,14 @@ public class MobileController {
     @GetMapping("/pack")
     public String pack(Authentication auth,
                        @RequestParam(required = false) String renewed,
+                       @RequestParam(required = false) String paid,
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if ("ok".equals(renewed)) {
             model.addAttribute("success", "Paiement reçu — ton pack a été renouvelé !");
+        }
+        if ("fail".equals(paid)) {
+            model.addAttribute("error", "Paiement refusé ou interrompu. Réessaye, ou contacte hello@amicalewifi.ch si le problème persiste.");
         }
         List<Presence> presences = memberService.getForMember(member.getId());
 
