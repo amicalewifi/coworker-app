@@ -227,8 +227,13 @@ public class MobileController {
     }
 
     @GetMapping("/pack")
-    public String pack(Authentication auth, Model model) {
+    public String pack(Authentication auth,
+                       @RequestParam(required = false) String renewed,
+                       Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
+        if ("ok".equals(renewed)) {
+            model.addAttribute("success", "Paiement reçu — ton pack a été renouvelé !");
+        }
         List<Presence> presences = memberService.getForMember(member.getId());
 
         BigDecimal totalChf = presences.stream()
