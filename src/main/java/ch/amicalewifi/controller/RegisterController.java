@@ -44,8 +44,15 @@ public class RegisterController {
                          @RequestParam(required = false) String city,
                          @RequestParam(required = false) String postalCode,
                          @RequestParam(required = false) String country,
+                         @RequestParam(defaultValue = "false") boolean acceptCgv,
                          Model model,
                          RedirectAttributes ra) {
+
+        if (!acceptCgv) {
+            model.addAttribute("error",
+                    "Tu dois accepter les Conditions Générales de Vente pour créer ton compte.");
+            return "auth/register";
+        }
 
         if (userRepo.existsByEmail(email) || memberRepo.existsByEmail(email)) {
             model.addAttribute("error", "Un compte existe déjà avec cet email.");
@@ -69,6 +76,7 @@ public class RegisterController {
                     .membership(MembershipType.JOURNEE_ESSAI)
                     .user(user)
                     .active(true)
+                    .cgvAcceptedAt(LocalDateTime.now())
                     .build());
 
             log.info("Nouvelle inscription: {} {} ({})", firstName, lastName, email);
