@@ -65,10 +65,14 @@ public class MobileController {
     @GetMapping({"", "/"})
     public String home(Authentication auth,
                        @RequestParam(required = false) String renewed,
+                       @RequestParam(required = false) String paid,
                        Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElse(null);
         if ("ok".equals(renewed)) {
             model.addAttribute("success", "Paiement reçu — ton pack a été renouvelé !");
+        }
+        if ("fail".equals(paid)) {
+            model.addAttribute("error", "Paiement refusé ou interrompu. Réessaye, ou contacte hello@amicalewifi.ch si le problème persiste.");
         }
         if (member == null) {
             boolean isAdmin = auth.getAuthorities().stream()
@@ -469,10 +473,14 @@ public class MobileController {
     @GetMapping("/print")
     public String printPage(Authentication auth,
                             @RequestParam(required = false) String bought,
+                            @RequestParam(required = false) String paid,
                             Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         if ("ok".equals(bought)) {
             model.addAttribute("success", "Paiement reçu — tes crédits d'impression ont été ajoutés !");
+        }
+        if ("fail".equals(paid)) {
+            model.addAttribute("error", "Paiement refusé ou interrompu. Réessaye, ou contacte hello@amicalewifi.ch si le problème persiste.");
         }
         model.addAttribute("member",       member);
         model.addAttribute("declarations", memberService.getPrintDeclarations(member.getId()).stream().limit(10).toList());
@@ -585,11 +593,15 @@ public class MobileController {
     public String roomsPage(Authentication auth,
                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                             @RequestParam(required = false) String bought,
+                            @RequestParam(required = false) String paid,
                             Model model) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
         LocalDate selectedDate = date != null ? date : LocalDate.now();
         if ("ok".equals(bought)) {
             model.addAttribute("success", "Paiement reçu — tes crédits de salle ont été ajoutés !");
+        }
+        if ("fail".equals(paid)) {
+            model.addAttribute("error", "Paiement refusé ou interrompu. Réessaye, ou contacte hello@amicalewifi.ch si le problème persiste.");
         }
         List<Room> rooms = roomService.getAll();
         java.util.Map<UUID, List<RoomBooking>> bookingsByRoom = new java.util.HashMap<>();

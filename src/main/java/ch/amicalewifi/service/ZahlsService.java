@@ -114,6 +114,7 @@ public class ZahlsService {
             params.put("amount",             String.valueOf(amountRappen));
             params.put("cancelRedirectUrl",  cancelRedirect);
             params.put("currency",           "CHF");
+            params.put("failedRedirectUrl",  withQueryParam(cancelRedirect, "paid", "fail"));
             params.put("purpose",            purpose);
             params.put("referenceId",        referenceId);
             params.put("successRedirectUrl", successRedirect);
@@ -154,5 +155,10 @@ public class ZahlsService {
     private void appendIfNotBlank(StringBuilder url, String param, String value) throws Exception {
         if (value != null && !value.isBlank())
             url.append("&").append(param).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+    }
+
+    private String withQueryParam(String url, String key, String value) {
+        String sep = url.contains("?") ? "&" : "?";
+        return url + sep + key + "=" + URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }
