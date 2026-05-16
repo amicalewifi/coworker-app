@@ -544,7 +544,8 @@ public class MobileController {
                               @RequestParam(defaultValue = "false") boolean duplex,
                               RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        int credits = pages * copies * (color ? 2 : 1);
+        int sheets = duplex ? (pages + 1) / 2 : pages;
+        int credits = sheets * copies * (color ? 2 : 1);
         try {
             memberService.deductPrintCredits(member.getId(), credits);
 
