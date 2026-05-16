@@ -47,12 +47,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 
 .muted{color:var(--t3);}
 
-.wifi-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:999px;margin-left:auto;}
-.wifi-badge::before{content:"";width:6px;height:6px;border-radius:50%;}
-.wifi-badge.online{color:#16a34a;background:rgba(22,163,74,.10);}
-.wifi-badge.online::before{background:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.18);}
-.wifi-badge.offline{color:var(--t3);background:var(--surf-2);}
-.wifi-badge.offline::before{background:var(--t3);}
 </style>
 </head>
 <body>
@@ -107,25 +101,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="info-title">Mon pack</div>
     </div>
     <div class="info-body">
-      <div class="pack-row">
-        <span class="pack-row-lbl">WiFi aujourd'hui</span>
-        <span class="pack-row-val"
-              th:with="h=${wifiTodaySeconds / 3600}, m=${(wifiTodaySeconds % 3600) / 60}">
-          <span th:if="${wifiTodaySeconds == 0}">—</span>
-          <span th:if="${wifiTodaySeconds > 0 and h == 0}" th:text="${m} + ' min'">14 min</span>
-          <span th:if="${h > 0}" th:text="${h} + 'h ' + ${m} + 'min'">2h 14min</span>
-          <small th:if="${!member.isPermanent() and wifiTodayCharged != null and wifiTodayCharged.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
-                 th:text="'· ' + ${wifiTodayCharged} + ' jour décompté'">· 0.5 jour décompté</small>
-        </span>
-      </div>
-      <div th:if="${!member.isPermanent() and unitsRemaining != null}" class="pack-row">
-        <span class="pack-row-lbl">Jours restants</span>
-        <span class="pack-row-val">
-          <span th:text="${unitsRemaining}">3.5</span>
-          <small th:if="${member.packUnitsTotal != null}"
-                 th:text="'/ ' + ${member.packUnitsTotal}">/ 5</small>
-        </span>
-      </div>
       <div th:if="${member.packExpires != null}" class="pack-row">
         <span class="pack-row-lbl">Valide jusqu'au</span>
         <span class="pack-row-val"
@@ -133,7 +108,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       </div>
       <div class="pack-row">
         <span class="pack-row-lbl">Formule</span>
-        <span class="pack-row-val" th:text="${member.membership.label}">Pack 5 jours</span>
+        <span class="pack-row-val" th:text="${member.membership.shortName}">Pack 5 jours</span>
       </div>
       <a class="info-link block" th:href="@{/mobile/pack}">
         <span>Voir mon pack</span>
@@ -191,11 +166,9 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="var(--t2)" stroke="none"/></svg>
       </div>
       <div class="info-title">WiFi</div>
-      <div th:if="${hasBoundMacs and wifiOnline}" class="wifi-badge online">En ligne</div>
-      <div th:if="${hasBoundMacs and !wifiOnline}" class="wifi-badge offline">Hors ligne</div>
     </div>
     <div class="info-body">
-      <p>Au coworking, connecte-toi au WiFi <strong>coworker.amicalewifi.ch</strong> puis ajoute chaque appareil que tu utilises depuis <strong>Mes appareils</strong> pour avoir Internet complet. L'autorisation reste active tant que ton pack est valide.</p>
+      <p>Au coworking, connecte-toi au WiFi <strong>amicalewifi.ch</strong> puis ajoute chaque appareil que tu utilises depuis <strong>Mes appareils</strong> pour avoir Internet complet. L'autorisation reste active tant que ton pack est valide.</p>
       <p th:if="${deviceCount > 0}"
          th:text="${deviceCount == 1 ? '1 appareil enregistré.' : deviceCount + ' appareils enregistrés.'}">2 appareils enregistrés.</p>
       <p th:if="${deviceCount == 0}" class="muted">Aucun appareil enregistré pour l'instant.</p>
