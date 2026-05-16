@@ -141,11 +141,11 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
           Couleur
         </label>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
-          <input type="checkbox" name="duplex" value="true" checked>
+          <input type="checkbox" name="duplex" id="uploadDuplex" value="true" checked onchange="updateUploadPreview()">
           Recto-verso
         </label>
       </div>
-      <div class="input-hint">N&B : 1 crédit/page · Couleur : 2 crédits/page (× copies)</div>
+      <div class="input-hint">N&B : 1 crédit/feuille · Couleur : 2 crédits/feuille (recto-verso : 2 pages par feuille)</div>
       <div class="credit-preview" id="uploadPreview">
         <span>≈</span>
         <span class="big" id="uploadCredits">1</span>
@@ -250,7 +250,9 @@ function updateUploadPreview() {
   const pages  = parseInt(document.getElementById('uploadPages').value)  || 1;
   const copies = parseInt(document.getElementById('uploadCopies').value) || 1;
   const color  = document.getElementById('uploadColor').checked;
-  const total  = pages * copies * (color ? 2 : 1);
+  const duplex = document.getElementById('uploadDuplex').checked;
+  const sheets = duplex ? Math.ceil(pages / 2) : pages;
+  const total  = sheets * copies * (color ? 2 : 1);
   document.getElementById('uploadCredits').textContent = total;
   const btn = document.getElementById('uploadBtn');
   if (total <= remaining && total > 0) {
