@@ -79,6 +79,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	// /internal/* : endpoints réservés au backend Spring (sweeper).
+	// Bind au même listener mais non routé publiquement par Caddy.
+	mux.HandleFunc("/internal/poll-job", internalPollJobHandler)
 	mux.HandleFunc("/", printHandler(proxy))
 
 	srv := &http.Server{

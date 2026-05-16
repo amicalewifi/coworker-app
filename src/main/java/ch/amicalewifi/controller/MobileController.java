@@ -4,6 +4,10 @@ import ch.amicalewifi.model.*;
 import ch.amicalewifi.repository.*;
 import ch.amicalewifi.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
@@ -16,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
@@ -30,7 +35,11 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/mobile")
 @RequiredArgsConstructor
+@Slf4j
 public class MobileController {
+
+    @Value("${amicale.business.print-color-factor:2}") private int printColorFactor;
+    @Value("${amicale.business.print-bw-factor:1}")    private int printBwFactor;
 
     private final MemberService            memberService;
     private final RoomService              roomService;
@@ -538,25 +547,65 @@ public class MobileController {
     @PostMapping(value = "/print/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String uploadPrint(Authentication auth,
                               @RequestParam MultipartFile file,
-                              @RequestParam(defaultValue = "1") int pages,
                               @RequestParam(defaultValue = "1") int copies,
                               @RequestParam(defaultValue = "false") boolean color,
                               @RequestParam(defaultValue = "false") boolean duplex,
                               RedirectAttributes ra) {
         Member member = memberRepo.findByEmail(auth.getName()).orElseThrow();
-        int sheets = duplex ? (pages + 1) / 2 : pages;
-        int credits = sheets * copies * (color ? 2 : 1);
+        if (file == null || file.isEmpty()) {
+            ra.addFlashAttribute("error", "Aucun fichier sélectionné.");
+            return "redirect:/mobile/print";
+        }
+        if (copies <= 0) copies = 1;
+
+        String filename = file.getOriginalFilename();
+        String lower = filename != null ? filename.toLowerCase() : "";
+        if (!lower.endsWith(".pdf")) {
+            ra.addFlashAttribute("error", "Seuls les fichiers PDF sont acceptés (le PostScript n'est pas supporté).");
+            return "redirect:/mobile/print";
+        }
+
+        // Source de vérité pour le page count : parse PDFBox côté serveur.
+        // Le champ "pages" envoyé par le navigateur n'est qu'une estimation UX
+        // — on ne lui fait pas confiance pour la facturation (l'utilisateur
+        // peut éditer le champ readonly via les devtools, et le parser regex
+        // client peut sous-compter sur PDF à objets compressés).
+        int pages;
+        byte[] bytes;
+        try {
+            bytes = file.getBytes();
+        } catch (IOException e) {
+            ra.addFlashAttribute("error", "Lecture du fichier impossible : " + e.getMessage());
+            return "redirect:/mobile/print";
+        }
+        try (PDDocument doc = Loader.loadPDF(bytes)) {
+            pages = doc.getNumberOfPages();
+        } catch (InvalidPasswordException e) {
+            ra.addFlashAttribute("error",
+                    "PDF protégé par mot de passe — retire la protection avant l'impression.");
+            return "redirect:/mobile/print";
+        } catch (IOException e) {
+            log.warn("PDF illisible pour {} ({}): {}", member.getEmail(), filename, e.getMessage());
+            ra.addFlashAttribute("error",
+                    "PDF illisible ou corrompu — vérifie le fichier et réessaye.");
+            return "redirect:/mobile/print";
+        }
+        if (pages <= 0) {
+            ra.addFlashAttribute("error", "PDF vide (0 page).");
+            return "redirect:/mobile/print";
+        }
+
+        int credits = PrintCostCalculator.cost(
+                pages, copies, color, duplex, printColorFactor, printBwFactor);
         try {
             memberService.deductPrintCredits(member.getId(), credits);
 
-            String filename = file.getOriginalFilename();
-            String lang = (filename != null && filename.toLowerCase().endsWith(".ps")) ? "POSTSCRIPT" : "PDF";
             BigDecimal cppChf = color ? new BigDecimal("0.200") : new BigDecimal("0.100");
             boolean online = printerService.isOnline();
 
             PrinterJob job = printerJobRepo.save(PrinterJob.builder()
                     .member(member)
-                    .filename(filename != null ? filename : "document.pdf")
+                    .filename(filename)
                     .pages(pages).copies(copies).color(color).duplex(duplex)
                     .status(online ? PrintJobStatus.PRINTING : PrintJobStatus.QUEUED)
                     .costPerPage(cppChf)
@@ -564,12 +613,13 @@ public class MobileController {
 
             if (online) {
                 try {
-                    printerService.print(file.getBytes(), job.getFilename(), lang, copies, duplex);
+                    printerService.print(bytes, job.getFilename(), "PDF", copies, duplex);
                     job.setStatus(PrintJobStatus.COMPLETED);
                     job.setCompletedAt(LocalDateTime.now());
                     printerJobRepo.save(job);
                     ra.addFlashAttribute("success",
-                            "Document envoyé à l'imprimante — " + credits + " crédit(s) déduits.");
+                            "Document envoyé à l'imprimante — " + pages + " page(s), "
+                                    + credits + " crédit(s) déduits.");
                 } catch (Exception e) {
                     job.setStatus(PrintJobStatus.ERROR);
                     job.setErrorMessage(e.getMessage());
@@ -580,7 +630,8 @@ public class MobileController {
                 }
             } else {
                 ra.addFlashAttribute("success",
-                        "Imprimante hors ligne — document mis en file d'attente. " + credits + " crédit(s) déduits.");
+                        "Imprimante hors ligne — document mis en file d'attente. "
+                                + pages + " page(s), " + credits + " crédit(s) déduits.");
             }
         } catch (IllegalStateException e) {
             ra.addFlashAttribute("error", e.getMessage());

@@ -47,6 +47,30 @@ func nextReqID() uint32 {
 	return atomic.AddUint32(&reqIDCounter, 1)
 }
 
+// computeBillUnit choisit l'unité de billing à reporter à Spring, par
+// ordre de confiance décroissante :
+//
+//  1. sheets (job-media-sheets-completed) — autoritaire si firmware le supporte
+//  2. impressions / 2 (arrondi sup) si duplex — reconstitue les feuilles
+//     physiques quand l'attribut PWG dédié manque
+//  3. impressions (per-side) — simplex ou duplex inconnu
+//  4. 1 (fallback) — jamais de free print silencieux
+//
+// Partagée par le polling continu (pollAndComplete) et le poll one-shot
+// utilisé par le sweeper côté Spring (/internal/poll-job).
+func computeBillUnit(sheets, impressions int, duplex bool) (int, string) {
+	switch {
+	case sheets > 0:
+		return sheets, "sheets"
+	case duplex && impressions > 0:
+		return (impressions + 1) / 2, "sheets-from-impressions"
+	case impressions > 0:
+		return impressions, "impressions"
+	default:
+		return 1, "fallback"
+	}
+}
+
 func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), pollDeadline)
 	defer cancel()
@@ -81,30 +105,10 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 				color = color || kColor
 				duplex = duplex || kDuplex
 
-				// Choix de l'unité de billing :
-				//   1. sheets si la Kyocera le rapporte (job-media-sheets-completed)
-				//   2. sinon : impressions / 2 (arrondi sup) si duplex →
-				//      reconstitue le nombre de feuilles physiques quand le
-				//      firmware ne supporte pas l'attribut PWG dédié
-				//   3. sinon impressions (per-side, recto)
-				//   4. en dernier recours 1 (jamais de free print silencieux)
-				var billUnit int
-				var unitLabel string
-				switch {
-				case sheets > 0:
-					billUnit = sheets
-					unitLabel = "sheets"
-				case duplex && impressions > 0:
-					billUnit = (impressions + 1) / 2
-					unitLabel = "sheets-from-impressions"
-				case impressions > 0:
-					billUnit = impressions
-					unitLabel = "impressions"
-				default:
+				billUnit, unitLabel := computeBillUnit(sheets, impressions, duplex)
+				if unitLabel == "fallback" {
 					log.Printf("[claudine-proxy] job=%s completed but no count reported (impressions=%d sheets=%d), defaulting to 1",
 						jobID, impressions, sheets)
-					billUnit = 1
-					unitLabel = "fallback"
 				}
 				log.Printf("[claudine-proxy] job=%s completed: %d %s (color=%v duplex=%v impressions=%d sheets=%d)",
 					jobID, billUnit, unitLabel, color, duplex, impressions, sheets)
@@ -183,5 +187,16 @@ func reportError(jobID, message string) {
 	defer cancel()
 	if err := spring.Error(ctx, jobID, message); err != nil {
 		log.Printf("[claudine-proxy] spring error job=%s: %v", jobID, err)
+	}
+}
+
+// reportDispatched : pousse à Spring l'URI Kyocera attribuée au job, pour que
+// le sweeper côté Spring puisse re-poller si /complete ne nous parvient
+// jamais. Best-effort — un échec ne fait que désactiver ce filet pour CE job.
+func reportDispatched(jobID, kyoceraJobURI string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := spring.Dispatched(ctx, jobID, kyoceraJobURI); err != nil {
+		log.Printf("[claudine-proxy] spring dispatched job=%s: %v", jobID, err)
 	}
 }

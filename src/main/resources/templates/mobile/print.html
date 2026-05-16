@@ -109,6 +109,34 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
   </div>
 
+  <!-- Règles de décompte -->
+  <details class="rules-card" style="margin-bottom:20px;">
+    <summary>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+           stroke="currentColor" stroke-width="1.6"
+           style="flex-shrink:0;color:var(--t3);">
+        <circle cx="8" cy="8" r="6"/>
+        <path d="M8 7v4"/>
+        <circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/>
+      </svg>
+      <div class="rules-meta">
+        <div class="rules-title">Comment les crédits sont décomptés</div>
+        <div class="rules-sub">Règles de calcul de l'estimation</div>
+      </div>
+      <svg class="rules-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+    </summary>
+    <div class="rules-body">
+      <p>On compte les <strong>feuilles</strong> imprimées, pas les pages :</p>
+      <ul>
+        <li><strong>1 crédit</strong> par feuille en <strong>N&amp;B</strong></li>
+        <li><strong>2 crédits</strong> par feuille en <strong>couleur</strong></li>
+        <li><strong>Recto-verso</strong> : 2 pages tiennent sur 1 feuille</li>
+        <li>Multiplié par le nombre de <strong>copies</strong></li>
+      </ul>
+      <p style="margin-top:10px;">L'estimation peut différer du décompte final si le nombre de pages n'a pas pu être détecté automatiquement.</p>
+    </div>
+  </details>
+
   <!-- Imprimante virtuelle Claudine -->
   <a th:href="@{/mobile/printer-setup}"
      style="display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px;margin-bottom:20px;text-decoration:none;color:var(--text);">
@@ -125,7 +153,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
   <div class="declare-card">
     <form th:action="@{/mobile/print/upload}" method="post" enctype="multipart/form-data" id="uploadForm">
       <label class="file-picker" id="filePicker">
-        <input type="file" name="file" accept=".pdf,.ps" required onchange="onFileChosen(this)">
+        <input type="file" name="file" accept=".pdf,application/pdf" required onchange="onFileChosen(this)">
         <div class="fp-icon">📄</div>
         <div class="fp-body">
           <div class="fp-title" id="fpTitle">Choisir un fichier PDF</div>
@@ -144,7 +172,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         </div>
       </div>
       <div id="uploadPagesHint" class="input-hint" style="display:none;margin-top:-6px;margin-bottom:10px;color:var(--t3);">
-        Nombre de pages non détecté — facturation calculée à l'impression.
+        Nombre de pages non détecté côté navigateur — le décompte exact sera calculé au moment de l'envoi.
       </div>
       <div style="display:flex;gap:16px;margin-bottom:12px;">
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;">
@@ -156,32 +184,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
           Recto-verso
         </label>
       </div>
-      <details class="rules-card">
-        <summary>
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
-               stroke="currentColor" stroke-width="1.6"
-               style="flex-shrink:0;color:var(--t3);">
-            <circle cx="8" cy="8" r="6"/>
-            <path d="M8 7v4"/>
-            <circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/>
-          </svg>
-          <div class="rules-meta">
-            <div class="rules-title">Comment les crédits sont décomptés</div>
-            <div class="rules-sub">Règles de calcul de l'estimation</div>
-          </div>
-          <svg class="rules-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
-        </summary>
-        <div class="rules-body">
-          <p>On compte les <strong>feuilles</strong> imprimées, pas les pages :</p>
-          <ul>
-            <li><strong>1 crédit</strong> par feuille en <strong>N&amp;B</strong></li>
-            <li><strong>2 crédits</strong> par feuille en <strong>couleur</strong></li>
-            <li><strong>Recto-verso</strong> : 2 pages tiennent sur 1 feuille</li>
-            <li>Multiplié par le nombre de <strong>copies</strong></li>
-          </ul>
-          <p style="margin-top:10px;">L'estimation peut différer du décompte final si le nombre de pages n'a pas pu être détecté automatiquement.</p>
-        </div>
-      </details>
       <div class="credit-preview" id="uploadPreview">
         <span id="uploadCreditApprox" style="display:none;">≈</span>
         <span class="big" id="uploadCredits">—</span>

@@ -81,6 +81,19 @@ func (s *SpringClient) Complete(ctx context.Context, jobID string, pages, copies
 	return s.do(ctx, "POST", "/api/v1/print/"+jobID+"/complete", body, nil)
 }
 
+type dispatchedReq struct {
+	KyoceraJobURI string `json:"kyoceraJobUri"`
+}
+
+// Dispatched notifie Spring de l'URI Kyocera retournée par le Print-Job.
+// Best-effort : un échec n'interrompt rien (le sweeper côté Spring pourra
+// re-poller via cette URI si on lui a réussi à la pousser ; sinon le job
+// reste orphelin et la prochaine intervention humaine s'en charge).
+func (s *SpringClient) Dispatched(ctx context.Context, jobID, kyoceraJobURI string) error {
+	body, _ := json.Marshal(dispatchedReq{KyoceraJobURI: kyoceraJobURI})
+	return s.do(ctx, "POST", "/api/v1/print/"+jobID+"/dispatched", body, nil)
+}
+
 type errorReq struct {
 	Message string `json:"message"`
 }

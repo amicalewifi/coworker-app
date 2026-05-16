@@ -212,6 +212,11 @@ func (r *ippParseReader) Read(p []byte) (int, error) {
 				if jobURI, kyoceraJobID, perr := ExtractJobURI(r.accum); perr == nil && jobURI != "" {
 					log.Printf("[claudine-proxy] job dispatched spring-id=%s kyocera-id=%d uri=%s color=%v duplex=%v",
 						r.jobID, kyoceraJobID, jobURI, r.color, r.duplex)
+					// Best-effort : pousser l'URI à Spring pour le sweeper.
+					// Échec → on continue : pollAndComplete fera l'essentiel et
+					// le job ne sera orphelin que si CE proxy crashe avant que
+					// /complete passe.
+					go reportDispatched(r.jobID, jobURI)
 					go pollAndComplete(r.jobID, jobURI, r.color, r.duplex)
 					r.done = true
 					r.accum = nil // free
