@@ -165,7 +165,7 @@ amicale:
   wifi:
     poll-interval-ms:          120000   # Polling stat/sta toutes les 2 min
     half-day-threshold-seconds: 1800    # 30 min de connexion → 0.5 unité
-    full-day-threshold-seconds: 18000   # 5 h de connexion   → 1.0 unité
+    full-day-threshold-seconds: 16200   # 4 h 30 de connexion → 1.0 unité
     # URL HTTP vers laquelle on redirige depuis /login quand on n'a pas encore
     # la MAC du client (entrée directe sur coworker.amicalewifi.ch). UniFi
     # intercepte cette requête HTTP et 302 vers /guest/s/default/?id=<MAC>&...

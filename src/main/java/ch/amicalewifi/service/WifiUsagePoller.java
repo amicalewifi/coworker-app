@@ -18,9 +18,9 @@ import java.util.stream.Collectors;
  * Décompte des unités de pack basé sur le temps de connexion WiFi.
  *
  * Modèle métier :
- *   < 30 min/jour                → 0 unité
- *   30 min ≤ temps < 5 h /jour   → 0.5 unité
- *   ≥ 5 h/jour                   → 1.0 unité
+ *   < 30 min/jour                  → 0 unité
+ *   30 min ≤ temps < 4 h 30 /jour  → 0.5 unité
+ *   ≥ 4 h 30/jour                  → 1.0 unité
  *
  * Multi-appareil : on stocke l'UNION (un membre = une timeline). Avoir
  * deux appareils connectés en simultané ne consomme pas deux fois.
@@ -51,7 +51,7 @@ public class WifiUsagePoller {
     /**
      * Poll régulier des clients connectés. Pour chaque membre détecté,
      * incrémente le compteur de secondes du jour et décompte les unités
-     * de pack au passage des seuils (30 min, 5 h).
+     * de pack au passage des seuils (30 min, 4 h 30).
      */
     @Scheduled(fixedDelayString = "${amicale.wifi.poll-interval-ms:120000}")
     @Transactional

@@ -170,6 +170,33 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     </div>
   </div>
 
+  <!-- Comment ton temps est compté : explication des règles de décompte -->
+  <details class="prev-pack" style="margin-bottom:14px;">
+    <summary>
+      <div class="prev-pack-meta">
+        <div class="prev-pack-title">Comment ton temps est compté</div>
+        <div class="prev-pack-sub">Règles de décompte du pack</div>
+      </div>
+      <svg class="prev-pack-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+    </summary>
+    <div class="prev-pack-body">
+      <p style="font-size:13px;color:var(--t2);line-height:1.5;margin:0 0 10px;">
+        On compte le temps que tu passes <strong>connecté au WiFi du coworking</strong>, jour par jour. Selon ce total quotidien :
+      </p>
+      <ul style="font-size:13px;color:var(--t2);line-height:1.6;margin:0 0 12px;padding-left:18px;">
+        <li>moins de <strong>30 min</strong> &rarr; rien n'est décompté de ton pack</li>
+        <li>entre <strong>30 min et 4 h 30</strong> &rarr; <strong>½ jour</strong> est décompté</li>
+        <li><strong>4 h 30 ou plus</strong> &rarr; <strong>1 jour entier</strong> est décompté</li>
+      </ul>
+      <p style="font-size:13px;color:var(--t2);margin:0 0 6px;"><strong>Bon à savoir :</strong></p>
+      <ul style="font-size:13px;color:var(--t2);line-height:1.6;margin:0;padding-left:18px;">
+        <li>Plusieurs appareils connectés en même temps comptent comme <strong>un seul</strong> (téléphone + laptop = un seul décompte).</li>
+        <li>Si tu reviens plusieurs fois dans la journée, c'est le <strong>temps total cumulé</strong> qui compte.</li>
+        <li>Une fois la journée commencée, tu gardes l'accès jusqu'à minuit, même si ton pack arrive à zéro entre temps.</li>
+      </ul>
+    </div>
+  </details>
+
   <!-- Packs précédents (collapsés par défaut) -->
   <div th:if="${!#lists.isEmpty(previousPacks)}">
     <div class="section-title">Packs précédents</div>
