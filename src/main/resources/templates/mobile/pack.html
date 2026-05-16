@@ -78,7 +78,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
            th:text="${member.isPermanent() ? 'Permanent'
                        : (member.membership.hasPack() ? member.membership.shortName : 'Aucun pack actif')}">Pack 60 jours</div>
       <div th:if="${member.packExpires != null}" class="ph-formula"
-           th:text="'Valide jusqu''au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}">Valide jusqu'au 12 mai 2026</div>
+           th:text="'Valide jusqu\'au ' + ${#temporals.format(member.packExpires, 'd MMM yyyy', #locale)}">Valide jusqu'au 12 mai 2026</div>
     </div>
 
     <div th:if="${member.packUnitsTotal != null}" style="margin-bottom:12px;position:relative;z-index:1;">
