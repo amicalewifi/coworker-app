@@ -18,12 +18,14 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Endpoints HTTP appelés exclusivement par le container CUPS broker
- * (amicale-broker.py) sur le réseau loopback du VPS. Authentifié par un
- * header X-Print-Broker-Key partagé entre l'app et le broker (généré au
+ * Endpoints HTTP appelés exclusivement par claudine-proxy (Go, voir
+ * docker/claudine-proxy/) sur le bridge Docker du VPS. Authentifié par un
+ * header X-Print-Broker-Key partagé entre l'app et claudine-proxy (généré au
  * bootstrap, stocké dans .env). Pas exposé via Caddy.
  *
- * Le broker fait : authenticate -> submit -> [print sur Kyocera] -> complete/error.
+ * claudine-proxy fait : authenticate → submit → [forward IPP à la Kyocera] →
+ * dispatched → complete/error (deferred billing : pages effectives obtenues
+ * en pollant la Kyocera après le job).
  */
 @RestController
 @RequestMapping("/api/v1/print")

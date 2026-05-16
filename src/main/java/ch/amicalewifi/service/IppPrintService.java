@@ -17,8 +17,12 @@ import java.util.UUID;
 
 /**
  * Orchestre le flux d'impression IPP : auth par token, vérif quota, ledger
- * sur PrinterJob, débit du quota à la complétion. Le comptage de pages est
- * fait côté broker CUPS (pdfinfo) — ce service reçoit juste les métadonnées.
+ * sur PrinterJob, débit du quota à la complétion. Source du page count :
+ *   - flow Claudine (laptop IPP) : claudine-proxy polle la Kyocera après le
+ *     job et envoie le compte effectif (job-impressions-completed /
+ *     job-media-sheets-completed) via /complete.
+ *   - flow mobile (/mobile/print/upload) : MobileController parse le PDF
+ *     côté serveur avec PDFBox avant débit.
  *
  * Source de vérité du débit : printUsed est incrémenté UNIQUEMENT dans
  * complete() — pas à l'admission. Échec = pas de débit (refund implicite).
@@ -66,7 +70,7 @@ public class IppPrintService {
 
         if (pages > 0) {
             // Mode legacy : page count connu à l'admission, on vérifie le quota
-            // dès maintenant (early reject si insuffisant — UX broker CUPS).
+            // dès maintenant (early reject si insuffisant — UX claudine-proxy).
             int cost = PrintCostCalculator.credits(pages, copies, color, colorFactor, bwFactor);
             int remaining = m.getPrintQuota() - m.getPrintUsed();
             if (cost > remaining) {

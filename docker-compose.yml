@@ -19,7 +19,7 @@ services:
       SPRING_DATASOURCE_URL:                       jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME:                  ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD:                  ${POSTGRES_PASSWORD}
-    # Publié sur la loopback du host pour que le container `cups`
+    # Publié sur la loopback du host pour que le container `claudine`
     # (en network_mode: host pour atteindre wg0) puisse joindre l'app via
     # 127.0.0.1:8081. Pas exposé publiquement — Caddy reste le seul ingress.
     ports:
@@ -118,10 +118,10 @@ volumes:
   caddy_config:
 
 # Pin du subnet du bridge `default` pour que l'IP du gateway (172.18.0.1)
-# soit stable. Caddy reverse-proxy vers cette IP pour atteindre le binaire
-# claudine (PAPPL) en network_mode: host (le gateway du bridge depuis
-# l'intérieur du bridge = le host lui-même). Une règle UFW dans bootstrap.sh
-# autorise ce subnet → host:8000 (port d'écoute PAPPL).
+# soit stable. Caddy reverse-proxy vers cette IP pour atteindre claudine-proxy
+# en network_mode: host (le gateway du bridge depuis l'intérieur du bridge =
+# le host lui-même). Une règle UFW dans bootstrap.sh autorise ce subnet →
+# host:8000 (port d'écoute claudine-proxy).
 networks:
   default:
     ipam:
@@ -129,7 +129,7 @@ networks:
         - subnet: 172.18.0.0/16
 
 # Public:    https://coworker.amicalewifi.ch                   → Caddy → app:8081
-#            https://print.amicalewifi.ch/printers/claudine    → Caddy → CUPS:631 (IPPS)
+#            https://print.amicalewifi.ch/printers/claudine    → Caddy → claudine-proxy (network_mode:host, IPPS)
 # pgAdmin:   http://127.0.0.1:5050           (SSH-tunnel from your laptop)
 # Postgres:  127.0.0.1:5432                  (SSH-tunnel from your laptop)
-# App:       127.0.0.1:8081                  (loopback only, used by CUPS broker)
+# App:       127.0.0.1:8081                  (loopback only, used by claudine-proxy)

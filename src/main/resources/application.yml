@@ -142,8 +142,8 @@ amicale:
     timeout-ms: 2000
 
   print:
-    # Secret partagé entre coworker-app et le container CUPS broker (claudine).
-    # Le broker l'envoie en header X-Print-Broker-Key sur tout appel /api/v1/print/**.
+    # Secret partagé entre coworker-app et claudine-proxy.
+    # claudine-proxy l'envoie en header X-Print-Broker-Key sur tout appel /api/v1/print/**.
     # Auto-généré par bootstrap.sh si vide dans .env.
     broker-key:   ${AMICALE_PRINT_BROKER_KEY:CHANGE_ME}
     public-host:  print.amicalewifi.ch
