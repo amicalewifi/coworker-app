@@ -22,12 +22,19 @@ import java.util.stream.Collectors;
  *   30 min ≤ temps < 4 h 30 /jour  → 0.5 unité
  *   ≥ 4 h 30/jour                  → 1.0 unité
  *
+ * Le décompte ne dépasse jamais le solde du pack : si le membre ne peut
+ * pas s'offrir le passage HALF → FULL, on s'arrête à HALF. Au moment où le
+ * solde tombe à 0 on pose {@code packExhaustedAt} ; après 30 min de grâce,
+ * {@link WifiAccessService#hasAccess} renvoie false et le poll révoque
+ * activement les MACs encore connectées (KICK_PACK_EMPTY).
+ *
  * Multi-appareil : on stocke l'UNION (un membre = une timeline). Avoir
  * deux appareils connectés en simultané ne consomme pas deux fois.
  * Permanents et essais (JOURNEE_ESSAI) ne consomment rien.
  *
- * Job de minuit : révoque les MACs des membres qui n'ont plus accès
- * (pack épuisé sans renouvellement, contrat expiré).
+ * Job de minuit : balaie aussi les MACs des membres sans accès (filet de
+ * sécurité pour le cas où le membre n'aurait pas été détecté en cours de
+ * journée).
  */
 @Service
 @RequiredArgsConstructor
@@ -96,6 +103,22 @@ public class WifiUsagePoller {
                             .seconds(0).unitsCharged(BigDecimal.ZERO)
                             .lastPollAt(now).build()));
 
+            // Pas d'accès (pack épuisé hors grâce, badge expiré, …) : on ne
+            // compte plus le temps et on révoque activement les MACs encore
+            // dans le walled-garden. unauthorizeGuest est idempotent côté
+            // UniFi ; si le device se déconnecte, il ne reviendra plus dans
+            // connectedMacs et on arrête naturellement.
+            if (!accessService.hasAccess(member)) {
+                usage.setLastPollAt(now);
+                usageRepo.save(usage);
+                for (MemberWifiMac mac : entry.getValue()) {
+                    if (unifi.unauthorizeGuest(mac.getMac())) {
+                        accessService.audit(member, mac.getMac(), "KICK_PACK_EMPTY", null);
+                    }
+                }
+                continue;
+            }
+
             long deltaSec = Math.max(0, Duration.between(usage.getLastPollAt(), now).getSeconds());
             deltaSec = Math.min(deltaSec, maxDeltaSec);
             // Première observation de la journée : on ne crédite que la fenêtre du poll.
@@ -120,29 +143,39 @@ public class WifiUsagePoller {
         if (member.isPermanent()) return;
         if (member.getMembership() == MembershipType.JOURNEE_ESSAI) return;
 
-        BigDecimal alreadyCharged = usage.getUnitsCharged();
+        BigDecimal target;
+        if      (usage.getSeconds() >= fullDaySec) target = FULL;
+        else if (usage.getSeconds() >= halfDaySec) target = HALF;
+        else return;
 
-        if (usage.getSeconds() >= fullDaySec && alreadyCharged.compareTo(FULL) < 0) {
-            BigDecimal delta = FULL.subtract(alreadyCharged);
-            member.setPackUnitsUsed(member.getPackUnitsUsed().add(delta));
-            member.setUpdatedAt(LocalDateTime.now());
-            memberRepo.save(member);
-            usage.setUnitsCharged(FULL);
-            accessService.audit(member, null, "CHARGED_FULL",
-                    "seconds=" + usage.getSeconds());
-            log.info("WiFi pack full-day: {} (+{} unité, restant: {})",
-                    member.getDisplayName(), delta, member.getPackUnitsRemaining());
-        } else if (usage.getSeconds() >= halfDaySec && alreadyCharged.compareTo(HALF) < 0) {
-            BigDecimal delta = HALF.subtract(alreadyCharged);
-            member.setPackUnitsUsed(member.getPackUnitsUsed().add(delta));
-            member.setUpdatedAt(LocalDateTime.now());
-            memberRepo.save(member);
-            usage.setUnitsCharged(HALF);
-            accessService.audit(member, null, "CHARGED_HALF",
-                    "seconds=" + usage.getSeconds());
-            log.info("WiFi pack half-day: {} (+{} unité, restant: {})",
-                    member.getDisplayName(), delta, member.getPackUnitsRemaining());
+        BigDecimal alreadyCharged = usage.getUnitsCharged();
+        if (alreadyCharged.compareTo(target) >= 0) return;
+
+        // Cap au solde restant : la contrainte SQL chk_pack_max interdit
+        // pack_units_used > pack_units_total, et plus généralement on ne
+        // facture jamais au-delà de ce que le membre a acheté.
+        BigDecimal remaining = member.getPackUnitsRemaining();
+        if (remaining == null || remaining.signum() <= 0) return;
+
+        BigDecimal intended = target.subtract(alreadyCharged);
+        BigDecimal delta    = intended.min(remaining);
+        BigDecimal newCharged = alreadyCharged.add(delta);
+
+        member.setPackUnitsUsed(member.getPackUnitsUsed().add(delta));
+        if (member.getPackUnitsRemaining().signum() <= 0
+                && member.getPackExhaustedAt() == null) {
+            member.setPackExhaustedAt(LocalDateTime.now());
         }
+        member.setUpdatedAt(LocalDateTime.now());
+        memberRepo.save(member);
+        usage.setUnitsCharged(newCharged);
+
+        String event = newCharged.compareTo(FULL) >= 0 ? "CHARGED_FULL" : "CHARGED_HALF";
+        accessService.audit(member, null, event,
+                "seconds=" + usage.getSeconds() + ",delta=" + delta);
+        log.info("WiFi pack {}: {} (+{} unité, restant: {})",
+                event.equals("CHARGED_FULL") ? "full-day" : "half-day",
+                member.getDisplayName(), delta, member.getPackUnitsRemaining());
     }
 
     /**

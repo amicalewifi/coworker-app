@@ -46,6 +46,7 @@ public class MemberService {
     public Member create(Member m) {
         m.setPackUnitsTotal(m.getMembership().getPackUnits());
         m.setPackUnitsUsed(BigDecimal.ZERO);
+        m.setPackExhaustedAt(null);
         m.setConfCreditsTotalH(m.getMembership().getConfCredits());
         m.setConfCreditsUsedH(BigDecimal.ZERO);
         if (m.getMembership() == MembershipType.PERMANENT) {
@@ -74,6 +75,7 @@ public class MemberService {
         m.setMembership(membership);
         m.setPackUnitsTotal(membership.getPackUnits());
         m.setPackUnitsUsed(BigDecimal.ZERO);
+        m.setPackExhaustedAt(null);
         boolean singleSession = membership == MembershipType.PACK_DEMIJ;
         m.setPackExpires(validUntil != null ? validUntil :
                 membership == MembershipType.PERMANENT ? LocalDate.now().plusMonths(1) :
@@ -112,6 +114,7 @@ public class MemberService {
             m.setPackUnitsTotal(null);
             m.setPackUnitsUsed(BigDecimal.ZERO);
         }
+        m.setPackExhaustedAt(null);
         m.setPackExpires(packExpires);
         m.setUpdatedAt(LocalDateTime.now());
         log.info("Ajustement pack admin: {} → {} · {}j restantes · expire {}", m.getDisplayName(), membership, unitsRemaining, packExpires);
@@ -260,6 +263,10 @@ public class MemberService {
                 && p.getUnitsConsumed().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal refunded = m.getPackUnitsUsed().subtract(p.getUnitsConsumed());
             m.setPackUnitsUsed(refunded.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : refunded);
+            // Si le remboursement remet le pack à un solde > 0, on lève l'état d'épuisement.
+            if (m.getPackUnitsRemaining() != null && m.getPackUnitsRemaining().signum() > 0) {
+                m.setPackExhaustedAt(null);
+            }
             m.setUpdatedAt(LocalDateTime.now());
             memberRepo.save(m);
         }
