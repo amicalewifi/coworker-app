@@ -301,6 +301,13 @@ public class MobileController {
                 .map(WifiDailyUsage::getUnitsCharged)
                 .orElse(BigDecimal.ZERO);
 
+        // Statut WiFi (en ligne / hors ligne) — déplacé de /mobile/ ici en
+        // tête de la section "Aujourd'hui".
+        java.util.List<MemberWifiMac> myMacs =
+                wifiMacRepo.findAllByMemberIdOrderByCreatedAtAsc(member.getId());
+        boolean hasBoundMacs = !myMacs.isEmpty();
+        boolean wifiOnline   = hasBoundMacs && anyBoundMacAuthorizedNow(myMacs);
+
         model.addAttribute("member",               member);
         model.addAttribute("hasActivePack",        hasActivePack);
         model.addAttribute("currentPackPresences", currentPackPresences);
@@ -308,6 +315,8 @@ public class MobileController {
         model.addAttribute("totalChf",             totalChf);
         model.addAttribute("wifiTodaySeconds",     wifiTodaySeconds);
         model.addAttribute("wifiTodayCharged",     wifiTodayCharged);
+        model.addAttribute("hasBoundMacs",         hasBoundMacs);
+        model.addAttribute("wifiOnline",           wifiOnline);
         return "mobile/pack";
     }
 
