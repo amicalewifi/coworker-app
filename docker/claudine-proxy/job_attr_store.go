@@ -28,9 +28,14 @@ import (
 )
 
 type JobAttrs struct {
-	Color     bool
-	Duplex    bool
-	UpdatedAt time.Time
+	Color  bool
+	Duplex bool
+	// BeforeColor : valeur du compteur Imprimante Couleur lue juste avant
+	// de soumettre le job à la Kyocera. Servira au delta à la complétion.
+	// Sentinelle -1 : la lecture SNMP avant a échoué, on skip le delta et
+	// on retombe sur Color (request-side peek).
+	BeforeColor int
+	UpdatedAt   time.Time
 }
 
 type jobAttrStore struct {

@@ -72,6 +72,10 @@ func computeBillUnit(sheets, impressions int, duplex bool) (int, string) {
 }
 
 func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
+	// Libère printerMu sur TOUT chemin de sortie (complétion, error,
+	// timeout, panic). Acquis dans handler.go avant le forward.
+	defer printerMu.Unlock()
+
 	ctx, cancel := context.WithTimeout(context.Background(), pollDeadline)
 	defer cancel()
 
@@ -98,16 +102,45 @@ func pollAndComplete(jobID, kyoceraJobURI string, color, duplex bool) {
 			switch state {
 			case jobStateCompleted:
 				// Source de vérité pour color/duplex : le request-side peek
-				// stocké dans attrStore. Pour Linux/Windows, ces valeurs
-				// viennent du Print-Job inline. Pour macOS, Send-Document
-				// les a overridées avec les vraies. On ne fait PLUS de OR
-				// avec kColor/kDuplex (per-job IPP attrs Kyocera) : la
-				// Kyocera renvoie ses valeurs DEFAULT-machine pour ces
-				// attrs au lieu des actual-job (cf. ipp.go autour de
-				// BuildGetJobAttributes), donc OR'er inflate à tort.
+				// stocké dans attrStore (Print-Job inline pour Linux/Windows,
+				// Send-Document pour macOS). On ne fait PAS de OR avec
+				// kColor/kDuplex (per-job IPP attrs Kyocera) car la Kyocera
+				// renvoie ses valeurs DEFAULT-machine pour ces attrs au
+				// lieu des actual-job (cf. ipp.go autour de BuildGetJobAttributes).
 				finalColor, finalDuplex := color, duplex
-				if stored, ok := attrStore.Get(jobID); ok {
+				stored, hasStored := attrStore.Get(jobID)
+				if hasStored {
 					finalColor, finalDuplex = stored.Color, stored.Duplex
+				}
+
+				// Counter-delta override : on relit le compteur SNMP
+				// "Imprimante Couleur" et on compare au snapshot pris
+				// avant le submit. Si le compteur a bougé, le job a
+				// consommé du toner couleur (la vérité physique). Si non,
+				// c'était mono même si le client a demandé color (cas
+				// macOS auto-grayscale, panel "force B&W", etc.).
+				// Sentinelle BeforeColor=-1 → la lecture avant a échoué,
+				// on skip le delta et on fait confiance au request-side.
+				if hasStored && stored.BeforeColor >= 0 {
+					// Grace de 3s pour laisser la Kyocera flusher le compteur
+					// après job-state=9.
+					time.Sleep(3 * time.Second)
+					afterColor, err := ReadImprimanteCouleur(ctx)
+					if err != nil {
+						log.Printf("[claudine-proxy] SNMP after read failed (job=%s): %v — falling back to request-side color",
+							jobID, err)
+					} else {
+						delta := afterColor - stored.BeforeColor
+						counterColor := delta > 0
+						if counterColor != stored.Color {
+							log.Printf("[claudine-proxy] color override job=%s: request=%v counter-delta=%v (Δ=%d before=%d after=%d)",
+								jobID, stored.Color, counterColor, delta, stored.BeforeColor, afterColor)
+						} else {
+							log.Printf("[claudine-proxy] counter-delta confirms request job=%s: color=%v Δ=%d",
+								jobID, counterColor, delta)
+						}
+						finalColor = counterColor
+					}
 				}
 
 				billUnit, unitLabel := computeBillUnit(sheets, impressions, finalDuplex)

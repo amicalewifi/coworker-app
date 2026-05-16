@@ -9,7 +9,7 @@
 #
 # Multi-stage build : Go static binary + Alpine runtime minimal.
 
-FROM golang:1.22-alpine AS build
+FROM golang:1.24-alpine AS build
 
 WORKDIR /src
 COPY go.mod ./
