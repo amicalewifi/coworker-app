@@ -18,11 +18,12 @@ import java.time.*;
  *   - badge actif, non expiré, ET
  *   - contrat permanent, OU
  *   - pack avec unités restantes > 0, OU
- *   - journée déjà décomptée aujourd'hui (on laisse finir la journée).
+ *   - pack tout juste épuisé : on tolère 30 min de grâce après le décompte
+ *     qui a vidé le pack (cf. {@code packExhaustedAt}).
  *
  * Durée d'autorisation passée à UniFi : jusqu'à expiration du pack
- * (packExpires). Un job de minuit (WifiUsagePoller) révoque les membres
- * qui n'ont plus accès le lendemain.
+ * (packExpires). WifiUsagePoller révoque activement les membres dont la
+ * grâce a expiré, et un job de minuit nettoie le reste.
  */
 @Service
 @Transactional
@@ -32,8 +33,9 @@ public class WifiAccessService {
 
     private final MemberWifiMacRepository  macRepo;
     private final WifiAuditRepository      auditRepo;
-    private final WifiDailyUsageRepository usageRepo;
     private final UnifiService             unifi;
+
+    private static final long GRACE_MINUTES = 30;
 
     private static final ZoneId ZURICH = ZoneId.of("Europe/Zurich");
 
@@ -123,8 +125,8 @@ public class WifiAccessService {
 
     /**
      * Vrai si le membre a actuellement droit au WiFi.
-     * Note : on accepte aussi le cas « déjà décompté aujourd'hui » : si le
-     * pack est tombé à 0 en cours de journée, on laisse finir la journée.
+     * Après que le pack soit tombé à zéro, on tolère 30 min de grâce
+     * (cf. {@link Member#getPackExhaustedAt()}) avant de couper l'accès.
      */
     public boolean hasAccess(Member m) {
         if (m == null || !m.isActive()) return false;
@@ -134,9 +136,9 @@ public class WifiAccessService {
         if (m.isPermanent()) return true;
         if (m.getPackUnitsRemaining() != null
                 && m.getPackUnitsRemaining().compareTo(BigDecimal.ZERO) > 0) return true;
-        return usageRepo.findByMemberIdAndUsageDate(m.getId(), LocalDate.now(ZURICH))
-                .map(u -> u.getUnitsCharged().compareTo(BigDecimal.ZERO) > 0)
-                .orElse(false);
+        LocalDateTime exhaustedAt = m.getPackExhaustedAt();
+        if (exhaustedAt == null) return false;
+        return Duration.between(exhaustedAt, LocalDateTime.now()).toMinutes() < GRACE_MINUTES;
     }
 
     /**

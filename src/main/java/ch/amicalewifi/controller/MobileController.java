@@ -290,11 +290,24 @@ public class MobileController {
             previousPacks.add(new PackGroup(tx, ps, used));
         }
 
+        // Temps WiFi du jour : alimente la sous-section "Aujourd'hui" du
+        // template. Même requête que /mobile/dashboard.
+        int wifiTodaySeconds = wifiDailyUsageRepo
+                .findByMemberIdAndUsageDate(member.getId(), today)
+                .map(WifiDailyUsage::getSeconds)
+                .orElse(0);
+        BigDecimal wifiTodayCharged = wifiDailyUsageRepo
+                .findByMemberIdAndUsageDate(member.getId(), today)
+                .map(WifiDailyUsage::getUnitsCharged)
+                .orElse(BigDecimal.ZERO);
+
         model.addAttribute("member",               member);
         model.addAttribute("hasActivePack",        hasActivePack);
         model.addAttribute("currentPackPresences", currentPackPresences);
         model.addAttribute("previousPacks",        previousPacks);
         model.addAttribute("totalChf",             totalChf);
+        model.addAttribute("wifiTodaySeconds",     wifiTodaySeconds);
+        model.addAttribute("wifiTodayCharged",     wifiTodayCharged);
         return "mobile/pack";
     }
 

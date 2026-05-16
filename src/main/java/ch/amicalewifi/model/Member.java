@@ -53,6 +53,12 @@ public class Member {
     @Builder.Default private BigDecimal packUnitsUsed = BigDecimal.ZERO;
     @Column(name = "pack_expires")      private LocalDate packExpires;
 
+    // Posé par WifiUsagePoller quand un décompte fait passer packUnitsRemaining
+    // à 0. Pilote le délai de grâce de 30 min avant révocation effective (cf.
+    // WifiAccessService.hasAccess). Effacé par MemberService lors d'un
+    // renouvellement / ajustement du pack.
+    @Column(name = "pack_exhausted_at") private LocalDateTime packExhaustedAt;
+
     @Column(name = "conf_credits_total_h", precision = 5, scale = 2)
     @Builder.Default private BigDecimal confCreditsTotalH = BigDecimal.ZERO;
     @Column(name = "conf_credits_used_h",  precision = 5, scale = 2)
