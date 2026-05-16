@@ -180,7 +180,7 @@ amicale:
     instance:    CHANGE_ME
     api-key:     CHANGE_ME
     base-url:    https://api.zahls.ch/v1.14
-    success-url:       http://localhost:8081/mobile/?renewed=ok
+    success-url:       http://localhost:8081/mobile/pack?renewed=ok
     cancel-url:        http://localhost:8081/mobile/
     print-success-url: http://localhost:8081/mobile/print?bought=ok
     print-cancel-url:  http://localhost:8081/mobile/print
