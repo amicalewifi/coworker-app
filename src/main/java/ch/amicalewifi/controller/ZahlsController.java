@@ -41,19 +41,31 @@ public class ZahlsController {
             }
 
             String status = (String) transaction.get("status");
-            if (!"confirmed".equalsIgnoreCase(status)) {
-                log.debug("Zahls webhook: status='{}' ignoré", status);
-                return ResponseEntity.ok().build();
-            }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> invoice = (Map<String, Object>) transaction.get("invoice");
-            if (invoice == null) {
-                log.warn("Zahls webhook: transaction sans 'invoice'");
+            String referenceId = invoice != null ? (String) invoice.get("referenceId") : null;
+
+            // Statuts non-confirmés : on logge mais on n'agit pas.
+            // Pour refunded/chargeback on log au niveau WARN avec un appel à
+            // action admin (retrait manuel des crédits/pack accordés) — l'auto-
+            // revocation est volontairement hors scope pour éviter les
+            // double-soustractions sur bugs de duplicata webhook.
+            if (!"confirmed".equalsIgnoreCase(status)) {
+                if ("refunded".equalsIgnoreCase(status) || "chargeback".equalsIgnoreCase(status)) {
+                    log.warn("Zahls webhook: paiement remboursé (status={}, ref={}) — ACTION ADMIN REQUISE : retirer manuellement les crédits/pack accordés",
+                            status, referenceId);
+                } else {
+                    log.info("Zahls webhook: status non-confirmé ignoré (status={}, ref={})",
+                            status, referenceId);
+                }
                 return ResponseEntity.ok().build();
             }
 
-            String referenceId = (String) invoice.get("referenceId");
+            if (invoice == null) {
+                log.warn("Zahls webhook: transaction confirmée sans 'invoice'");
+                return ResponseEntity.ok().build();
+            }
             if (referenceId == null || !referenceId.contains(":")) {
                 log.warn("Zahls webhook: referenceId invalide: {}", referenceId);
                 return ResponseEntity.ok().build();
