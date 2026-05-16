@@ -59,6 +59,10 @@ public class Member {
     // renouvellement / ajustement du pack.
     @Column(name = "pack_exhausted_at") private LocalDateTime packExhaustedAt;
 
+    // Horodatage d'acceptation des CGV à l'inscription. NULL pour les membres
+    // antérieurs à V30 ; imposé en application pour toute nouvelle création.
+    @Column(name = "cgv_accepted_at")   private LocalDateTime cgvAcceptedAt;
+
     @Column(name = "conf_credits_total_h", precision = 5, scale = 2)
     @Builder.Default private BigDecimal confCreditsTotalH = BigDecimal.ZERO;
     @Column(name = "conf_credits_used_h",  precision = 5, scale = 2)

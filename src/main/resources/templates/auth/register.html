@@ -100,6 +100,15 @@
       <input name="password" id="regPw" type="password" class="form-in" placeholder="••••••••" minlength="8" required>
     </div>
 
+    <div class="section">Conditions Générales de Vente</div>
+    <div th:replace="~{fragments/cgv :: cgv}"></div>
+    <label class="form-row" style="display:flex;align-items:flex-start;gap:8px;margin-top:10px;cursor:pointer;">
+      <input type="checkbox" name="acceptCgv" required style="margin-top:3px;flex-shrink:0;">
+      <span class="form-lbl" style="text-transform:none;letter-spacing:normal;font-weight:500;">
+        J'ai lu et j'accepte les <strong>Conditions Générales de Vente</strong> ci-dessus. *
+      </span>
+    </label>
+
     <button type="submit" class="btn btn-g btn-full" style="margin-top:8px;">Créer mon compte</button>
   </form>
 
