@@ -136,7 +136,7 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
       <div class="input-row">
         <div class="input-group">
           <label>Pages estimées</label>
-          <input type="number" name="pages" id="uploadPages" min="1" value="1" readonly>
+          <input type="number" name="pages" id="uploadPages" min="1" value="" placeholder="—" readonly>
         </div>
         <div class="input-group">
           <label>Copies</label>
@@ -183,9 +183,9 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
         </div>
       </details>
       <div class="credit-preview" id="uploadPreview">
-        <span>≈</span>
-        <span class="big" id="uploadCredits">1</span>
-        <span>crédit(s) — estimation</span>
+        <span id="uploadCreditApprox" style="display:none;">≈</span>
+        <span class="big" id="uploadCredits">—</span>
+        <span id="uploadCreditLabel">crédit(s)</span>
       </div>
       <button type="submit" class="btn-primary" id="uploadBtn">
         Envoyer à l'imprimante →
@@ -283,14 +283,27 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 const remaining = /*[[${member.printQuota - member.printUsed}]]*/ 0;
 
 function updateUploadPreview() {
-  const pages  = parseInt(document.getElementById('uploadPages').value)  || 1;
-  const copies = parseInt(document.getElementById('uploadCopies').value) || 1;
-  const color  = document.getElementById('uploadColor').checked;
-  const duplex = document.getElementById('uploadDuplex').checked;
+  const pages    = parseInt(document.getElementById('uploadPages').value, 10);
+  const copies   = parseInt(document.getElementById('uploadCopies').value) || 1;
+  const color    = document.getElementById('uploadColor').checked;
+  const duplex   = document.getElementById('uploadDuplex').checked;
+  const btn      = document.getElementById('uploadBtn');
+  const credSpan = document.getElementById('uploadCredits');
+  const approx   = document.getElementById('uploadCreditApprox');
+  const label    = document.getElementById('uploadCreditLabel');
+  if (!pages || pages <= 0) {
+    credSpan.textContent = '—';
+    approx.style.display = 'none';
+    label.textContent = 'crédit(s)';
+    btn.disabled = false;
+    btn.textContent = 'Envoyer à l\'imprimante →';
+    return;
+  }
   const sheets = duplex ? Math.ceil(pages / 2) : pages;
   const total  = sheets * copies * (color ? 2 : 1);
-  document.getElementById('uploadCredits').textContent = total;
-  const btn = document.getElementById('uploadBtn');
+  credSpan.textContent = total;
+  approx.style.display = '';
+  label.textContent = 'crédit(s) — estimation';
   if (total <= remaining && total > 0) {
     btn.disabled = false;
     btn.textContent = 'Envoyer à l\'imprimante → ≈ ' + total + ' crédit(s)';
@@ -309,7 +322,7 @@ async function onFileChosen(input) {
     picker.classList.remove('has-file');
     document.getElementById('fpTitle').textContent = 'Choisir un fichier PDF';
     document.getElementById('fpSub').textContent = 'Touchez pour parcourir';
-    document.getElementById('uploadPages').value = 1;
+    document.getElementById('uploadPages').value = '';
     hint.style.display = 'none';
     updateUploadPreview();
     return;
