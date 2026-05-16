@@ -34,6 +34,17 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 .fp-sub{font-size:11px;color:var(--t3);margin-top:2px;}
 .fp-arrow{font-size:18px;color:var(--prim);opacity:.6;flex-shrink:0;}
 .file-picker.has-file .fp-arrow{display:none;}
+.rules-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04);overflow:hidden;}
+.rules-card > summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.rules-card > summary::-webkit-details-marker{display:none;}
+.rules-meta{flex:1;min-width:0;}
+.rules-title{font-size:14px;font-weight:700;color:var(--text);}
+.rules-sub{font-size:11px;color:var(--t3);margin-top:2px;}
+.rules-chev{flex-shrink:0;color:var(--t3);transition:transform .2s ease;}
+.rules-card[open] .rules-chev{transform:rotate(90deg);}
+.rules-body{padding:0 16px 14px;}
+.rules-body ul{font-size:13px;color:var(--t2);line-height:1.6;margin:0;padding-left:18px;}
+.rules-body p{font-size:13px;color:var(--t2);line-height:1.5;margin:0 0 8px;}
 .credit-preview{background:var(--gl);border:1px solid var(--prim);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--prim-d);font-weight:600;display:flex;align-items:center;gap:8px;}
 .credit-preview .big{font-size:20px;font-weight:900;}
 .input-hint{font-size:11px;color:var(--t3);margin-bottom:12px;line-height:1.5;}
@@ -145,7 +156,32 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
           Recto-verso
         </label>
       </div>
-      <div class="input-hint">N&B : 1 crédit/feuille · Couleur : 2 crédits/feuille (recto-verso : 2 pages par feuille)</div>
+      <details class="rules-card">
+        <summary>
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"
+               stroke="currentColor" stroke-width="1.6"
+               style="flex-shrink:0;color:var(--t3);">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M8 7v4"/>
+            <circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/>
+          </svg>
+          <div class="rules-meta">
+            <div class="rules-title">Comment les crédits sont décomptés</div>
+            <div class="rules-sub">Règles de calcul de l'estimation</div>
+          </div>
+          <svg class="rules-chev" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4l4 4-4 4"/></svg>
+        </summary>
+        <div class="rules-body">
+          <p>On compte les <strong>feuilles</strong> imprimées, pas les pages :</p>
+          <ul>
+            <li><strong>1 crédit</strong> par feuille en <strong>N&amp;B</strong></li>
+            <li><strong>2 crédits</strong> par feuille en <strong>couleur</strong></li>
+            <li><strong>Recto-verso</strong> : 2 pages tiennent sur 1 feuille</li>
+            <li>Multiplié par le nombre de <strong>copies</strong></li>
+          </ul>
+          <p style="margin-top:10px;">L'estimation peut différer du décompte final si le nombre de pages n'a pas pu être détecté automatiquement.</p>
+        </div>
+      </details>
       <div class="credit-preview" id="uploadPreview">
         <span>≈</span>
         <span class="big" id="uploadCredits">1</span>
