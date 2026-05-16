@@ -79,7 +79,15 @@ func printHandler(proxy *httputil.ReverseProxy) http.HandlerFunc {
 			kyoceraID, ok := ExtractJobID(peek)
 			if ok && kyoceraID > 0 {
 				if springID := attrStore.KyoceraToSpring(kyoceraID); springID != "" {
-					attrStore.Set(springID, JobAttrs{Color: sdColor, Duplex: sdDuplex})
+					// Merge : on garde BeforeColor capturé au Create-Job (Set
+					// avec struct literal écrasait à 0 → Δ buggé dans la log).
+					existing, hasExisting := attrStore.Get(springID)
+					if !hasExisting {
+						existing = JobAttrs{BeforeColor: -1}
+					}
+					existing.Color = sdColor
+					existing.Duplex = sdDuplex
+					attrStore.Set(springID, existing)
 					log.Printf("[claudine-proxy] Send-Document overrode attrs spring-id=%s kyocera-id=%d color=%v duplex=%v",
 						springID, kyoceraID, sdColor, sdDuplex)
 				} else {
