@@ -77,6 +77,18 @@ public class IppPrintService {
                 throw new InsufficientPrintCreditsException(
                         "crédits insuffisants — " + remaining + " disponibles, " + cost + " requis");
             }
+        } else {
+            // Mode deferred billing (pages=0, claudine-proxy) : on ne connaît
+            // pas le coût exact, mais on refuse de créer un job quand le solde
+            // est déjà à zéro. Sans ce garde-fou, un membre épuisé peut
+            // imprimer indéfiniment et printUsed dépasse printQuota
+            // silencieusement. Le clamp à /complete couvre le dernier job qui
+            // dépasse — celui-ci empêche les suivants.
+            int remaining = m.getPrintQuota() - m.getPrintUsed();
+            if (remaining <= 0) {
+                throw new InsufficientPrintCreditsException(
+                        "crédits insuffisants — solde " + remaining + ", impression refusée");
+            }
         }
 
         BigDecimal costPerPage = color ? new BigDecimal("0.200") : new BigDecimal("0.100");
@@ -135,18 +147,31 @@ public class IppPrintService {
         int cost = PrintCostCalculator.credits(
                 job.getPages(), job.getCopies(), job.isColor(), colorFactor, bwFactor);
 
+        // Clamp anti-overdraft : la page est déjà sortie physiquement, on ne
+        // peut pas l'annuler, mais on refuse de laisser printUsed dépasser
+        // printQuota. Le surplus est annoté sur le job pour visibilité admin.
+        // Le garde-fou à /submit empêche les jobs SUIVANTS — celui-ci absorbe
+        // le dernier qui a dépassé.
         Member m = job.getMember();
-        m.setPrintUsed(m.getPrintUsed() + cost);
+        int remaining = Math.max(0, m.getPrintQuota() - m.getPrintUsed());
+        int debited = Math.min(cost, remaining);
+        m.setPrintUsed(m.getPrintUsed() + debited);
         m.setUpdatedAt(LocalDateTime.now());
         memberRepo.save(m);
+
+        if (cost > remaining) {
+            String note = "OVERDRAFT cost=" + cost + " remaining=" + remaining + " debited=" + debited;
+            job.setErrorMessage(note);
+            log.warn("Print overdraft job={} member={}: {}", jobId, m.getDisplayName(), note);
+        }
 
         job.setStatus(PrintJobStatus.COMPLETED);
         job.setCompletedAt(LocalDateTime.now());
         job.setUpdatedAt(LocalDateTime.now());
         jobRepo.save(job);
-        log.info("Print complete: job={} · {} · {}p × {} · +{} crédits (total used={}/{})",
+        log.info("Print complete: job={} · {} · {}p × {} · cost={} debited={} (total used={}/{})",
                 jobId, m.getDisplayName(), job.getPages(), job.getCopies(),
-                cost, m.getPrintUsed(), m.getPrintQuota());
+                cost, debited, m.getPrintUsed(), m.getPrintQuota());
     }
 
     /** Override pour le deferred billing : tous les champs nullables. */
