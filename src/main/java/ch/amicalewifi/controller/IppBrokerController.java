@@ -6,6 +6,7 @@ import ch.amicalewifi.service.IppPrintService;
 import ch.amicalewifi.service.IppPrintService.InsufficientPrintCreditsException;
 import ch.amicalewifi.service.IppPrintService.InvalidPrintRequestException;
 import ch.amicalewifi.service.IppPrintService.InvalidPrintTokenException;
+import ch.amicalewifi.service.PrintCostCalculator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,12 +49,32 @@ public class IppBrokerController {
     public ResponseEntity<?> submit(@RequestHeader(value = "X-Print-Broker-Key", required = false) String key,
                                     @RequestBody SubmitRequest req) {
         if (!checkKey(key)) return unauthorized();
+        int copies = req.copies() == 0 ? 1 : req.copies();
         PrinterJob job = ippPrintService.submit(
-                req.token(), req.pages(), req.filename(),
-                req.copies() == 0 ? 1 : req.copies(),
+                req.token(), req.pages(), req.filename(), copies,
                 req.color(), req.duplex(), req.submittedUsername());
-        int factor = req.color() ? colorFactor : bwFactor;
-        return ResponseEntity.ok(new SubmitResponse(job.getId(), req.pages() * (req.copies() == 0 ? 1 : req.copies()) * factor));
+        int estimatedCost = PrintCostCalculator.credits(
+                req.pages(), copies, req.color(), colorFactor, bwFactor);
+        return ResponseEntity.ok(new SubmitResponse(job.getId(), estimatedCost));
+    }
+
+    /**
+     * Notifie Spring que la Kyocera a accepté le Print-Job et a attribué un
+     * job-uri. Persiste l'URI sur PrinterJob.printerJobId pour que le sweeper
+     * puisse re-poller la Kyocera si le callback /complete ne nous parvient
+     * jamais (crash de claudine-proxy, partition réseau, etc.). Best-effort
+     * fire-and-forget côté proxy — pas d'effet de bord si l'appel échoue.
+     */
+    @PostMapping("/{jobId}/dispatched")
+    public ResponseEntity<?> dispatched(@RequestHeader(value = "X-Print-Broker-Key", required = false) String key,
+                                        @PathVariable UUID jobId,
+                                        @RequestBody DispatchedRequest req) {
+        if (!checkKey(key)) return unauthorized();
+        if (req == null || req.kyoceraJobUri() == null || req.kyoceraJobUri().isBlank()) {
+            return ResponseEntity.unprocessableEntity().body(Map.of("error", "missing kyoceraJobUri"));
+        }
+        ippPrintService.recordKyoceraJobUri(jobId, req.kyoceraJobUri());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{jobId}/complete")
@@ -125,4 +146,5 @@ public class IppBrokerController {
      *  nullables — chaque champ non-null override la valeur stockée à /submit. */
     public record CompleteRequest(Integer pages, Integer copies,
                                    Boolean color, Boolean duplex) {}
+    public record DispatchedRequest(String kyoceraJobUri) {}
 }

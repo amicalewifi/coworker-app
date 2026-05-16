@@ -59,6 +59,12 @@ http://10.0.1.2 {
     request_body {
         max_size 500MB
     }
+    # Bloque les endpoints internes : réservés au sweeper côté Spring
+    # (PrinterJobReconciler), joignable uniquement depuis le bridge Docker.
+    # Défense en profondeur — l'auth X-Print-Broker-Key reste la garde
+    # principale côté claudine-proxy.
+    @internal path /internal/*
+    respond @internal 404
     reverse_proxy 172.18.0.1:8000 {
         # IPP attend HTTP/1.1 chunked — pas de HTTP/2.
         transport http {

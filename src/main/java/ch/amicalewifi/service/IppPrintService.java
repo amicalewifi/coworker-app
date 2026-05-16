@@ -64,11 +64,10 @@ public class IppPrintService {
                     submittedUsername, m.getEmail(), token);
         }
 
-        int factor = color ? colorFactor : bwFactor;
         if (pages > 0) {
             // Mode legacy : page count connu à l'admission, on vérifie le quota
             // dès maintenant (early reject si insuffisant — UX broker CUPS).
-            int cost = pages * copies * factor;
+            int cost = PrintCostCalculator.credits(pages, copies, color, colorFactor, bwFactor);
             int remaining = m.getPrintQuota() - m.getPrintUsed();
             if (cost > remaining) {
                 throw new InsufficientPrintCreditsException(
@@ -106,11 +105,14 @@ public class IppPrintService {
      * Backward compat : appel sans override (override == null) garde le
      * comportement legacy — utilise les champs initialement passés au /submit.
      *
-     * Idempotent : status == COMPLETED → no-op.
+     * Idempotent : status == COMPLETED → no-op. Race-safe : findByIdForUpdate
+     * pose un row-lock pessimiste, donc deux appelants concurrents (claudine-
+     * proxy callback + sweeper) sont sérialisés au niveau DB ; le second voit
+     * status=COMPLETED et sort en no-op (pas de double-débit).
      */
     @Transactional
     public void complete(UUID jobId, CompleteOverride override) {
-        PrinterJob job = jobRepo.findById(jobId)
+        PrinterJob job = jobRepo.findByIdForUpdate(jobId)
                 .orElseThrow(() -> new InvalidPrintRequestException("job inconnu: " + jobId));
         if (job.getStatus() == PrintJobStatus.COMPLETED) {
             log.debug("complete() idempotent no-op pour job {}", jobId);
@@ -123,8 +125,11 @@ public class IppPrintService {
             if (override.duplex() != null) job.setDuplex(override.duplex());
         }
 
-        int factor = job.isColor() ? colorFactor : bwFactor;
-        int cost   = job.getPages() * job.getCopies() * factor;
+        // job.pages = unité de billing déjà résolue (sheets pour claudine-proxy,
+        // page count brut pour la voie mobile pré-collapsée). Le calculator se
+        // contente d'appliquer copies × factor : cf. PrintCostCalculator#credits.
+        int cost = PrintCostCalculator.credits(
+                job.getPages(), job.getCopies(), job.isColor(), colorFactor, bwFactor);
 
         Member m = job.getMember();
         m.setPrintUsed(m.getPrintUsed() + cost);
@@ -149,9 +154,9 @@ public class IppPrintService {
         PrinterJob job = jobRepo.findById(jobId).orElse(null);
         if (job == null) return;
         if (job.getStatus() == PrintJobStatus.COMPLETED && job.getMember() != null) {
-            int factor = job.isColor() ? colorFactor : bwFactor;
-            int cost   = job.getPages() * job.getCopies() * factor;
-            Member m   = job.getMember();
+            int cost = PrintCostCalculator.credits(
+                    job.getPages(), job.getCopies(), job.isColor(), colorFactor, bwFactor);
+            Member m = job.getMember();
             m.setPrintUsed(Math.max(0, m.getPrintUsed() - cost));
             m.setUpdatedAt(LocalDateTime.now());
             memberRepo.save(m);
@@ -159,6 +164,23 @@ public class IppPrintService {
                     jobId, m.getDisplayName(), cost, m.getPrintUsed(), m.getPrintQuota());
         }
         jobRepo.delete(job);
+    }
+
+    /**
+     * Persiste l'URI Kyocera retournée par le Print-Job côté printer, pour
+     * que le sweeper puisse re-poller en cas d'orphelin. Idempotent : si la
+     * valeur est déjà stockée, no-op silencieux.
+     */
+    @Transactional
+    public void recordKyoceraJobUri(UUID jobId, String kyoceraJobUri) {
+        PrinterJob job = jobRepo.findById(jobId)
+                .orElseThrow(() -> new InvalidPrintRequestException("job inconnu: " + jobId));
+        if (kyoceraJobUri == null || kyoceraJobUri.isBlank()) return;
+        if (kyoceraJobUri.equals(job.getPrinterJobId())) return;
+        job.setPrinterJobId(kyoceraJobUri);
+        job.setUpdatedAt(LocalDateTime.now());
+        jobRepo.save(job);
+        log.debug("Print dispatched: job={} kyocera-uri={}", jobId, kyoceraJobUri);
     }
 
     @Transactional
