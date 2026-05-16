@@ -90,43 +90,11 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
      style="display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px;margin-bottom:20px;text-decoration:none;color:var(--text);">
     <div style="flex-shrink:0;width:38px;height:38px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:18px;">🖨️</div>
     <div style="flex:1;min-width:0;">
-      <div style="font-size:14px;font-weight:800;">Imprimer depuis ton ordi</div>
+      <div style="font-size:14px;font-weight:800;">Imprimer depuis ton ordinateur</div>
       <div style="font-size:12px;color:var(--t3);margin-top:1px;">Configurer Claudine sur Mac, PC, Linux, mobile…</div>
     </div>
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.4;"><path d="M6 4l4 4-4 4"/></svg>
   </a>
-
-  <!-- Déclarer -->
-  <div class="section-title">Déclarer des impressions</div>
-  <div class="declare-card">
-    <form th:action="@{/mobile/print/declare}" method="post" id="declareForm">
-      <div class="input-row">
-        <div class="input-group">
-          <label>Pages N&B</label>
-          <input type="number" name="pagesBw" id="pagesBw" min="0" value="0"
-                 oninput="updatePreview()">
-        </div>
-        <div class="input-group">
-          <label>Pages couleur</label>
-          <input type="number" name="pagesColor" id="pagesColor" min="0" value="0"
-                 oninput="updatePreview()">
-        </div>
-      </div>
-      <div class="input-hint">1 crédit par page N&B · 2 crédits par page couleur</div>
-      <div class="credit-preview" id="creditPreview">
-        <span class="big" id="previewCredits">0</span>
-        <span>crédit(s) seront déduits</span>
-      </div>
-      <button type="submit" class="btn-primary" id="declareBtn"
-              th:disabled="${member.printQuota - member.printUsed <= 0}">
-        Déclarer les impressions
-      </button>
-    </form>
-  </div>
-  <div th:if="${member.printQuota - member.printUsed <= 0}"
-       style="font-size:12px;color:var(--t3);text-align:center;margin:6px 0 16px;padding:0 8px;">
-    Aucun crédit disponible — achetez un pack ci-dessous.
-  </div>
 
   <!-- Upload fichier -->
   <div class="section-title">Imprimer un fichier</div>
@@ -256,24 +224,6 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
 
 <script th:inline="javascript">
 const remaining = /*[[${member.printQuota - member.printUsed}]]*/ 0;
-
-function updatePreview() {
-  const bw    = parseInt(document.getElementById('pagesBw').value)    || 0;
-  const col   = parseInt(document.getElementById('pagesColor').value) || 0;
-  const total = bw + col * 2;
-  document.getElementById('previewCredits').textContent = total;
-  const btn = document.getElementById('declareBtn');
-  if (total > 0 && total <= remaining) {
-    btn.disabled = false;
-    btn.textContent = 'Déclarer — ' + total + ' crédit(s)';
-  } else if (total > remaining) {
-    btn.disabled = true;
-    btn.textContent = 'Crédits insuffisants (' + remaining + ' disponibles)';
-  } else {
-    btn.disabled = true;
-    btn.textContent = 'Déclarer les impressions';
-  }
-}
 
 function updateUploadPreview() {
   const pages  = parseInt(document.getElementById('uploadPages').value)  || 1;
