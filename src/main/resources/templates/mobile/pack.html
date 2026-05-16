@@ -61,6 +61,10 @@ body{max-width:430px;margin:0 auto;min-height:100dvh;display:flex;flex-direction
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M3 8l4 4 6-6"/></svg>
     <span th:text="${success}"></span>
   </div>
+  <div th:if="${error}" class="flash flash-err" style="margin-bottom:12px;">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11h.01"/></svg>
+    <span th:text="${error}"></span>
+  </div>
 
   <!-- Hero pack -->
   <div class="pack-hero">
