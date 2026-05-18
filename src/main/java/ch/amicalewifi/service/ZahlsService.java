@@ -59,7 +59,7 @@ public class ZahlsService {
         }
         int amountRappen = membership.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Renouvellement " + membership.getLabel(),
-                amountRappen, successUrl, cancelUrl);
+                amountRappen, successUrl, cancelUrl, member);
     }
 
     public Optional<String> createConfCreditPaymentLink(Member member, ConfHourPackType pack) {
@@ -70,7 +70,7 @@ public class ZahlsService {
         }
         int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Salle de conférence · " + pack.getLabel(),
-                amountRappen, confSuccessUrl, confCancelUrl);
+                amountRappen, confSuccessUrl, confCancelUrl, member);
     }
 
     public Optional<String> createPrintPackPaymentLink(Member member, PrintPackType pack) {
@@ -81,7 +81,7 @@ public class ZahlsService {
         }
         int amountRappen = pack.getPriceChf().multiply(BigDecimal.valueOf(100)).intValue();
         return createApiLink(referenceId, "Crédits impression · " + pack.getLabel(),
-                amountRappen, printSuccessUrl, printCancelUrl);
+                amountRappen, printSuccessUrl, printCancelUrl, member);
     }
 
     /** Ajoute referenceId + infos membre à un lien de paiement statique zahls.ch. */
@@ -107,7 +107,8 @@ public class ZahlsService {
 
     /** Crée un lien dynamique via l'API zahls.ch (requiert une clé API valide). */
     private Optional<String> createApiLink(String referenceId, String purpose,
-                                            int amountRappen, String successRedirect, String cancelRedirect) {
+                                            int amountRappen, String successRedirect, String cancelRedirect,
+                                            Member member) {
         try {
             String key = apiKey.trim();
             Map<String, String> params = new LinkedHashMap<>();
@@ -126,6 +127,16 @@ public class ZahlsService {
 
             MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
             params.forEach(body::add);
+
+            if (member != null) {
+                addFieldIfNotBlank(body, "fields[forename][value]",  member.getFirstName());
+                addFieldIfNotBlank(body, "fields[surname][value]",   member.getLastName());
+                addFieldIfNotBlank(body, "fields[email][value]",     member.getEmail());
+                addFieldIfNotBlank(body, "fields[phone][value]",     member.getPhone());
+                addFieldIfNotBlank(body, "fields[street][value]",    member.getAddress());
+                addFieldIfNotBlank(body, "fields[postcode][value]",  member.getPostalCode());
+                addFieldIfNotBlank(body, "fields[place][value]",     member.getCity());
+            }
 
             String url = baseUrl + "/Gateway/?instance=" + instance.trim();
             ResponseEntity<Map> resp = rest.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
@@ -155,6 +166,10 @@ public class ZahlsService {
     private void appendIfNotBlank(StringBuilder url, String param, String value) throws Exception {
         if (value != null && !value.isBlank())
             url.append("&").append(param).append("=").append(URLEncoder.encode(value, StandardCharsets.UTF_8));
+    }
+
+    private void addFieldIfNotBlank(MultiValueMap<String, String> body, String key, String value) {
+        if (value != null && !value.isBlank()) body.add(key, value);
     }
 
     private String withQueryParam(String url, String key, String value) {
